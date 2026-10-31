@@ -33,17 +33,30 @@ The probe advertises version 366.0, sets bit 48 and clears bit 27. The iPhone th
 
 The first three bytes are the TLV8 method item for pair setup. The legacy handler accepts only a 32-byte body, so it rejects this request. The iPhone then asks for the code again.
 
-The 9-byte body has the same size as the transient request of `pyatv`: method, state and the flag `0x10`. The full bytes from the iPhone are not logged yet.
+The 9-byte body is `00 01 00 06 01 01 13 01 10`: method, state and the transient flag `0x10`.
 
-Stage 2 passed on the TV on 2026-10-31 with a `pyatv` client, `check_transient.py`. The client finished transient pairing and read `/info` on the encrypted channel. An iPhone did not run this test.
+Stage 2 passed on the TV on 2026-10-31 with a `pyatv` client, `check_transient.py`. The client finished transient pairing and read `/info` on the encrypted channel. An iPhone and an iMac then finished the same pairing without a code.
 
 The code for stage 2 is on the branch `airplay2-probe`. It uses `pair_ap` and OpenSSL. It does not add libsodium.
 
-Stage 3 is not tested. The build hashes the stream key with the 64-byte pairing secret. No public source confirms this length for transient pairing. If video does not decode, try the first 32 bytes.
+Stage 3 passed on 2026-10-31 with an iPhone 18,4 on iOS 27.2. The screen showed video. The log shows 1801 decrypted frames in 34 seconds and no decryption errors. The sender was on the new channel for the full test.
+
+After transient pairing, the iPhone uses this sequence. `POST /fp-setup` comes first, two times. The first `SETUP` has no `ekey` and no `eiv`. The `RECORD` request comes before the stream `SETUP`.
+
+Video uses ChaCha20-Poly1305:
+
+| Item | Value |
+| --- | --- |
+| Key | HKDF-SHA512 of the 64-byte pairing secret |
+| Salt | `DataStream-Salt` and the decimal `streamConnectionID` |
+| Info | `DataStream-Output-Encryption-Key` |
+| Nonce | 4 zero bytes and a 64-bit little-endian frame count |
+| Additional data | The 128-byte frame header |
+| Tag | The last 16 bytes of the payload |
 
 ## Known limits
 
-- Every open type 110 path found so far still uses `ekey` and `fp-setup`.
+- The iPhone still calls `fp-setup`. The video key does not use its result.
 - Nothing public describes how iOS at sender version 980 selects a protocol.
 - `combinedGetInfoWithControlSetup` has no public description.
 - PTP uses ports 319 and 320. An Android app may not be able to bind them.
