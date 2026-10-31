@@ -33,7 +33,7 @@
     <string name="tv_power_mode_desc">Receive in Standby: keeps this TV discoverable to iPhone, iPad and Mac in standby, and tries to turn the screen on when casting begins. Whether this works depends on the TV model and system settings, and standby power use may increase.\nPower Saving: reduces standby power use. Devices may not find this TV during standby, so turn the TV on before casting.</string>
     <string name="tv_power_standby">Receive in Standby</string>
     <string name="tv_power_saving">Power Saving</string>
-    <string name="tv_home_title">Cast to This TV</string>
+    <string name="tv_home_title">Telik</string>
     <string name="tv_home_hint">Open Screen Mirroring on your iPhone, iPad or Mac, then choose “%1$s”.</string>
     <string name="tv_home_cast">Screen Mirroring</string>
     <string name="tv_home_cast_sub">From iPhone, iPad or Mac</string>

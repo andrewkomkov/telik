@@ -1,0 +1,1 @@
+Use the app language for the default TV name. The English home screen now shows Telik.
