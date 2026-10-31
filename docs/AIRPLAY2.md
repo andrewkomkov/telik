@@ -19,6 +19,22 @@ Each stage has one test on a real iPhone. A failed test stops the next stage.
 | 5 | Add PTP only if iOS requires it | iOS accepts the timing peer |
 | 6 | Study types 120 and 130 | Decide after stage 5 |
 
+## Results
+
+Stages 0 and 1 passed on 2026-10-31 with an iPhone on sender version 1005.13.1.
+
+The probe advertises version 366.0, sets bit 48 and clears bit 27. The iPhone then sends these requests:
+
+| Request | `X-Apple-HKP` | Body |
+| --- | --- | --- |
+| `GET /info` | none | Binary plist with the key `qualifier` |
+| `POST /pair-pin-start` | 4 | Empty |
+| `POST /pair-setup` | 4 | 9 bytes that start with `00 01 00` |
+
+The first three bytes are the TLV8 method item for pair setup. The legacy handler accepts only a 32-byte body, so it rejects this request. The iPhone then asks for the code again.
+
+The iPhone calls `/pair-pin-start`, so it expects a code. Stage 2 must find which advertised flag selects transient pairing without a code.
+
 ## Known limits
 
 - Every open type 110 path found so far still uses `ekey` and `fp-setup`.
