@@ -297,4 +297,6 @@
     <string name="speaker_title">HomePod 傳聲</string>
     <string name="speaker_home_sub">將電視聲音傳到 AirPlay 喇叭</string>
     <string name="speaker_notification">喇叭傳送工作階段進行中，可開啟 App 查看狀態或停止。</string>
+    <string name="tv_home_homekit">Apple 家庭</string>
+    <string name="tv_home_homekit_sub">將這台電視加入「家庭」App</string>
 </resources>

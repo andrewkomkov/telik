@@ -1,0 +1,40 @@
+Categories:
+  - Multimedia
+  - System
+License: GPL-3.0-only
+AuthorName: Andrew Komkov
+WebSite: https://andrewkomkov.github.io/telik/
+SourceCode: https://github.com/andrewkomkov/telik
+IssueTracker: https://github.com/andrewkomkov/telik/issues
+Changelog: https://github.com/andrewkomkov/telik/releases
+
+AutoName: Telik
+
+RepoType: git
+Repo: https://github.com/andrewkomkov/telik.git
+
+Builds:
+  - versionName: 1.0.0
+    versionCode: 9
+    commit: v1.0.0
+    subdir: app
+    submodules: true
+    sudo:
+      - apt-get update
+      - apt-get install -y cmake ninja-build
+    output: build/outputs/apk/release/app-release-unsigned.apk
+    gradle:
+      - yes
+    srclibs:
+      - rustup@stable
+    prebuild:
+      - $$rustup$$/rustup-init.sh -y --default-toolchain 1.98.0 --target armv7-linux-androideabi
+    build:
+      - source $HOME/.cargo/env
+      - ANDROID_HOME=$$SDK$$ ANDROID_NDK_HOME=$$NDK$$ ../scripts/build-remote.sh
+    ndk: 27.0.12077973
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 1.0.0
+CurrentVersionCode: 9

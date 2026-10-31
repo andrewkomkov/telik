@@ -330,4 +330,5 @@
     <string name="accessibility_service_description">Позволяет подключённым пультам Apple TV управлять телевизором.</string>
     <string name="btn_disconnect">Отключить</string>
     <string name="tv_scroll_hint">Для прокрутки используйте кнопки вверх и вниз.</string>
+    <string name="app_name">Телик</string>
 </resources>

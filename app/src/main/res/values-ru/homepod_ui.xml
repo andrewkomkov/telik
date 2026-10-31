@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hp_speakers">Колонки</string>
+    <string name="hp_refresh">Искать снова</string>
+    <string name="hp_searching">Поиск HomePod и колонок AirPlay в этой сети…</string>
+    <string name="hp_still_searching">Поиск других колонок…</string>
+    <string name="hp_none_title">Колонки не найдены</string>
+    <string name="hp_none_power">Проверьте, что HomePod подключён к питанию и настроен.</string>
+    <string name="hp_none_network">Телевизор и колонка должны быть в одной локальной сети.</string>
+    <string name="hp_none_home_app">В приложении «Дом» на iPhone откройте Настройки дома › Колонки и ТВ и разрешите доступ всем в той же сети.</string>
+    <string name="hp_permission_title">Нужен доступ к локальной сети</string>
+    <string name="hp_permission_body">Разрешите доступ, чтобы телевизор находил HomePod и другие колонки AirPlay в вашей сети.</string>
+    <string name="hp_permission_action">Разрешить</string>
+    <string name="hp_scan_error_title">Не удаётся найти колонки</string>
+    <string name="hp_scan_error_body">Проверьте подключение телевизора к сети и выберите «Искать снова».</string>
+    <string name="hp_pick_prompt">Выберите колонку из списка</string>
+    <string name="hp_row_selected">Выбрана</string>
+    <string name="hp_row_sending">Передача</string>
+    <string name="hp_unavailable">Колонка сейчас недоступна. Проверьте, что она включена и находится в той же сети.</string>
+    <string name="hp_sending_to">Передача на</string>
+    <string name="hp_status_ready">Готово</string>
+    <string name="hp_status_waiting">Ответьте на запросы разрешений на экране…</string>
+    <string name="hp_status_connecting">Подключение…</string>
+    <string name="hp_status_audio">Передаётся звук приложений. Откройте нужное приложение.</string>
+    <string name="hp_status_tone">Идёт проверочный сигнал. Убедитесь, что колонка его воспроизводит.</string>
+    <string name="hp_failed_body">Передача не началась или остановилась. Проверьте, что колонка включена и находится в одной сети с телевизором, затем повторите.</string>
+    <string name="hp_start">Передавать звук приложений</string>
+    <string name="hp_start_note">Android запросит разрешение на запись звука и захват экрана. Приложение получает только звук других приложений, не использует микрофон и не записывает экран.</string>
+    <string name="hp_test">Проверочный сигнал</string>
+    <string name="hp_stop">Остановить передачу</string>
+    <string name="hp_volume">Громкость колонки</string>
+    <string name="hp_volume_value" formatted="true">%1$d%%</string>
+    <string name="hp_quieter">Тише</string>
+    <string name="hp_louder">Громче</string>
+    <string name="hp_needs_android10">Для передачи звука приложений нужен Android 10 или новее. Проверочный сигнал по-прежнему доступен.</string>
+    <string name="hp_cancelled">Отменено. Ничего не передаётся.</string>
+    <string name="hp_permission_denied">Без разрешения на запись звук приложений не передаётся. Микрофон приложение не использует.</string>
+    <string name="hp_capture_unavailable">Этот телевизор не поддерживает захват звука приложений. Проверочный сигнал по-прежнему доступен.</string>
+    <string name="hp_limits">Некоторые приложения запрещают захват звука, и он не дойдёт до колонки. Колонки AirPlay играют с задержкой, поэтому звук может отставать от видео.</string>
+</resources>
