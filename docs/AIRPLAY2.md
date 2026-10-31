@@ -33,7 +33,13 @@ The probe advertises version 366.0, sets bit 48 and clears bit 27. The iPhone th
 
 The first three bytes are the TLV8 method item for pair setup. The legacy handler accepts only a 32-byte body, so it rejects this request. The iPhone then asks for the code again.
 
-The iPhone calls `/pair-pin-start`, so it expects a code. Stage 2 must find which advertised flag selects transient pairing without a code.
+The 9-byte body has the same size as the transient request of `pyatv`: method, state and the flag `0x10`. The full bytes from the iPhone are not logged yet.
+
+Stage 2 passed on the TV on 2026-10-31 with a `pyatv` client, `check_transient.py`. The client finished transient pairing and read `/info` on the encrypted channel. An iPhone did not run this test.
+
+The code for stage 2 is on the branch `airplay2-probe`. It uses `pair_ap` and OpenSSL. It does not add libsodium.
+
+Stage 3 is not tested. The build hashes the stream key with the 64-byte pairing secret. No public source confirms this length for transient pairing. If video does not decode, try the first 32 bytes.
 
 ## Known limits
 
