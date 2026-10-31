@@ -105,7 +105,7 @@
     <string name="tv_name_error_empty">Enter a name</string>
     <string name="tv_name_error_long">Name is too long. Use up to about 63 letters.</string>
     <string name="tv_name_error_control">Name contains characters that can’t be used</string>
-    <string name="tv_require_pin_desc">When on, AirPlay devices must enter the 4-digit code shown on this TV to connect. Apple TV Remote pairing always requires a code.</string>
+    <string name="tv_require_pin_desc">When off, anyone on your network can mirror to this TV over AirPlay 2. When on, devices enter the 4-digit code shown on this TV and use the older AirPlay protocol. Apple TV Remote pairing always requires a code.</string>
     <string name="tv_color_range">Color Range</string>
     <string name="tv_color_range_desc">Sets the black and white levels of the picture. If dark areas look gray, or shadow detail is hard to see, try another setting and check it with Grayscale Reference.</string>
     <string name="tv_color_range_full">Full (0–255)</string>

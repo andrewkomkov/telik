@@ -15,6 +15,9 @@ extern "C" {
 #include "pairing.h"
 #include "android_raop_callbacks.h"
 #include "android_dnssd_shim.h"
+extern "C" {
+#include "telik_hk.h"
+}
 }
 
 #include "audio_engine.h"
@@ -84,6 +87,8 @@ Java_io_github_henry753951_airplayremote_airplay_bridge_NativeBridge_nativeInit(
     if (ret < 0) {
         LOGE("raop_init2 failed: %d", ret);
     }
+
+    telik_airplay2_set_enabled(requirePin ? 0 : 1);
 
     if (requirePin) {
         /* avoid UxPlay's random-PIN retry path: use one random PIN for this server run */

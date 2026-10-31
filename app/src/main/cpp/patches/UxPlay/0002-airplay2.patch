@@ -1,0 +1,360 @@
+diff --git a/lib/global.h b/lib/global.h
+index 03f2dcb..064348c 100644
+--- a/lib/global.h
++++ b/lib/global.h
+@@ -22 +22,4 @@
+-#define GLOBAL_VERSION  "220.68"
++/* The advertised version selects the protocol that a sender uses. See telik_hk.h. */
++const char *telik_version(void);
++const char *telik_server_name(void);
++#define GLOBAL_VERSION  telik_version()
+diff --git a/lib/httpd.c b/lib/httpd.c
+index 56a3742..572512e 100644
+--- a/lib/httpd.c
++++ b/lib/httpd.c
+@@ -557,0 +558,23 @@ httpd_thread(void *arg)
++#ifdef TELIK_AIRPLAY2
++            {
++                char *plain = NULL;
++                size_t plain_len = 0;
++                int state = httpd->callbacks.conn_decrypt(connection->user_data, buffer, recv_datalen, &plain, &plain_len);
++                if (state < 0) {
++                    logger_log(httpd->logger, LOGGER_ERR, "airplay2: cannot decrypt a request");
++                    httpd_remove_connection(httpd, connection, 0);
++                    continue;
++                }
++                if (state > 0) {
++                    if (plain_len) {
++                        http_request_add_data(connection->request, plain, plain_len);
++                    }
++                    free(plain);
++                    if (!plain_len) {
++                        continue;
++                    }
++                } else {
++                    http_request_add_data(connection->request, buffer, recv_datalen);
++                }
++            }
++#else
+@@ -559,0 +583 @@ httpd_thread(void *arg)
++#endif
+@@ -594,0 +619,8 @@ httpd_thread(void *arg)
++#ifdef TELIK_AIRPLAY2
++                    char *encrypted = NULL;
++                    size_t encrypted_len = 0;
++                    if (httpd->callbacks.conn_encrypt(connection->user_data, data, datalen, &encrypted, &encrypted_len) > 0) {
++                        data = encrypted;
++                        datalen = (int) encrypted_len;
++                    }
++#endif
+@@ -604,0 +637,4 @@ httpd_thread(void *arg)
++#ifdef TELIK_AIRPLAY2
++                    free(encrypted);
++                    httpd->callbacks.conn_reply_sent(connection->user_data);
++#endif
+diff --git a/lib/httpd.h b/lib/httpd.h
+index 72cc137..6d11a01 100644
+--- a/lib/httpd.h
++++ b/lib/httpd.h
+@@ -37,0 +38,5 @@ struct httpd_callbacks_s {
++#ifdef TELIK_AIRPLAY2
++    int   (*conn_decrypt)(void *ptr, const char *in, size_t in_len, char **out, size_t *out_len);
++    int   (*conn_encrypt)(void *ptr, const char *in, size_t in_len, char **out, size_t *out_len);
++    void  (*conn_reply_sent)(void *ptr);
++#endif
+diff --git a/lib/raop.c b/lib/raop.c
+index 07564e1..7293bff 100644
+--- a/lib/raop.c
++++ b/lib/raop.c
+@@ -17,0 +18,3 @@
++#ifdef TELIK_AIRPLAY2
++#include "telik_hk.h"
++#endif
+@@ -122,0 +126,3 @@ struct raop_conn_s {
++#ifdef TELIK_AIRPLAY2
++    telik_hk_t *hk;
++#endif
+@@ -126,0 +133,11 @@ typedef struct raop_conn_s raop_conn_t;
++#ifdef TELIK_AIRPLAY2
++static int conn_decrypt(void *ptr, const char *in, size_t in_len, char **out, size_t *out_len) {
++    return telik_hk_decrypt(((raop_conn_t *) ptr)->hk, in, in_len, out, out_len);
++}
++static int conn_encrypt(void *ptr, const char *in, size_t in_len, char **out, size_t *out_len) {
++    return telik_hk_encrypt(((raop_conn_t *) ptr)->hk, in, in_len, out, out_len);
++}
++static void conn_reply_sent(void *ptr) {
++    telik_hk_reply_sent(((raop_conn_t *) ptr)->hk);
++}
++#endif
+@@ -179,0 +197,9 @@ conn_init(void *opaque, unsigned char *local, int locallen, unsigned char *remot
++#ifdef TELIK_AIRPLAY2
++    {
++        int hw_addr_len = 0;
++        const char *hw_addr = dnssd_get_hw_addr(raop->dnssd, &hw_addr_len);
++        char device_id[3 * 6 + 1] = { 0 };
++        utils_hwaddr_airplay(device_id, sizeof(device_id), hw_addr, hw_addr_len);
++        conn->hk = telik_hk_new(device_id);
++    }
++#endif
+@@ -404,0 +431,11 @@ conn_request(void *ptr, http_request_t *request, http_response_t **response) {
++#ifdef TELIK_AIRPLAY2
++    if (telik_airplay2_enabled() && !strcmp(method, "POST") && http_request_get_header(request, "X-Apple-HKP")) {
++        if (!strcmp(url, "/pair-pin-start")) {
++            handler = &raop_handler_hk_pin_start;
++        } else if (!strcmp(url, "/pair-setup")) {
++            handler = &raop_handler_hk_pair_setup;
++        }
++    }
++    if (handler) {
++    } else
++#endif
+@@ -488 +525 @@ conn_request(void *ptr, http_request_t *request, http_response_t **response) {
+-        http_response_add_header(*response, "Server", "AirTunes/"GLOBAL_VERSION);
++        http_response_add_header(*response, "Server", telik_server_name());
+@@ -551,0 +589,4 @@ conn_destroy(void *ptr) {
++#ifdef TELIK_AIRPLAY2
++    telik_hk_free(conn->hk);
++    conn->hk = NULL;
++#endif
+@@ -690,0 +732,5 @@ raop_init2(raop_t *raop, int nohold, const char *device_id, const char *keyfile)
++#ifdef TELIK_AIRPLAY2
++    httpd_cbs.conn_decrypt = &conn_decrypt;
++    httpd_cbs.conn_encrypt = &conn_encrypt;
++    httpd_cbs.conn_reply_sent = &conn_reply_sent;
++#endif
+diff --git a/lib/raop_buffer.c b/lib/raop_buffer.c
+index 45a3e4c..ff81411 100644
+--- a/lib/raop_buffer.c
++++ b/lib/raop_buffer.c
+@@ -35,0 +36,3 @@
++#ifdef TELIK_AIRPLAY2
++#include "telik_hk.h"
++#endif
+@@ -56,0 +60,5 @@ struct raop_buffer_s {
++#ifdef TELIK_AIRPLAY2
++    telik_stream_t *hk_stream;
++    unsigned int hk_ok;
++    unsigned int hk_bad;
++#endif
+@@ -104,0 +113,3 @@ raop_buffer_destroy(raop_buffer_t *raop_buffer)
++#ifdef TELIK_AIRPLAY2
++        telik_stream_free(raop_buffer->hk_stream);
++#endif
+@@ -115,0 +127,12 @@ seqnum_cmp(unsigned short s1, unsigned short s2)
++#ifdef TELIK_AIRPLAY2
++void
++raop_buffer_set_hk_stream(raop_buffer_t *raop_buffer, const unsigned char *secret, size_t secret_len,
++                          uint64_t stream_connection_id)
++{
++    telik_stream_free(raop_buffer->hk_stream);
++    raop_buffer->hk_stream = telik_stream_new(secret, secret_len, stream_connection_id);
++    raop_buffer->hk_ok = 0;
++    raop_buffer->hk_bad = 0;
++}
++#endif
++
+@@ -129,0 +153,15 @@ raop_buffer_decrypt(raop_buffer_t *raop_buffer, unsigned char *data, unsigned ch
++#ifdef TELIK_AIRPLAY2
++    if (raop_buffer->hk_stream) {
++        int plain_size = telik_audio_decrypt(raop_buffer->hk_stream, data, payload_size + 12, output);
++        if (plain_size < 0) {
++            if (raop_buffer->hk_bad++ < 5) {
++                logger_log(raop_buffer->logger, LOGGER_ERR, "airplay2: cannot decrypt audio, size %u, ok so far %u",
++                           payload_size, raop_buffer->hk_ok);
++            }
++            return -1;
++        }
++        raop_buffer->hk_ok++;
++        *outputlen = (unsigned int) plain_size;
++        return 1;
++    }
++#endif
+@@ -212,0 +251,9 @@ raop_buffer_enqueue(raop_buffer_t *raop_buffer, unsigned char *data, unsigned sh
++#ifdef TELIK_AIRPLAY2
++    if (decrypt_ret < 0) {
++        free(entry->payload_data);
++        entry->payload_data = NULL;
++        entry->payload_size = 0;
++        entry->filled = 0;
++        return 0;
++    }
++#endif
+diff --git a/lib/raop_buffer.h b/lib/raop_buffer.h
+index a3322da..946708c 100644
+--- a/lib/raop_buffer.h
++++ b/lib/raop_buffer.h
+@@ -38,0 +39,4 @@ void raop_buffer_destroy(raop_buffer_t *raop_buffer);
++#ifdef TELIK_AIRPLAY2
++void raop_buffer_set_hk_stream(raop_buffer_t *raop_buffer, const unsigned char *secret, size_t secret_len,
++                               uint64_t stream_connection_id);
++#endif
+diff --git a/lib/raop_handlers.h b/lib/raop_handlers.h
+index b3f3b17..1c2238d 100644
+--- a/lib/raop_handlers.h
++++ b/lib/raop_handlers.h
+@@ -250,0 +251,28 @@ raop_handler_info(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++/* Transient pairing uses a fixed code, so the TV shows nothing. */
++static void
++raop_handler_hk_pin_start(raop_conn_t *conn,
++                          http_request_t *request, http_response_t *response,
++                          char **response_data, int *response_datalen) {
++}
++
++static void
++raop_handler_hk_pair_setup(raop_conn_t *conn,
++                           http_request_t *request, http_response_t *response,
++                           char **response_data, int *response_datalen) {
++    raop_t *raop = conn->raop;
++    int data_len = 0;
++    const char *data = http_request_get_data(request, &data_len);
++    uint8_t *reply = NULL;
++    size_t reply_len = 0;
++    if (telik_hk_pair_setup(conn->hk, (const uint8_t *) data, data_len, &reply, &reply_len) < 0) {
++        logger_log(raop->logger, LOGGER_ERR, "airplay2: pair-setup failed: %s", telik_hk_error(conn->hk));
++        http_response_init(response, "RTSP/1.0", 470, "Connection Authorization Required");
++        return;
++    }
++    http_response_add_header(response, "Content-Type", "application/octet-stream");
++    *response_data = (char *) reply;
++    *response_datalen = (int) reply_len;
++}
++#endif
++
+@@ -628,0 +657,8 @@ raop_handler_setup(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++    /* After HomeKit pairing the first SETUP has no ekey or eiv. The pairing secret protects the streams. */
++    size_t hk_secret_size = 0;
++    const uint8_t *hk_stream_secret = telik_hk_secret(conn->hk, &hk_secret_size);
++    bool hk_setup = hk_stream_secret && !PLIST_IS_DATA(req_ekey_node) &&
++                    plist_dict_get_item(req_root_node, "timingProtocol");
++    if (hk_setup || (PLIST_IS_DATA(req_eiv_node) && PLIST_IS_DATA(req_ekey_node))) {
++#else
+@@ -629,0 +666 @@ raop_handler_setup(raop_conn_t *conn,
++#endif
+@@ -780,0 +818,3 @@ raop_handler_setup(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++        if (!hk_setup) {
++#endif
+@@ -823,0 +864,14 @@ raop_handler_setup(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++            size_t hk_secret_len = 0;
++            const uint8_t *hk_secret = telik_hk_secret(conn->hk, &hk_secret_len);
++            if (hk_secret) {
++                /* After HomeKit pairing the stream key is hashed with the pairing secret. */
++                unsigned char digest[64];
++                sha_ctx_t *hk_ctx = sha_init();
++                sha_update(hk_ctx, aeskey, 16);
++                sha_update(hk_ctx, hk_secret, (unsigned int) hk_secret_len);
++                sha_final(hk_ctx, digest, NULL);
++                sha_destroy(hk_ctx);
++                memcpy(aeskey, digest, 16);
++            } else
++#endif
+@@ -858,0 +913,3 @@ raop_handler_setup(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++        }
++#endif
+@@ -962,0 +1020,6 @@ raop_handler_setup(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++                    if (hk_stream_secret && !PLIST_IS_DATA(req_ekey_node)) {
++                        raop_rtp_mirror_set_hk_stream(conn->raop_rtp_mirror, hk_stream_secret, hk_secret_size,
++                                                      stream_connection_id);
++                    }
++#endif
+@@ -974,0 +1038,3 @@ raop_handler_setup(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++                plist_dict_set_item(res_stream_node, "streamID", plist_new_uint(1));
++#endif
+@@ -1029,0 +1096,7 @@ raop_handler_setup(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++                    if (hk_stream_secret && !PLIST_IS_DATA(req_ekey_node)) {
++                        uint64_t audio_stream_id = 0;
++                        plist_get_uint_val(plist_dict_get_item(req_stream_node, "streamConnectionID"), &audio_stream_id);
++                        raop_rtp_set_hk_stream(conn->raop_rtp, hk_stream_secret, hk_secret_size, audio_stream_id);
++                    }
++#endif
+@@ -1043,0 +1117,3 @@ raop_handler_setup(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++                plist_dict_set_item(res_stream_node, "streamID", plist_new_uint(2));
++#endif
+diff --git a/lib/raop_rtp.c b/lib/raop_rtp.c
+index 64eb7fb..afb8802 100644
+--- a/lib/raop_rtp.c
++++ b/lib/raop_rtp.c
+@@ -183,0 +184,9 @@ raop_rtp_init(logger_t *logger, raop_callbacks_t *callbacks, raop_ntp_t *ntp, co
++#ifdef TELIK_AIRPLAY2
++void
++raop_rtp_set_hk_stream(raop_rtp_t *raop_rtp, const unsigned char *secret, size_t secret_len,
++                       uint64_t stream_connection_id)
++{
++    raop_buffer_set_hk_stream(raop_rtp->buffer, secret, secret_len, stream_connection_id);
++}
++#endif
++
+diff --git a/lib/raop_rtp.h b/lib/raop_rtp.h
+index d9f5476..dcd7407 100644
+--- a/lib/raop_rtp.h
++++ b/lib/raop_rtp.h
+@@ -46,0 +47,4 @@ void raop_rtp_destroy(raop_rtp_t *raop_rtp);
++#ifdef TELIK_AIRPLAY2
++void raop_rtp_set_hk_stream(raop_rtp_t *raop_rtp, const unsigned char *secret, size_t secret_len,
++                            uint64_t stream_connection_id);
++#endif
+diff --git a/lib/raop_rtp_mirror.c b/lib/raop_rtp_mirror.c
+index 2efee1b..6b158ed 100644
+--- a/lib/raop_rtp_mirror.c
++++ b/lib/raop_rtp_mirror.c
+@@ -37,0 +38,3 @@
++#ifdef TELIK_AIRPLAY2
++#include "telik_hk.h"
++#endif
+@@ -90,0 +94,5 @@ struct raop_rtp_mirror_s {
++#ifdef TELIK_AIRPLAY2
++    telik_stream_t *hk_stream;
++    unsigned int hk_frames_ok;
++    unsigned int hk_frames_bad;
++#endif
+@@ -168,0 +177,12 @@ raop_rtp_mirror_t *raop_rtp_mirror_init(logger_t *logger, raop_callbacks_t *call
++#ifdef TELIK_AIRPLAY2
++void
++raop_rtp_mirror_set_hk_stream(raop_rtp_mirror_t *raop_rtp_mirror, const unsigned char *secret, size_t secret_len,
++                              uint64_t stream_connection_id)
++{
++    telik_stream_free(raop_rtp_mirror->hk_stream);
++    raop_rtp_mirror->hk_stream = telik_stream_new(secret, secret_len, stream_connection_id);
++    raop_rtp_mirror->hk_frames_ok = 0;
++    raop_rtp_mirror->hk_frames_bad = 0;
++}
++#endif
++
+@@ -454,0 +475,16 @@ raop_rtp_mirror_thread(void *arg)
++#ifdef TELIK_AIRPLAY2
++                if (raop_rtp_mirror->hk_stream) {
++                    int plain_size = telik_stream_decrypt(raop_rtp_mirror->hk_stream, packet, sizeof(packet),
++                                                          payload, payload_size, payload_decrypted);
++                    if (plain_size < 0) {
++                        if (raop_rtp_mirror->hk_frames_bad++ < 5) {
++                            logger_log(raop_rtp_mirror->logger, LOGGER_ERR, "airplay2: cannot decrypt video frame, size %d, ok so far %u",
++                                       payload_size, raop_rtp_mirror->hk_frames_ok);
++                        }
++                        free(payload_out);
++                        break;
++                    }
++                    raop_rtp_mirror->hk_frames_ok++;
++                    payload_size = plain_size;
++                } else
++#endif
+@@ -967,0 +1004,3 @@ void raop_rtp_mirror_destroy(raop_rtp_mirror_t *raop_rtp_mirror) {
++#ifdef TELIK_AIRPLAY2
++        telik_stream_free(raop_rtp_mirror->hk_stream);
++#endif
+diff --git a/lib/raop_rtp_mirror.h b/lib/raop_rtp_mirror.h
+index 2e7914d..f3ce537 100644
+--- a/lib/raop_rtp_mirror.h
++++ b/lib/raop_rtp_mirror.h
+@@ -29,0 +30,4 @@ raop_rtp_mirror_t *raop_rtp_mirror_init(logger_t *logger, raop_callbacks_t *call
++#ifdef TELIK_AIRPLAY2
++void raop_rtp_mirror_set_hk_stream(raop_rtp_mirror_t *raop_rtp_mirror, const unsigned char *secret, size_t secret_len,
++                                   uint64_t stream_connection_id);
++#endif

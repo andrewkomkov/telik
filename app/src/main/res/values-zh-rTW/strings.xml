@@ -103,7 +103,7 @@
     <string name="tv_name_error_empty">請輸入名稱</string>
     <string name="tv_name_error_long">名稱過長，請縮短至約 21 個中文字或 63 個英文字元以內</string>
     <string name="tv_name_error_control">名稱包含無法使用的字元</string>
-    <string name="tv_require_pin_desc">開啟後，AirPlay 裝置連線時需要輸入電視上顯示的 4 位數驗證碼。Apple TV 遙控器配對時一律需要驗證碼。</string>
+    <string name="tv_require_pin_desc">關閉時，同一網路上的任何裝置都能透過 AirPlay 2 投放到這台電視。開啟後，裝置需要輸入電視上顯示的 4 位數驗證碼，並使用舊版 AirPlay 協定。Apple TV 遙控器配對時一律需要驗證碼。</string>
     <string name="tv_color_range">色彩範圍</string>
     <string name="tv_color_range_desc">設定影像的黑色與白色範圍。若暗部呈現灰色，或暗部細節不易辨識，可嘗試其他設定，並搭配「灰階對照」確認。</string>
     <string name="tv_color_range_full">完整（0–255）</string>

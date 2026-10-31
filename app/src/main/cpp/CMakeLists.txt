@@ -92,6 +92,24 @@ add_library(playfair STATIC
 )
 target_include_directories(playfair PUBLIC ${UXPLAY_LIB}/playfair)
 
+# ---------- AirPlay 2 pairing and stream decryption ----------
+add_compile_definitions(TELIK_AIRPLAY2)
+set(PAIR_AP third_party/pair_ap)
+add_library(telik_hk STATIC
+        airplay2/pair_fruit_stub.c
+        airplay2/sodium_shim.c
+        airplay2/telik_hk.c
+        ${PAIR_AP}/pair.c
+        ${PAIR_AP}/pair_homekit.c
+        ${PAIR_AP}/pair-tlv.c
+    )
+target_compile_definitions(telik_hk PRIVATE CONFIG_OPENSSL)
+target_compile_options(telik_hk PRIVATE -w)
+target_include_directories(telik_hk PRIVATE airplay2 ${PAIR_AP})
+target_link_libraries(telik_hk PUBLIC crypto)
+include_directories(airplay2)
+link_libraries(telik_hk)
+
 # ---------- UxPlay core (dnssd via shim) ----------
 set(AIRPLAY_SOURCES
     ${UXPLAY_LIB}/airplay_video.c
