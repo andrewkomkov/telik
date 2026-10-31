@@ -51,6 +51,12 @@ adb shell appops set dev.telik.tv TURN_SCREEN_ON allow
 adb shell dumpsys deviceidle whitelist +dev.telik.tv
 ```
 
+Чтобы беспроводная отладка оставалась включённой после обрывов Wi-Fi и перезагрузок, выполните команду ниже. Тогда любой в вашей сети сможет попытаться сопрячься с телевизором, поэтому без необходимости её не включайте.
+
+```sh
+adb shell settings put global telik_keep_wireless_debugging 1
+```
+
 Первая команда разрешает Телику выключить `low_power_standby_enabled`. В режиме ожидания телевизор
 может потреблять больше энергии.
 

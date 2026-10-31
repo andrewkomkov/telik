@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.database.ContentObserver
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.LinkProperties
@@ -29,6 +30,10 @@ private const val CHANNEL = "homekit"
 private const val PORT = 51826
 private const val CATEGORY_TELEVISION = 31
 private const val RETRY_MS = 5_000L
+private const val ADB_WIFI = "adb_wifi_enabled"
+
+/** Включается только вручную: adb shell settings put global telik_keep_wireless_debugging 1 */
+private const val KEEP_DEBUGGING = "telik_keep_wireless_debugging"
 
 /** Держит сервер HomeKit живым: стартует с системой, переживает сон экрана и смену сети. */
 class HomeKitService : Service() {
@@ -37,6 +42,7 @@ class HomeKitService : Service() {
     private var configIndex = 1
     private var advertised: String? = null
     private val retry = Runnable { advertise() }
+    private val restoreDebugging = Runnable { keepWirelessDebugging() }
     private val main = Handler(Looper.getMainLooper())
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
@@ -47,13 +53,21 @@ class HomeKitService : Service() {
         }
     }
 
+    private val debuggingObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) {
+            scheduleDebuggingCheck()
+        }
+    }
+
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             advertise()
+            scheduleDebuggingCheck()
         }
 
         override fun onLinkPropertiesChanged(network: Network, properties: LinkProperties) {
             advertise()
+            scheduleDebuggingCheck()
         }
 
         override fun onLost(network: Network) {
@@ -84,6 +98,9 @@ class HomeKitService : Service() {
             IntentFilter(Intent.ACTION_SCREEN_ON).apply { addAction(Intent.ACTION_SCREEN_OFF) },
         )
         keepNetworkInStandby()
+        contentResolver.registerContentObserver(Settings.Global.getUriFor(ADB_WIFI), false, debuggingObserver)
+        contentResolver.registerContentObserver(Settings.Global.getUriFor(KEEP_DEBUGGING), false, debuggingObserver)
+        scheduleDebuggingCheck()
 
         status = "Запуск"
         try {
@@ -108,6 +125,24 @@ class HomeKitService : Service() {
     private fun keepNetworkInStandby() {
         try {
             Settings.Global.putInt(contentResolver, "low_power_standby_enabled", 0)
+        } catch (e: SecurityException) {
+            Log.w(TAG, "Нет разрешения WRITE_SECURE_SETTINGS")
+        }
+    }
+
+    private fun scheduleDebuggingCheck() {
+        main.removeCallbacks(restoreDebugging)
+        main.postDelayed(restoreDebugging, RETRY_MS)
+    }
+
+    /** Android выключает беспроводную отладку при обрыве Wi-Fi и перезагрузке. Сопряжение при этом сохраняется. */
+    private fun keepWirelessDebugging() {
+        if (Settings.Global.getInt(contentResolver, KEEP_DEBUGGING, 0) != 1) return
+        if (LocalNetworkAddress.get(this) == null) return
+        if (Settings.Global.getInt(contentResolver, ADB_WIFI, 0) == 1) return
+        try {
+            Settings.Global.putInt(contentResolver, ADB_WIFI, 1)
+            Log.i(TAG, "Беспроводная отладка включена снова")
         } catch (e: SecurityException) {
             Log.w(TAG, "Нет разрешения WRITE_SECURE_SETTINGS")
         }

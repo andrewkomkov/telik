@@ -1,0 +1,1 @@
+HomeKit discovery works after Wi-Fi returns. Optional setting keeps wireless debugging on after Wi-Fi drops and reboots.

@@ -48,6 +48,12 @@ adb shell appops set dev.telik.tv TURN_SCREEN_ON allow
 adb shell dumpsys deviceidle whitelist +dev.telik.tv
 ```
 
+To keep wireless debugging on after Wi-Fi drops and reboots, run the command below. Anyone on your network can then try to pair with the TV, so leave it off if you do not need it.
+
+```sh
+adb shell settings put global telik_keep_wireless_debugging 1
+```
+
 The first command allows Telik to turn off `low_power_standby_enabled`, which can use more power in
 standby.
 
