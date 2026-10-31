@@ -113,6 +113,9 @@ class RemoteEngine(
     override fun onAudio(volume: Double, muted: Boolean) = Unit
     override fun onEvent(kind: String, detail: String) {
         if (!enabled || closed) return
+        if (kind == "ControlMessage" && detail.contains("_ti")) {
+            android.util.Log.i("AtvText", "iPhone: ${detail.take(120)}")
+        }
         when (kind) {
             "ClientConnected", "ClientDisconnected" -> worker.post {
                 clients = (clients + if (kind == "ClientConnected") 1 else -1).coerceAtLeast(0)
@@ -135,6 +138,17 @@ class RemoteEngine(
                 RemoteState.mutablePin.value = null
             }
             "MouseClick" -> RemoteAccessibilityService.instance?.handleMouseClick()
+            "TextInsert" -> main.post {
+                android.util.Log.i("AtvText", "insert: ${detail.length} chars")
+                RemoteAccessibilityService.instance?.insertText(detail)
+            }
+            "TextDelete" -> main.post {
+                RemoteAccessibilityService.instance?.deleteBackward(detail.toIntOrNull() ?: 0)
+            }
+            "TextReplace" -> main.post {
+                android.util.Log.i("AtvText", "replace: ${detail.length} chars")
+                RemoteAccessibilityService.instance?.replaceText(detail)
+            }
         }
     }
     fun close() {

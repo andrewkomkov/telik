@@ -250,6 +250,17 @@ pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_
 }
 
 #[no_mangle]
+pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_RemoteNative_nativeSetTextFocus(
+    mut env: JNIEnv,
+    _class: JClass,
+    focused: jboolean,
+    text: JString,
+) {
+    let text: String = env.get_string(&text).map(Into::into).unwrap_or_default();
+    atv_core::text_input::set_focus(focused != JNI_FALSE, &text);
+}
+
+#[no_mangle]
 pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_RemoteNative_nativeIsRunning(
     _env: JNIEnv,
     _class: JClass,

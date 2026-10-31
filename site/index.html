@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Telik: control Android TV from iPhone with the built-in Apple TV Remote</title>
+<meta name="description" content="Free open-source Android TV app. Use the iPhone Control Center remote, type with the iPhone keyboard, mirror your screen over AirPlay and add the TV to Apple Home. Runs entirely on the TV, no extra hardware.">
+<link rel="canonical" href="https://andrewkomkov.github.io/telik/">
+<link rel="alternate" hreflang="en" href="https://andrewkomkov.github.io/telik/">
+<link rel="alternate" hreflang="ru" href="https://andrewkomkov.github.io/telik/ru/">
+<link rel="alternate" hreflang="x-default" href="https://andrewkomkov.github.io/telik/">
+<link rel="icon" href="assets/mascot.svg" type="image/svg+xml">
+<meta name="theme-color" content="#07070c">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Telik: iPhone remote, keyboard, AirPlay and Apple Home for Android TV">
+<meta property="og:description" content="One free app on the TV. No Apple TV box, no server, no iPhone app.">
+<meta property="og:url" content="https://andrewkomkov.github.io/telik/">
+<meta property="og:image" content="https://andrewkomkov.github.io/telik/assets/home.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "Telik",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Android TV 13 or newer",
+      "description": "Control Android TV with the built-in iPhone Apple TV Remote and keyboard, mirror over AirPlay and add the TV to Apple Home.",
+      "url": "https://andrewkomkov.github.io/telik/",
+      "downloadUrl": "https://github.com/andrewkomkov/telik/releases/latest",
+      "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Can I control Android TV with the iPhone Control Center remote?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Telik makes the TV appear in the Apple TV Remote list in iPhone Control Center. Pair once with the code on the TV screen." }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Netflix or Apple TV+ work over AirPlay?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Telik does not decrypt protected video. Open those services in their own apps on the TV and control them from the iPhone remote." }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need root or an extra device?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. The app runs on the TV without root, a server, Homebridge or an iPhone app." }
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./"><img src="assets/mascot.svg" alt="" width="34" height="34">Telik</a>
+    <nav aria-label="Main">
+      <a class="optional" href="#features">Features</a>
+      <a class="optional" href="#install">Install</a>
+      <a class="optional" href="#faq">FAQ</a>
+      <a href="ru/" hreflang="ru" lang="ru">Русский</a>
+      <a href="https://github.com/andrewkomkov/telik">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="hero">
+      <img class="mascot" src="assets/mascot.svg" alt="Telik, a smiling TV with two antennas" width="220" height="220">
+      <h1>Control Android TV from your iPhone. No extra app.</h1>
+      <p class="lead">Telik puts your Android TV in the iPhone Control Center remote list. Swipe, click, type with the iPhone keyboard, mirror over AirPlay and use Apple Home. Everything runs on the TV.</p>
+      <div class="cta">
+        <a class="button primary" href="https://github.com/andrewkomkov/telik/releases/latest">Download APK</a>
+        <a class="button" href="https://github.com/andrewkomkov/telik">Source code</a>
+      </div>
+      <p class="note">Free and open source, GPL-3.0. Android TV 13+, 32-bit ARM builds.</p>
+      <img class="shot" src="assets/home.jpg" alt="Telik home screen on a TV: Screen Mirroring, Apple TV Remote, Home app and HomePod sound" width="1600" height="900">
+    </div>
+
+    <section id="features">
+      <h2>What works from the iPhone</h2>
+      <div class="grid">
+        <article class="card"><h3>The real Apple TV Remote</h3><p>Touch area, click, back, TV button, play and pause from Control Center. Nothing to install on the iPhone.</p></article>
+        <article class="card"><h3>The iPhone keyboard</h3><p>Focus a text field on the TV and type on the phone, Cyrillic included. Works in fields that use the standard Android input. Apps that draw their own on-screen keyboard may not respond.</p></article>
+        <article class="card"><h3>AirPlay mirroring</h3><p>Mirror an iPhone, iPad or Mac screen and send sound to the TV. Based on UxPlay.</p></article>
+        <article class="card"><h3>Apple Home</h3><p>The TV gets a tile in the Home app with power and app inputs, so scenes and Siri commands can use it.</p></article>
+        <article class="card"><h3>No extra hardware</h3><p>No Homebridge, Raspberry Pi or Termux. The services start by themselves after the TV boots.</p></article>
+        <article class="card"><h3>Small</h3><p>The APK is about 9&nbsp;MB and written for low-end TV hardware.</p></article>
+      </div>
+    </section>
+
+    <section id="install">
+      <h2>Install</h2>
+      <ol class="steps">
+        <li>Download <code>telik-*-armv7.apk</code> from <a href="https://github.com/andrewkomkov/telik/releases/latest">Releases</a> and install it on the TV. <code>adb install</code> works, and so does a file manager.</li>
+        <li>Open Telik and allow accessibility access when asked. It presses the remote buttons and receives text.</li>
+        <li>On the iPhone, open Control Center, tap the remote icon, choose Telik and enter the code from the TV.</li>
+        <li>To add the Apple Home tile, open <em>Home app</em> in Telik and scan the QR code.</li>
+      </ol>
+    </section>
+
+    <section id="compare">
+      <h2>What to expect</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th scope="col">Task</th><th scope="col">With Telik</th></tr></thead>
+          <tbody>
+            <tr><td>Navigation, volume, pause from the iPhone</td><td>Works</td></tr>
+            <tr><td>Text input from the iPhone</td><td>Works in standard Android text fields</td></tr>
+            <tr><td>Screen mirroring</td><td>Works through the AirPlay legacy protocol, tested on iOS 27.2</td></tr>
+            <tr><td>Apple TV+, Netflix over AirPlay</td><td>Not supported. Use their apps on the TV</td></tr>
+            <tr><td>The real Siri on the TV</td><td>Not available. The side button starts Android voice search</td></tr>
+            <tr><td>Turning the TV on from the iPhone</td><td>Depends on whether the TV keeps its network in standby</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="faq">
+      <h2>Questions</h2>
+      <details><summary>Can I control Android TV with the iPhone Control Center remote?</summary><p>Yes. Telik makes the TV appear in the Apple TV Remote list. Pair once with the code on the TV screen.</p></details>
+      <details><summary>Does Netflix or Apple TV+ work over AirPlay?</summary><p>No. Telik does not decrypt protected video. Open those services in their own apps on the TV and control them from the iPhone remote.</p></details>
+      <details><summary>Do I need root or an extra device?</summary><p>No. The app runs on the TV without root, a server, Homebridge or an iPhone app.</p></details>
+      <details><summary>Which TVs are supported?</summary><p>Tested on a 32-bit Dahua 4K TV with Android 14 and an iPhone on iOS 27.2. Other Android TV 13+ models should work, and reports are welcome in the issue tracker.</p></details>
+      <details><summary>Is it safe?</summary><p>The source is public. Accessibility access lets the app operate the TV, so install only builds you trust. Telik has no analytics and does not need an account.</p></details>
+    </section>
+  </main>
+
+  <footer>
+    <p>Telik is an independent open-source project built on <a href="https://github.com/henry753951/android-tv-airplay-hub">Android TV AirPlay Hub</a>, <a href="https://github.com/corvofeng/atv-core">atv-core</a>, <a href="https://github.com/FDH2/UxPlay">UxPlay</a> and <a href="https://github.com/postlund/pyatv">pyatv</a> research. It is not affiliated with or endorsed by Apple or Google. Apple TV, AirPlay, HomePod, HomeKit, iPhone and Siri are trademarks of Apple Inc. Android TV is a trademark of Google LLC.</p>
+  </footer>
+</div>
+</body>
+</html>

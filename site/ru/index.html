@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Телик: управление Android TV с iPhone через встроенный пульт Apple TV</title>
+<meta name="description" content="Бесплатное приложение с открытым кодом для Android TV: штатный пульт iPhone в Пункте управления, ввод с клавиатуры iPhone, повтор экрана по AirPlay и телевизор в приложении «Дом». Устанавливается только на телевизор.">
+<link rel="canonical" href="https://andrewkomkov.github.io/telik/ru/">
+<link rel="alternate" hreflang="en" href="https://andrewkomkov.github.io/telik/">
+<link rel="alternate" hreflang="ru" href="https://andrewkomkov.github.io/telik/ru/">
+<link rel="alternate" hreflang="x-default" href="https://andrewkomkov.github.io/telik/">
+<link rel="icon" href="../assets/mascot.svg" type="image/svg+xml">
+<meta name="theme-color" content="#07070c">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ru_RU">
+<meta property="og:title" content="Телик: пульт iPhone, клавиатура, AirPlay и «Дом» для Android TV">
+<meta property="og:description" content="Одно бесплатное приложение на телевизоре. Без приставки Apple TV, сервера и приложений на iPhone.">
+<meta property="og:url" content="https://andrewkomkov.github.io/telik/ru/">
+<meta property="og:image" content="https://andrewkomkov.github.io/telik/assets/home.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "Телик",
+      "alternateName": "Telik",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Android TV 13 или новее",
+      "description": "Управление Android TV через штатный пульт и клавиатуру iPhone, повтор экрана по AirPlay и телевизор в приложении «Дом».",
+      "url": "https://andrewkomkov.github.io/telik/ru/",
+      "downloadUrl": "https://github.com/andrewkomkov/telik/releases/latest",
+      "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+      "inLanguage": "ru",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Можно ли управлять Android TV через пульт в Пункте управления iPhone?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Да. Телик добавляет телевизор в список пульта Apple TV на iPhone. Сопряжение нужно один раз, по коду с экрана телевизора." }
+        },
+        {
+          "@type": "Question",
+          "name": "Работают ли Netflix и Apple TV+ по AirPlay?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Нет. Телик не расшифровывает защищённое видео. Открывайте эти сервисы в их приложениях на телевизоре и управляйте ими с пульта iPhone." }
+        },
+        {
+          "@type": "Question",
+          "name": "Нужны ли root или дополнительное устройство?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Нет. Приложение работает на телевизоре без root, сервера, Homebridge и приложений на iPhone." }
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./"><img src="../assets/mascot.svg" alt="" width="34" height="34">Телик</a>
+    <nav aria-label="Главное меню">
+      <a class="optional" href="#features">Возможности</a>
+      <a class="optional" href="#install">Установка</a>
+      <a class="optional" href="#faq">Вопросы</a>
+      <a href="../" hreflang="en" lang="en">English</a>
+      <a href="https://github.com/andrewkomkov/telik">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="hero">
+      <img class="mascot" src="../assets/mascot.svg" alt="Телик: улыбающийся телевизор с двумя антеннами" width="220" height="220">
+      <h1>Android TV с пульта iPhone. Без лишних приложений.</h1>
+      <p class="lead">Телик добавляет ваш Android TV в список пульта в Пункте управления iPhone. Свайпы, нажатия, ввод с клавиатуры iPhone, повтор экрана по AirPlay и приложение «Дом» работают прямо с телевизора.</p>
+      <div class="cta">
+        <a class="button primary" href="https://github.com/andrewkomkov/telik/releases/latest">Скачать APK</a>
+        <a class="button" href="https://github.com/andrewkomkov/telik">Исходный код</a>
+      </div>
+      <p class="note">Бесплатно, с открытым кодом, GPL-3.0. Android TV 13+, сборка для 32-битных ARM.</p>
+      <img class="shot" src="../assets/home.jpg" alt="Главный экран Телика: повтор экрана, пульт Apple TV, приложение «Дом» и звук на HomePod" width="1600" height="900">
+    </div>
+
+    <section id="features">
+      <h2>Что работает с iPhone</h2>
+      <div class="grid">
+        <article class="card"><h3>Настоящий пульт Apple TV</h3><p>Сенсорная панель, нажатие, «назад», кнопка TV, пауза из Пункта управления. На iPhone ничего ставить не нужно.</p></article>
+        <article class="card"><h3>Клавиатура iPhone</h3><p>Откройте поле ввода на телевизоре и печатайте на телефоне, кириллица поддерживается. Работает в полях со стандартным вводом Android. Приложения со своей экранной клавиатурой могут не реагировать.</p></article>
+        <article class="card"><h3>Повтор экрана по AirPlay</h3><p>Экран iPhone, iPad или Mac и звук на телевизоре. В основе UxPlay.</p></article>
+        <article class="card"><h3>Приложение «Дом»</h3><p>У телевизора появляется плитка с питанием и приложениями-входами, поэтому его можно включать в сценарии и команды Siri.</p></article>
+        <article class="card"><h3>Без лишнего железа</h3><p>Не нужны Homebridge, Raspberry Pi и Termux. Службы запускаются сами после включения телевизора.</p></article>
+        <article class="card"><h3>Компактно</h3><p>APK весит около 9&nbsp;МБ и рассчитан на слабое железо телевизоров.</p></article>
+      </div>
+    </section>
+
+    <section id="install">
+      <h2>Установка</h2>
+      <ol class="steps">
+        <li>Скачайте <code>telik-*-armv7.apk</code> со страницы <a href="https://github.com/andrewkomkov/telik/releases/latest">Releases</a> и установите на телевизор: через <code>adb install</code> или файловый менеджер.</li>
+        <li>Откройте Телик и разрешите доступ к специальным возможностям. Он нужен, чтобы нажимать кнопки и получать текст.</li>
+        <li>На iPhone откройте Пункт управления, нажмите значок пульта, выберите «Телик» и введите код с экрана телевизора.</li>
+        <li>Чтобы добавить плитку в «Дом», откройте в Телике пункт <em>Приложение «Дом»</em> и отсканируйте QR-код.</li>
+      </ol>
+    </section>
+
+    <section id="compare">
+      <h2>Чего ожидать</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th scope="col">Задача</th><th scope="col">С Теликом</th></tr></thead>
+          <tbody>
+            <tr><td>Навигация, громкость, пауза с iPhone</td><td>Работает</td></tr>
+            <tr><td>Ввод текста с iPhone</td><td>Работает в стандартных полях ввода Android</td></tr>
+            <tr><td>Повтор экрана</td><td>Работает через режим AirPlay Legacy, проверено на iOS 27.2</td></tr>
+            <tr><td>Apple TV+ и Netflix по AirPlay</td><td>Не поддерживается, используйте их приложения на телевизоре</td></tr>
+            <tr><td>Настоящая Siri на телевизоре</td><td>Недоступна. Боковая кнопка запускает голосовой поиск Android</td></tr>
+            <tr><td>Включение телевизора с iPhone</td><td>Зависит от того, остаётся ли телевизор в сети в режиме ожидания</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="faq">
+      <h2>Вопросы</h2>
+      <details><summary>Можно ли управлять Android TV через пульт в Пункте управления iPhone?</summary><p>Да. Телик добавляет телевизор в список пульта Apple TV на iPhone. Сопряжение нужно один раз, по коду с экрана телевизора.</p></details>
+      <details><summary>Работают ли Netflix и Apple TV+ по AirPlay?</summary><p>Нет. Телик не расшифровывает защищённое видео. Открывайте эти сервисы в их приложениях на телевизоре и управляйте ими с пульта iPhone.</p></details>
+      <details><summary>Нужны ли root или дополнительное устройство?</summary><p>Нет. Приложение работает на телевизоре без root, сервера, Homebridge и приложений на iPhone.</p></details>
+      <details><summary>Какие телевизоры поддерживаются?</summary><p>Проверено на 32-битном телевизоре Dahua 4K с Android 14 и iPhone на iOS 27.2. Другие модели на Android TV 13+ должны работать, отчёты ждём в трекере задач.</p></details>
+      <details><summary>Это безопасно?</summary><p>Исходный код открыт. Служба специальных возможностей позволяет приложению управлять телевизором, поэтому ставьте только сборки, которым доверяете. В Телике нет аналитики и аккаунтов.</p></details>
+    </section>
+  </main>
+
+  <footer>
+    <p>Телик — независимый проект с открытым кодом на основе <a href="https://github.com/henry753951/android-tv-airplay-hub">Android TV AirPlay Hub</a>, <a href="https://github.com/corvofeng/atv-core">atv-core</a>, <a href="https://github.com/FDH2/UxPlay">UxPlay</a> и исследований <a href="https://github.com/postlund/pyatv">pyatv</a>. Он не связан с Apple или Google и не одобрен ими. Apple TV, AirPlay, HomePod, HomeKit, iPhone и Siri — товарные знаки Apple Inc. Android TV — товарный знак Google LLC.</p>
+  </footer>
+</div>
+</body>
+</html>

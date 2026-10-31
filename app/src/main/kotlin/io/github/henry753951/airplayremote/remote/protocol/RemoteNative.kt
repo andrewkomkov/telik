@@ -29,4 +29,5 @@ object RemoteNative {
 
     external fun nativeStopServer()
     external fun nativeIsRunning(): Boolean
+    external fun nativeSetTextFocus(focused: Boolean, text: String)
 }

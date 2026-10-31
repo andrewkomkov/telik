@@ -18,6 +18,12 @@ pub enum TouchPhase {
 /// Lifecycle and state events emitted by the server.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventKind {
+    /// iPhone keyboard inserted text. Detail: the text.
+    TextInsert,
+    /// iPhone keyboard deleted backward. Detail: character count.
+    TextDelete,
+    /// iPhone keyboard replaced the whole field. Detail: the new text.
+    TextReplace,
     /// A client connected to the Companion port. Detail: peer address.
     ClientConnected,
     /// A client disconnected. Detail: peer address and reason.

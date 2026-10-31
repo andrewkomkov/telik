@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Android TV AirPlay Hub</string>
+    <string name="app_name">Телик</string>
     <string name="tv_settings">Settings</string>
     <string name="tv_now_playing">Now Playing</string>
     <string name="tv_cd_previous">Previous</string>
@@ -38,6 +38,8 @@
     <string name="tv_home_cast">Screen Mirroring</string>
     <string name="tv_home_cast_sub">From iPhone, iPad or Mac</string>
     <string name="tv_home_remote">Apple TV Remote</string>
+    <string name="tv_home_homekit">Apple Home</string>
+    <string name="tv_home_homekit_sub">Add this TV to the Home app</string>
     <string name="tv_home_remote_sub">Control this TV with iPhone</string>
     <string name="tv_home_remote_off">Off</string>
     <string name="tv_home_settings_sub">Picture, sound, remote and power</string>

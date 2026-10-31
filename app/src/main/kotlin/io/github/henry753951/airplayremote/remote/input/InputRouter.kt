@@ -5,9 +5,9 @@ internal object InputRouter {
     fun route(mode: InjectionMode, hardware: () -> Boolean, adb: () -> Boolean,
               accessibility: () -> Boolean): String = when (mode) {
         InjectionMode.AUTO -> when {
-            hardware() -> "硬件事件驱动 (/dev/input)"
-            adb() -> "本地 ADB (127.0.0.1:5555)"
+            // После перезагрузки беспроводная отладка выключается, поэтому adb не может быть основным путём.
             accessibility() -> "无障碍服务 (Accessibility)"
+            hardware() -> "硬件事件驱动 (/dev/input)"
             else -> "分发失败 (无可用通道)"
         }
         InjectionMode.EVENT -> if (hardware()) "硬件事件驱动" else "硬件驱动失败 (无权限或设备不存在)"

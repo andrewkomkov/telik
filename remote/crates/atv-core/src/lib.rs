@@ -18,6 +18,7 @@ pub mod identity;
 pub mod inspector;
 pub mod opack;
 pub mod registry;
+pub mod text_input;
 pub mod server;
 pub mod session;
 pub mod settings;

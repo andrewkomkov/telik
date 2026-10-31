@@ -4,6 +4,13 @@ import io.github.henry753951.airplayremote.remote.identity.RemoteIdentityStore
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
+import android.accessibilityservice.InputMethod
+import android.media.AudioManager
+import android.speech.RecognizerIntent
+import android.text.InputType
+import android.view.inputmethod.EditorInfo
+import androidx.annotation.RequiresApi
+import io.github.henry753951.airplayremote.remote.protocol.RemoteNative
 import android.content.Context
 import android.content.Intent
 import android.graphics.Path
@@ -33,6 +40,7 @@ open class RemoteAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        dev.tvhomekit.HomeKitService.start(this)
         menuBindingButton = RemoteIdentityStore.getMenuButtonBinding(this)
         Log.i(TAG, "RemoteAccessibilityService connected, menuBindingButton=$menuBindingButton")
 
@@ -51,7 +59,9 @@ open class RemoteAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // No-op
+        if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            event.packageName?.let { dev.tvhomekit.HomeKitService.tv?.onForegroundPackage(it.toString()) }
+        }
     }
 
     override fun onInterrupt() {
@@ -78,6 +88,8 @@ open class RemoteAccessibilityService : AccessibilityService() {
             return execInputKeyEvent("KEYCODE_MENU") || performGlobalAction(GLOBAL_ACTION_BACK)
         }
 
+        systemKey(lowerName)?.let { return it }
+
         return when (lowerName) {
             "menu" -> performGlobalAction(GLOBAL_ACTION_BACK)
             "home" -> performGlobalAction(GLOBAL_ACTION_HOME)
@@ -103,6 +115,90 @@ open class RemoteAccessibilityService : AccessibilityService() {
             "siri" -> execInputKeyEvent("KEYCODE_SEARCH")
             else -> execInputKeyEvent("KEYCODE_${lowerName.uppercase()}")
         }
+    }
+
+    /** Нажатия от имени системы: работают без adb и доходят до плееров, которые не принимают команды от приложений. */
+    private fun systemKey(name: String): Boolean? {
+        val audio = getSystemService(AudioManager::class.java)
+        fun volume(direction: Int): Boolean {
+            audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, direction, AudioManager.FLAG_SHOW_UI)
+            return true
+        }
+        if (Build.VERSION.SDK_INT >= 33) {
+            when (name) {
+                "up" -> return performGlobalAction(GLOBAL_ACTION_DPAD_UP)
+                "down" -> return performGlobalAction(GLOBAL_ACTION_DPAD_DOWN)
+                "left" -> return performGlobalAction(GLOBAL_ACTION_DPAD_LEFT)
+                "right" -> return performGlobalAction(GLOBAL_ACTION_DPAD_RIGHT)
+                "select" -> return performGlobalAction(GLOBAL_ACTION_DPAD_CENTER)
+            }
+        }
+        if (Build.VERSION.SDK_INT >= 31 && name == "play_pause") {
+            return performGlobalAction(GLOBAL_ACTION_KEYCODE_HEADSETHOOK)
+        }
+        return when (name) {
+            "volume_up" -> volume(AudioManager.ADJUST_RAISE)
+            "volume_down" -> volume(AudioManager.ADJUST_LOWER)
+            "mute" -> volume(AudioManager.ADJUST_TOGGLE_MUTE)
+            "siri" -> startVoiceSearch()
+            else -> null
+        }
+    }
+
+    private fun startVoiceSearch(): Boolean {
+        for (action in listOf(Intent.ACTION_ASSIST, RecognizerIntent.ACTION_WEB_SEARCH)) {
+            try {
+                startActivity(Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                return true
+            } catch (e: RuntimeException) {
+                Log.w(TAG, "Voice search via $action failed: $e")
+            }
+        }
+        return false
+    }
+
+    /** Системная мини-клавиатура службы: сообщает о поле ввода и вводит текст с клавиатуры iPhone. */
+    @RequiresApi(33)
+    private inner class RemoteInputMethod : InputMethod(this@RemoteAccessibilityService) {
+        override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
+            editorAction = attribute.imeOptions and EditorInfo.IME_MASK_ACTION
+            Log.i(TAG, "Text field: inputType=${attribute.inputType} package=${attribute.packageName}")
+            RemoteNative.nativeSetTextFocus(attribute.inputType != InputType.TYPE_NULL, "")
+        }
+
+        override fun onFinishInput() {
+            Log.i(TAG, "Text field closed")
+            RemoteNative.nativeSetTextFocus(false, "")
+        }
+    }
+
+    private var editorAction = EditorInfo.IME_ACTION_NONE
+
+    @RequiresApi(33)
+    override fun onCreateInputMethod(): InputMethod = RemoteInputMethod()
+
+    fun insertText(text: String) {
+        if (Build.VERSION.SDK_INT < 33) return
+        val connection = inputMethod?.currentInputConnection ?: return
+        if (text == "\n") {
+            connection.performEditorAction(
+                if (editorAction == EditorInfo.IME_ACTION_NONE) EditorInfo.IME_ACTION_DONE else editorAction,
+            )
+        } else {
+            connection.commitText(text, 1, null)
+        }
+    }
+
+    fun deleteBackward(count: Int) {
+        if (Build.VERSION.SDK_INT < 33 || count <= 0) return
+        inputMethod?.currentInputConnection?.deleteSurroundingText(count, 0)
+    }
+
+    fun replaceText(text: String) {
+        if (Build.VERSION.SDK_INT < 33) return
+        val connection = inputMethod?.currentInputConnection ?: return
+        connection.performContextMenuAction(android.R.id.selectAll)
+        connection.commitText(text, 1, null)
     }
 
     fun handleButton(name: String) {

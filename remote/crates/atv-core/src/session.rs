@@ -20,6 +20,7 @@ use crate::inspector::InspectorHub;
 use crate::opack::{self, Value};
 use crate::registry::{ActiveConnectionTracker, DeviceRegistry};
 use crate::srp::SrpServer;
+use crate::text_input::{self, TextFocusEvent};
 use crate::tlv::{self, tags};
 use crate::FrameType;
 
@@ -255,6 +256,32 @@ impl CompanionSession {
             event.push(Value::kv("_x", Value::Int(xid)));
         }
         self.send_encrypted_opack(&Value::Dict(event)).await
+    }
+
+    /// Tell the iPhone that a TV text field gained or lost focus.
+    pub async fn push_text_focus(&mut self, event: TextFocusEvent) -> Result<()> {
+        if self.cipher.is_none() || !self.is_established() {
+            return Ok(());
+        }
+        match event {
+            TextFocusEvent::Started => {
+                if let Some(archive) = text_input::current_archive() {
+                    self.send_event(
+                        "_tiStarted",
+                        None,
+                        Some(Value::dict(vec![
+                            Value::kv("_tiV", Value::Int(1)),
+                            Value::kv("_tiD", Value::Bytes(archive)),
+                        ])),
+                    )
+                    .await?;
+                }
+            }
+            TextFocusEvent::Stopped => {
+                self.send_event("_tiStopped", None, None).await?;
+            }
+        }
+        Ok(())
     }
 
     /// Advertise volume support using both modern and legacy wire formats.
@@ -684,7 +711,8 @@ impl CompanionSession {
             .map(str::to_string);
         self.current_identifier = identifier.clone();
         let xid = data.get("_x").and_then(Value::as_int);
-        if identifier.as_deref() != Some("_hidT") {
+        // `_tiC` carries typed text, which may be a password: keep it out of event logs.
+        if identifier.as_deref() != Some("_hidT") && identifier.as_deref() != Some("_tiC") {
             self.delegate
                 .on_event(EventKind::ControlMessage, &data.to_string());
         }
@@ -846,12 +874,38 @@ impl CompanionSession {
                 self.handle_media_control(&content, xid).await?;
             }
             Some("_tiStart") => {
-                self.send_response(
-                    xid,
-                    Some(Value::dict(vec![Value::kv("_tiE", Value::Bool(false))])),
-                    0,
-                )
-                .await?;
+                let reply = match text_input::current_archive() {
+                    Some(archive) => Value::dict(vec![
+                        Value::kv("_tiV", Value::Int(1)),
+                        Value::kv("_tiD", Value::Bytes(archive)),
+                    ]),
+                    None => Value::dict(vec![Value::kv("_tiE", Value::Bool(false))]),
+                };
+                self.send_response(xid, Some(reply), 0).await?;
+            }
+            Some("_tiC") => {
+                if let Some(operations) = content
+                    .get("_tiD")
+                    .and_then(Value::as_bytes)
+                    .and_then(text_input::parse_operations)
+                {
+                    if operations.delete_backward > 0 {
+                        self.delegate.on_event(
+                            EventKind::TextDelete,
+                            &operations.delete_backward.to_string(),
+                        );
+                    }
+                    if let Some(text) = &operations.insert {
+                        self.delegate.on_event(EventKind::TextInsert, text);
+                    } else if let Some(text) = &operations.replace_all {
+                        self.delegate.on_event(EventKind::TextReplace, text);
+                    }
+                } else {
+                    warn!("could not decode _tiC payload");
+                }
+                if xid.is_some() && data.get("_t").and_then(Value::as_int) == Some(2) {
+                    self.send_response(xid, None, 0).await?;
+                }
             }
             Some("FetchLaunchableApplicationsEvent") => {
                 self.send_response(

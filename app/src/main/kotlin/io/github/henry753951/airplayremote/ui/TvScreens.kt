@@ -3,6 +3,9 @@ package io.github.henry753951.airplayremote.ui
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
@@ -305,7 +308,7 @@ private fun openSystemSettings(ctx: android.content.Context, action: String) {
 
 // ---- home ----
 
-private enum class TvHomeEntry { CAST, REMOTE, SPEAKERS }
+private enum class TvHomeEntry { CAST, REMOTE, HOMEKIT, SPEAKERS }
 
 private const val ATTENTION_DELAY_MS = 1_500L
 
@@ -343,6 +346,7 @@ internal fun TvIdleScreen(
     }
 
     val entries = TvHomeEntry.entries
+    val homeContext = LocalContext.current
     val requesters = remember { List(entries.size + 1) { FocusRequester() } }
     val settingsFocus = requesters.last()
     var settingsFocused by remember { mutableStateOf(false) }
@@ -376,7 +380,7 @@ internal fun TvIdleScreen(
     Row(
         Modifier
             .fillMaxSize()
-            .background(TvBackdrop)
+            .telikBackdrop()
             .padding(start = TV_EDGE_START, end = TV_EDGE_END)
             .graphicsLayer { alpha = reveal.value }
     ) {
@@ -389,7 +393,8 @@ internal fun TvIdleScreen(
         ) {
             Text(
                 stringResource(R.string.tv_home_title),
-                color = TvText, fontSize = 34.sp, lineHeight = 42.sp, fontWeight = FontWeight.Light,
+                color = TvText, fontSize = 52.sp, lineHeight = 60.sp, fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-1).sp,
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             Spacer(Modifier.height(12.dp))
@@ -411,9 +416,11 @@ internal fun TvIdleScreen(
                         TvHomeEntry.CAST -> R.string.tv_home_cast to R.string.tv_home_cast_sub
                         TvHomeEntry.REMOTE -> R.string.tv_home_remote to
                             if (remoteEnabled) R.string.tv_home_remote_sub else R.string.tv_home_remote_off
+                        TvHomeEntry.HOMEKIT -> R.string.tv_home_homekit to R.string.tv_home_homekit_sub
                         TvHomeEntry.SPEAKERS -> R.string.speaker_title to R.string.speaker_home_sub
                     }
                     TvHomeRow(
+                        entry = entry,
                         title = stringResource(labels.first),
                         subtitle = stringResource(labels.second),
                         modifier = Modifier.weight(1f).focusRequester(requesters[i]).focusProperties {
@@ -427,13 +434,14 @@ internal fun TvIdleScreen(
                             onFocusIndex(i)
                         },
                         onClick = {
-                            go(
-                                when (entry) {
-                                    TvHomeEntry.CAST -> TvPage.CAST_GUIDE
-                                    TvHomeEntry.REMOTE -> TvPage.REMOTE_GUIDE
-                                    TvHomeEntry.SPEAKERS -> TvPage.SPEAKERS
-                                }
-                            )
+                            when (entry) {
+                                TvHomeEntry.CAST -> go(TvPage.CAST_GUIDE)
+                                TvHomeEntry.REMOTE -> go(TvPage.REMOTE_GUIDE)
+                                TvHomeEntry.HOMEKIT -> homeContext.startActivity(
+                                    Intent(homeContext, dev.tvhomekit.HomeKitActivity::class.java)
+                                )
+                                TvHomeEntry.SPEAKERS -> go(TvPage.SPEAKERS)
+                            }
                         }
                     )
                 }
@@ -489,11 +497,7 @@ internal fun TvIdleScreen(
                     label = "art"
                 ) { entry ->
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        when (entry) {
-                            TvHomeEntry.CAST -> TvCastArt()
-                            TvHomeEntry.REMOTE -> TvRemoteArt(remoteEnabled)
-                            TvHomeEntry.SPEAKERS -> Icon(Icons.Default.Speaker, null, Modifier.size(120.dp), tint = TvText)
-                        }
+                        TelikMascot(entry)
                     }
                 }
             }
@@ -526,8 +530,85 @@ private fun TvMinuteClock(modifier: Modifier = Modifier) {
     Text(format.format(now), color = TvMuted, fontSize = 17.sp, maxLines = 1, modifier = modifier)
 }
 
+private fun Modifier.telikBackdrop(): Modifier = drawBehind {
+    drawRect(Color(0xFF07070C))
+    drawRect(
+        androidx.compose.ui.graphics.Brush.radialGradient(
+            listOf(Color(0x664A3AFF), Color.Transparent),
+            center = Offset(size.width * 0.12f, size.height * 0.05f),
+            radius = size.width * 0.55f,
+        ),
+    )
+    drawRect(
+        androidx.compose.ui.graphics.Brush.radialGradient(
+            listOf(Color(0x55FF5E8A), Color.Transparent),
+            center = Offset(size.width * 0.95f, size.height * 0.2f),
+            radius = size.width * 0.5f,
+        ),
+    )
+    drawRect(
+        androidx.compose.ui.graphics.Brush.radialGradient(
+            listOf(Color(0x44FFAA4D), Color.Transparent),
+            center = Offset(size.width * 0.7f, size.height * 1.05f),
+            radius = size.width * 0.55f,
+        ),
+    )
+}
+
+private fun TvHomeEntry.accent(): List<Color> = when (this) {
+    TvHomeEntry.CAST -> listOf(Color(0xFF4FC3FF), Color(0xFF3A6BFF))
+    TvHomeEntry.REMOTE -> listOf(Color(0xFFB98CFF), Color(0xFF6A4DFF))
+    TvHomeEntry.HOMEKIT -> listOf(Color(0xFFFFB35C), Color(0xFFFF5E8A))
+    TvHomeEntry.SPEAKERS -> listOf(Color(0xFF5CE6B8), Color(0xFF12A58F))
+}
+
+@Composable
+private fun TelikMascot(entry: TvHomeEntry) {
+    val accent = entry.accent().first()
+    Box(Modifier.size(TV_ART_SIZE), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawCircle(
+                androidx.compose.ui.graphics.Brush.radialGradient(
+                    listOf(accent.copy(alpha = 0.42f), Color.Transparent),
+                    center = center,
+                    radius = size.minDimension * 0.62f,
+                ),
+                radius = size.minDimension * 0.62f,
+            )
+        }
+        Icon(
+            androidx.compose.ui.res.painterResource(R.drawable.mascot),
+            null,
+            Modifier.size(330.dp),
+            tint = Color.Unspecified,
+        )
+    }
+}
+
+@Composable
+private fun TelikRowIcon(entry: TvHomeEntry) {
+    Box(
+        Modifier
+            .size(52.dp)
+            .clip(RoundedCornerShape(15.dp))
+            .background(androidx.compose.ui.graphics.Brush.linearGradient(entry.accent())),
+        contentAlignment = Alignment.Center,
+    ) {
+        when (entry) {
+            TvHomeEntry.CAST -> AirPlayMark(28.dp, Color.White)
+            TvHomeEntry.REMOTE -> Canvas(Modifier.size(width = 16.dp, height = 30.dp)) {
+                drawRoundRect(Color.White, cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx()))
+                drawCircle(entry.accent().last(), radius = 4.5.dp.toPx(), center = Offset(size.width / 2, 8.dp.toPx()))
+            }
+            TvHomeEntry.HOMEKIT -> Icon(Icons.Default.Home, null, Modifier.size(30.dp), tint = Color.White)
+            TvHomeEntry.SPEAKERS -> Icon(Icons.Default.Speaker, null, Modifier.size(30.dp), tint = Color.White)
+        }
+    }
+}
+
 @Composable
 private fun TvHomeRow(
+    entry: TvHomeEntry,
     title: String,
     subtitle: String,
     modifier: Modifier,
@@ -535,30 +616,43 @@ private fun TvHomeRow(
     onClick: () -> Unit
 ) {
     var focused by remember { mutableStateOf(false) }
-    val bg by animateColorAsState(if (focused) TvText else Color(0x0FFFFFFF), tween(FOCUS_MS), label = "homeBg")
-    val fg by animateColorAsState(if (focused) TvInk else TvText, tween(FOCUS_MS), label = "homeFg")
-    val sub by animateColorAsState(if (focused) TvInk.copy(alpha = 0.6f) else TvMuted, tween(FOCUS_MS), label = "homeSub")
+    val scale by animateFloatAsState(if (focused) 1.035f else 1f, tween(FOCUS_MS), label = "homeScale")
+    val glass by animateColorAsState(if (focused) Color(0xF2FFFFFF) else Color(0x1AFFFFFF), tween(FOCUS_MS), label = "homeBg")
+    val fg by animateColorAsState(if (focused) Color(0xFF0B0B10) else TvText, tween(FOCUS_MS), label = "homeFg")
+    val sub by animateColorAsState(if (focused) Color(0x990B0B10) else TvMuted, tween(FOCUS_MS), label = "homeSub")
+    val shape = RoundedCornerShape(26.dp)
     Row(
         modifier
             .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .onFocusChanged {
                 focused = it.isFocused
                 if (it.isFocused) onFocused()
             }
-            .clip(RoundedCornerShape(18.dp))
-            .background(bg)
+            .clip(shape)
+            .background(glass)
+            .border(
+                1.dp,
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(Color(0x66FFFFFF), Color(0x0DFFFFFF)),
+                ),
+                shape,
+            )
             .clickable(remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 24.dp, vertical = 12.dp),
+            .padding(horizontal = 22.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        TelikRowIcon(entry)
+        Spacer(Modifier.width(20.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, color = fg, fontSize = 21.sp, fontWeight = FontWeight.Medium,
+            Text(title, color = fg, fontSize = 22.sp, fontWeight = FontWeight.SemiBold,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(2.dp))
             Text(subtitle, color = sub, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        Spacer(Modifier.width(16.dp))
-        Text("›", color = sub, fontSize = 24.sp)
     }
 }
 

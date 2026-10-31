@@ -34,7 +34,7 @@ android {
         minSdk = 26
         targetSdk = 37
         versionCode = providers.gradleProperty("versionCodeOverride").map(String::toInt).getOrElse(9)
-        versionName = "0.3.0-alpha2"
+        versionName = "1.0.0"
 
         externalNativeBuild {
             cmake {
@@ -57,6 +57,7 @@ android {
         }
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfigs.findByName("release")?.let { signingConfig = it }
             ndk { abiFilters += allAbis }
@@ -117,11 +118,8 @@ tasks.configureEach {
 }
 
 dependencies {
-    implementation("dev.mobile:dadb:1.2.6") {
-        // The published JVM-native test launcher is not an Android runtime dependency.
-        exclude(group = "org.graalvm.buildtools", module = "junit-platform-native")
-    }
     testImplementation("junit:junit:4.13.2")
+    implementation("com.google.zxing:core:3.5.3")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime)
@@ -158,3 +156,22 @@ val checkRemoteLibrary = tasks.register("checkRemoteLibrary") {
     }
 }
 tasks.named("preBuild") { dependsOn(checkRemoteLibrary) }
+
+android {
+    androidResources {
+        localeFilters += listOf("en", "ru", "zh-rTW")
+    }
+    packaging {
+        resources {
+            excludes += setOf(
+                "org/bouncycastle/pqc/**",
+                "org/bouncycastle/x509/**",
+                "META-INF/versions/**",
+                "kotlin/**",
+                "**/*.kotlin_builtins",
+                "**/*.kotlin_module",
+                "DebugProbesKt.bin",
+            )
+        }
+    }
+}

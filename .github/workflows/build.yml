@@ -50,7 +50,7 @@ jobs:
       - name: Upload unsigned development APK
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: android-tv-airplay-hub-unsigned-armv7
+          name: telik-unsigned-armv7
           path: app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
           retention-days: 14

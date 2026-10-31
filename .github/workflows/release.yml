@@ -1,0 +1,63 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          log-accepted-android-sdk-licenses: false
+          packages: platform-tools
+      - name: Install Android SDK components
+        run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0" "ndk;27.0.12077973" "cmake;3.22.1"
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.98.0'
+          targets: armv7-linux-androideabi
+      - name: Prepare signing key
+        env:
+          KEYSTORE: ${{ secrets.TELIK_KEYSTORE_BASE64 }}
+          PASSWORD: ${{ secrets.TELIK_KEYSTORE_PASSWORD }}
+        run: |
+          printf '%s' "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/telik.keystore"
+          {
+            printf 'storeFile=%s\n' "$RUNNER_TEMP/telik.keystore"
+            printf 'storePassword=%s\n' "$PASSWORD"
+            printf 'keyAlias=telik\n'
+            printf 'keyPassword=%s\n' "$PASSWORD"
+          } >> local.properties
+      - name: Test and build
+        run: |
+          (cd remote && cargo test --locked -p atv-core)
+          scripts/build-remote.sh
+          ./gradlew :app:testDebugUnitTest :app:assembleRelease --max-workers 4
+      - name: Package
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          mkdir dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/telik-${TAG#v}-armv7.apk"
+          (cd dist && sha256sum ./*.apk > SHA256SUMS)
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --generate-notes

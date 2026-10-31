@@ -4,13 +4,20 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class InputRouterTest {
-    @Test fun autoStopsAfterTheFirstSuccessfulBackend() {
+    @Test fun autoPrefersAccessibilityAndStopsAfterSuccess() {
         val calls = mutableListOf<String>()
         InputRouter.route(InjectionMode.AUTO,
-            hardware = { calls += "hardware"; false },
-            adb = { calls += "adb"; true },
-            accessibility = { error("Must not replay an accepted key") })
-        assertEquals(listOf("hardware", "adb"), calls)
+            hardware = { error("Must not replay an accepted key") },
+            adb = { error("Automatic mode must not start local ADB") },
+            accessibility = { calls += "accessibility"; true })
+        assertEquals(listOf("accessibility"), calls)
+    }
+
+    @Test fun autoNeverTouchesAdbWhenOtherBackendsFail() {
+        InputRouter.route(InjectionMode.AUTO,
+            hardware = { false },
+            adb = { error("Automatic mode must not start local ADB") },
+            accessibility = { false })
     }
 
     @Test fun explicitModeNeverFallsThroughWhenUnavailable() {

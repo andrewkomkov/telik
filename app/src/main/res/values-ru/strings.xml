@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tv_settings">Настройки</string>
+    <string name="tv_home_title">Телик</string>
+    <string name="tv_home_hint">Откройте «Повтор экрана» на iPhone, iPad или Mac и выберите «%1$s».</string>
+    <string name="tv_home_cast">Повтор экрана</string>
+    <string name="tv_home_cast_sub">С iPhone, iPad или Mac</string>
+    <string name="tv_home_remote">Пульт Apple TV</string>
+    <string name="tv_home_remote_sub">Управление с iPhone</string>
+    <string name="tv_home_remote_off">Выключен</string>
+    <string name="tv_home_homekit">Приложение «Дом»</string>
+    <string name="tv_home_homekit_sub">Добавить телевизор в «Дом»</string>
+    <string name="tv_home_settings_sub">Изображение, звук, пульт и питание</string>
+    <string name="tv_attn_airplay_error">Не удалось запустить AirPlay</string>
+    <string name="tv_attn_airplay_error_body">Проверьте подключение телевизора к сети и повторите.</string>
+    <string name="tv_attn_airplay_off">AirPlay выключен</string>
+    <string name="tv_attn_airplay_off_body">Включите AirPlay, чтобы iPhone, iPad и Mac находили телевизор.</string>
+    <string name="tv_attn_network">Телевизор не подключён</string>
+    <string name="tv_attn_network_body">Подключите телевизор к той же сети, что и iPhone, iPad или Mac.</string>
+    <string name="tv_attn_network_action">Настройки сети</string>
+    <string name="tv_attn_remote_error">Не удалось запустить пульт</string>
+    <string name="tv_attn_remote_error_body">Пульт Apple TV сейчас недоступен, повтор экрана работает. Состояние можно посмотреть в настройках пульта.</string>
+    <string name="tv_cast_guide_title">Повтор экрана</string>
+    <string name="tv_cast_guide_lead">Повтор запускается с iPhone, iPad или Mac, а телевизор показывает картинку.</string>
+    <string name="tv_cast_step_open">На iPhone или iPad откройте Пункт управления. На Mac откройте его в строке меню.</string>
+    <string name="tv_cast_step_mirror">Выберите «Повтор экрана».</string>
+    <string name="tv_cast_step_pick">Выберите в списке «%1$s».</string>
+    <string name="tv_cast_note_pin">Если появится запрос, введите код с экрана телевизора. Устройство должно быть в той же сети.</string>
+    <string name="tv_cast_note_mac">Устройство должно быть в той же сети. На Mac режим повтора или расширения выбирается в Системных настройках › Мониторы.</string>
+    <string name="tv_cast_guide_rename">Имя и код</string>
+    <string name="tv_remote_guide_title">Пульт Apple TV</string>
+    <string name="tv_remote_guide_lead">Управляйте телевизором через пульт в Пункте управления на iPhone.</string>
+    <string name="tv_remote_guide_off">Пульт выключен. Включите его, чтобы iPhone нашёл телевизор.</string>
+    <string name="tv_remote_step_open">На iPhone откройте Пункт управления и нажмите значок пульта.</string>
+    <string name="tv_remote_step_pick">Выберите вверху «%1$s».</string>
+    <string name="tv_remote_step_code">При первом подключении введите четырёхзначный код с экрана телевизора.</string>
+    <string name="tv_remote_guide_note">Если значка пульта нет, добавьте его в Пункт управления. Для кнопок-стрелок откройте на iPhone Настройки › Универсальный доступ › Пульт Apple TV.</string>
+    <string name="tv_remote_turn_on">Включить пульт</string>
+    <string name="tv_remote_guide_settings">Настройки пульта</string>
+    <string name="tv_remote_enable">Пульт Apple TV</string>
+    <string name="tv_remote_status">Состояние</string>
+    <string name="tv_remote_dpad">Кнопки-стрелки</string>
+    <string name="tv_remote_access">Доступ к управлению</string>
+    <string name="tv_remote_adb">Управление кнопками</string>
+    <string name="tv_remote_pair_hint">Введите этот код в пульте на iPhone</string>
+    <string name="tv_remote_paired">Пульт подключён</string>
+    <string name="waiting_for_playback">Ожидание воспроизведения…</string>
+    <string name="speaker_title">Звук на HomePod</string>
+    <string name="speaker_home_sub">Звук телевизора на колонке AirPlay</string>
+    <string name="speaker_notification">Звук выводится на колонку. Откройте приложение, чтобы посмотреть состояние или остановить вывод.</string>
+
+    <!-- TV interface -->
+    <string name="tv_now_playing">Сейчас играет</string>
+    <string name="tv_cd_previous">Предыдущий</string>
+    <string name="tv_cd_next">Следующий</string>
+    <string name="tv_more_info">Подробнее</string>
+    <string name="tv_got_it">ОК</string>
+    <string name="tv_remote_dpad_short">Как включить кнопки-стрелки на iPhone. Нажмите ОК, чтобы узнать больше.</string>
+    <string name="tv_power_mode_short">Выберите, принимать ли трансляцию в режиме ожидания. Нажмите ОК, чтобы сравнить режимы.</string>
+    <string name="tv_cat_video_desc">Разрешение, частота кадров, цветовой диапазон и эталон оттенков серого.</string>
+    <string name="tv_cat_audio_desc">Синхронизация громкости, задержка и буферизация звука.</string>
+    <string name="tv_cat_power_desc">Приём в фоне, запуск при включении и режим ожидания.</string>
+    <string name="tv_resolution_desc">Максимальное разрешение, которое предлагается устройству-источнику. Фактический размер картинки зависит от устройства и контента и может быть меньше.</string>
+    <string name="tv_fps">Частота кадров</string>
+    <string name="tv_fps_desc">Максимальная частота кадров, которая предлагается устройству-источнику. Фактическая частота зависит от устройства и контента. Если картинка идёт рывками, выберите значение ниже.</string>
+    <string name="tv_hevc">HEVC (H.265)</string>
+    <string name="tv_hevc_desc">В режиме «Авто» HEVC используется, если телевизор может его декодировать. При проблемах с воспроизведением выключите его.</string>
+    <string name="tv_overscan">Отступ от краёв</string>
+    <string name="tv_overscan_desc">Если телевизор обрезает края картинки, включите отступ вокруг изображения.</string>
+    <string name="tv_grayscale">Эталон оттенков серого</string>
+    <string name="tv_grayscale_desc">Показывает шкалу почти чёрных и почти белых оттенков серого. Сравните её с таким же шаблоном, транслируемым с устройства, чтобы проверить детали в тенях и светах.</string>
+    <string name="tv_grayscale_note">Сравните с таким же шаблоном, транслируемым с устройства, чтобы проверить детали в тенях и светах. Для выхода нажмите «Назад».</string>
+    <string name="tv_audio_smooth">Автоматический буфер звука</string>
+    <string name="tv_audio_auto_buffer_desc">Подстраивает буфер звука под состояние сети, чтобы звук реже прерывался. Задержка звука может немного вырасти.</string>
+    <string name="tv_remote_access_desc">Некоторым кнопкам пульта нужно это разрешение, чтобы управлять экраном телевизора. Нажмите ОК, чтобы открыть системные настройки, и включите его для этого приложения.</string>
+    <string name="tv_remote_adb_desc">Позволяет кнопкам пульта на iPhone управлять телевизором. Если указано «Не готово», некоторые кнопки могут не работать.</string>
+    <string name="tv_state_not_ready">Не готово</string>
+    <string name="tv_power_mode">Режим ожидания</string>
+    <string name="tv_power_mode_desc">Приём в режиме ожидания: iPhone, iPad и Mac находят телевизор в режиме ожидания, а при начале трансляции он пытается включить экран. Это зависит от модели телевизора и системных настроек, а расход энергии в режиме ожидания может вырасти.\nЭнергосбережение: снижает расход энергии в режиме ожидания. Устройства могут не найти телевизор, поэтому перед трансляцией включите его.</string>
+    <string name="tv_power_standby">Приём в режиме ожидания</string>
+    <string name="tv_power_saving">Энергосбережение</string>
+    <string name="tv_attn_permission">Нужно разрешение «Устройства поблизости»</string>
+    <string name="tv_retry">Повторить</string>
+    <string name="tv_require_pin">Запрашивать код</string>
+    <string name="tv_advanced">Дополнительно</string>
+    <string name="tv_logs_desc">Журнал работы приёмника для поиска неполадок.</string>
+    <string name="tv_save">Сохранить</string>
+    <string name="tv_cancel">Отменить</string>
+    <string name="tv_pair_title">Введите код</string>
+    <string name="tv_pair_hint">Введите этот код на iPhone, iPad или Mac</string>
+    <string name="tv_paired">Подключено</string>
+    <string name="tv_service_airplay">AirPlay</string>
+    <string name="tv_state_ready">Готово</string>
+    <string name="tv_stage_connecting">Подключение</string>
+    <string name="tv_state_connected">Подключено</string>
+    <string name="tv_state_starting">Запуск</string>
+    <string name="tv_state_waiting_network">Ожидание сети</string>
+    <string name="tv_state_stopped">Остановлено</string>
+    <string name="tv_state_on">Вкл.</string>
+    <string name="tv_state_off">Выкл.</string>
+    <string name="tv_state_error">Ошибка</string>
+    <string name="tv_cat_general">Основные</string>
+    <string name="tv_cat_general_desc">Имя телевизора, код и параметры подключения.</string>
+    <string name="tv_cat_video">Изображение</string>
+    <string name="tv_cat_audio">Звук</string>
+    <string name="tv_cat_remote">Пульт</string>
+    <string name="tv_cat_remote_desc">Управление телевизором через пульт Apple TV на iPhone.</string>
+    <string name="tv_cat_power">Фоновая работа и питание</string>
+    <string name="tv_cat_diagnostics">Диагностика</string>
+    <string name="tv_cat_diagnostics_desc">Журнал службы, сведения о потоке и все дополнительные параметры.</string>
+    <string name="tv_name">Имя</string>
+    <string name="tv_name_desc">Под этим именем телевизор виден на iPhone, iPad и Mac. Оно общее для AirPlay и пульта Apple TV. После изменения обе службы перезапустятся, а новое имя может появиться на устройствах не сразу.</string>
+    <string name="tv_name_shared">Используется для AirPlay и пульта Apple TV</string>
+    <string name="tv_name_bytes">%1$d/63</string>
+    <string name="tv_name_error_empty">Введите имя</string>
+    <string name="tv_name_error_long">Имя слишком длинное. Максимум около 30 русских или 63 латинских букв.</string>
+    <string name="tv_name_error_control">В имени есть недопустимые символы</string>
+    <string name="tv_require_pin_desc">Если включено, устройства AirPlay для подключения вводят четырёхзначный код с экрана телевизора. Для подключения пульта Apple TV код нужен всегда.</string>
+    <string name="tv_color_range">Цветовой диапазон</string>
+    <string name="tv_color_range_desc">Задаёт уровни чёрного и белого. Если тёмные области выглядят серыми или детали в тенях плохо видны, выберите другое значение и проверьте его по эталону оттенков серого.</string>
+    <string name="tv_color_range_full">Полный (0–255)</string>
+    <string name="tv_color_range_limited">Ограниченный (16–235)</string>
+    <string name="tv_audio_delay">Задержка звука</string>
+    <string name="tv_audio_delay_desc">Если звук и картинка не совпадают, задержите звук, чтобы выровнять их. В положении «Выкл.» используется значение по умолчанию.</string>
+    <string name="tv_ms">%1$d мс</string>
+    <string name="tv_remote_enable_desc">Если включено, пульт Apple TV в Пункте управления на iPhone находит телевизор и управляет им.</string>
+    <string name="tv_remote_status_desc">Показывает текущее состояние службы пульта. При первом подключении телевизор покажет четырёхзначный код для ввода на iPhone.</string>
+    <string name="tv_remote_dpad_desc">По умолчанию пульт на iPhone использует сенсорную область. Если удобнее кнопки-стрелки, включите их на iPhone: Настройки › Универсальный доступ › Пульт Apple TV. На телевизоре этот параметр изменить нельзя.</string>
+    <string name="tv_advanced_desc">Все технические параметры: порт, обнаружение, декодирование и настройки для разработчиков. Нужны для устранения неполадок.</string>
+
+    <!-- Notification -->
+    <string name="notification_channel">Служба AirPlay</string>
+    <string name="notification_title">Сервер AirPlay работает</string>
+    <string name="notification_text">Принимает подключения AirPlay</string>
+    <string name="notification_pin_title">Нужен PIN-код AirPlay</string>
+    <string name="notification_pin_text">PIN-код: %1$s</string>
+    <string name="stop_service">Остановить</string>
+
+    <!-- Tabs -->
+    <string name="tab_overview">Обзор</string>
+    <string name="tab_logs">Журнал</string>
+    <string name="tab_settings">Настройки</string>
+
+    <!-- Overview -->
+    <string name="server_stopped">Сервер остановлен</string>
+    <string name="waiting_for_connection">Ожидание подключения…</string>
+    <string name="error_starting_server">Ошибка запуска сервера</string>
+    <string name="connected_count">Подключено: %d</string>
+    <string name="error_label">Ошибка</string>
+    <string name="stopped_label">Остановлено</string>
+    <string name="btn_start">Запустить</string>
+    <string name="btn_stop">Остановить</string>
+    <string name="btn_allow">Разрешить</string>
+    <string name="btn_open_settings">Открыть настройки</string>
+    <string name="local_network_label">Нужен доступ к устройствам поблизости</string>
+    <string name="local_network_desc">Разрешите доступ к устройствам поблизости, чтобы iPhone, iPad и Mac находили телевизор в сети и подключались к нему.</string>
+    <string name="unknown_track">Неизвестно</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_pip">Картинка в картинке</string>
+    <string name="cd_fullscreen">Во весь экран</string>
+    <string name="cd_exit_fullscreen">Выйти из полноэкранного режима</string>
+    <string name="cd_cover_art">Обложка</string>
+    <string name="cd_play_pause">Воспроизведение/пауза</string>
+    <string name="cd_rewind">Перемотка назад</string>
+    <string name="cd_fast_forward">Перемотка вперёд</string>
+    <string name="volume_server">Громкость приёмника</string>
+    <string name="volume_client">Громкость источника</string>
+    <string name="volume_value">%1$d%%</string>
+    <string name="cd_download">Скачать видео</string>
+    <string name="cd_cancel_download">Отменить загрузку</string>
+
+    <!-- Video download -->
+    <string name="download_saved">Сохранено: %1$s</string>
+    <string name="download_failed">Не удалось скачать</string>
+
+    <!-- Player gestures -->
+    <string name="gesture_seek_seconds">%1$d с</string>
+    <string name="seconds_short">%1$d с</string>
+    <string name="select_playback_speed">Скорость воспроизведения</string>
+    <string name="cd_reset_speed">Сбросить скорость</string>
+    <string name="skip_silence">Пропускать тишину</string>
+
+    <!-- Player controls -->
+    <string name="cd_back">Назад</string>
+    <string name="cd_copy_url">Скопировать ссылку на видео</string>
+    <string name="cd_rotate">Повернуть экран</string>
+    <string name="cd_lock_controls">Заблокировать управление</string>
+    <string name="cd_unlock_controls">Разблокировать управление</string>
+    <string name="scale_best_fit">По размеру экрана</string>
+    <string name="scale_stretch">Растянуть</string>
+    <string name="scale_crop">Обрезать</string>
+    <string name="scale_hundred_percent">100%</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_pin_title">PIN-код AirPlay</string>
+    <string name="btn_ok">ОК</string>
+
+    <!-- Logs screen -->
+    <string name="btn_export">Экспорт</string>
+    <string name="btn_clear">Очистить</string>
+    <string name="export_logs_chooser_title">Экспорт журнала</string>
+
+    <!-- Settings sections -->
+    <string name="section_server">Сервер</string>
+    <string name="section_connection">Подключение</string>
+    <string name="section_display">Экран</string>
+    <string name="section_decode">Декодирование</string>
+    <string name="section_developer">Для разработчиков</string>
+
+    <!-- Settings: Server -->
+    <string name="setting_server_name">Имя сервера</string>
+    <string name="setting_server_port">Порт сервера</string>
+    <string name="setting_auto_start">Запускать AirPlay при открытии</string>
+    <string name="setting_auto_start_desc">Запускать приём AirPlay при каждом открытии приложения.</string>
+    <string name="setting_boot_auto_start">Запуск при включении</string>
+    <string name="setting_boot_auto_start_desc">Начинать приём после включения телевизора, не открывая приложение.</string>
+    <string name="setting_run_in_background">Приём в фоне</string>
+    <string name="setting_run_in_background_desc">Продолжать принимать подключения AirPlay и пульта после выхода из приложения.</string>
+
+    <!-- Settings: Connection -->
+    <string name="setting_require_pin">Запрашивать код</string>
+    <string name="setting_require_pin_desc">Запрашивать четырёхзначный код при каждом новом подключении</string>
+    <string name="setting_allow_new_conn">Разрешить новые подключения</string>
+    <string name="setting_allow_new_conn_desc">Если во время трансляции подключится другое устройство, оно заменит текущее, и сеанс завершится.</string>
+
+    <!-- Settings: Display -->
+    <string name="setting_idle_preview">Предпросмотр при простое</string>
+    <string name="setting_idle_preview_desc">Показывать область видео во время ожидания подключения</string>
+    <string name="setting_auto_fullscreen">Автоматически во весь экран</string>
+    <string name="setting_auto_fullscreen_desc">Переходить в полноэкранный режим, когда устройство начинает повтор экрана.</string>
+    <string name="setting_keep_screen_on">Не выключать экран при трансляции</string>
+    <string name="setting_keep_screen_on_desc">Отключает заставку и автоматический сон, пока устройство подключено.</string>
+    <string name="setting_advertise_video">Объявлять поддержку видео AirPlay</string>
+    <string name="setting_advertise_video_desc">Если выключено, видео передаётся только как аудиопоток</string>
+    <string name="setting_advertise_mirroring">Объявлять поддержку повтора экрана AirPlay</string>
+    <string name="setting_advertise_mirroring_desc">Если выключено, устройство не отображается для повтора экрана</string>
+    <string name="setting_advertise_audio">Объявлять поддержку аудио AirPlay</string>
+    <string name="setting_advertise_audio_desc">Если выключено, устройство доступно только для повтора экрана и скрыто от медиаплееров</string>
+    <string name="setting_alac">Объявлять кодек ALAC</string>
+    <string name="setting_alac_desc">Указывать ALAC в записи mDNS; используется для потоковой передачи музыки</string>
+    <string name="setting_aac">Объявлять кодек AAC</string>
+    <string name="setting_aac_desc">Указывать AAC-ELD/AAC-LC в записи mDNS; используется для звука при повторе экрана</string>
+    <string name="setting_launch_on_connect">Переключаться на приёмник при подключении</string>
+    <string name="setting_launch_on_connect_desc">При подключении устройства телевизор переключается на приёмник AirPlay.</string>
+    <string name="setting_launch_on_connect_no_permission">Для автоматического переключения нужно разрешение «Поверх других приложений». Нажмите ОК, чтобы открыть настройки.</string>
+    <string name="setting_discovery">Видимость через</string>
+    <string name="setting_discovery_all_desc">Объявлять на всех доступных интерфейсах. Использует NsdManager.</string>
+    <string name="setting_discovery_usb_desc">Объявлять только через USB-модем, чтобы подключение было проводным. Использует собственный mDNS-ответчик.</string>
+    <string name="chip_all_networks">Все сети</string>
+    <string name="chip_usb_only">Только USB</string>
+    <string name="setting_resolution">Разрешение</string>
+    <string name="setting_resolution_desc">Разрешение видео, объявляемое источникам</string>
+    <string name="setting_resolution_placeholder">[Ш]x[В]</string>
+    <string name="setting_resolution_width">Ширина</string>
+    <string name="setting_resolution_height">Высота</string>
+    <string name="setting_max_fps">Максимум FPS</string>
+    <string name="setting_max_fps_desc">Максимальная частота кадров, объявляемая источникам</string>
+    <string name="setting_max_fps_placeholder">FPS</string>
+    <string name="setting_overscanned">Компенсация выхода за края</string>
+    <string name="setting_overscanned_desc">Добавлять границу в пикселях для экранов, обрезающих края изображения</string>
+    <string name="chip_custom">Другое</string>
+    <string name="chip_device_portrait">Книжная</string>
+    <string name="chip_device_landscape">Альбомная</string>
+
+    <!-- Settings: Decode -->
+    <string name="setting_h265">H.265 (HEVC)</string>
+    <string name="setting_h265_desc">В режиме «Авто» используются только проверенные декодеры H.265</string>
+    <string name="setting_enforce_sdr">Подмена метаданных SDR</string>
+    <string name="setting_enforce_sdr_desc">Заменять метаданные декодера на BT.709 SDR. HDR при этом не преобразуется в SDR.</string>
+    <string name="setting_sw_alac">Программный декодер ALAC</string>
+    <string name="setting_sw_alac_desc">Всегда использовать программный декодер ALAC вместо системного; может повлиять на задержку</string>
+    <string name="setting_sw_aac">Программный декодер AAC</string>
+    <string name="setting_sw_aac_desc">Всегда использовать программный декодер AAC вместо системного; может повлиять на задержку</string>
+    <string name="setting_sync_client_volume">Синхронизация громкости устройства</string>
+    <string name="setting_sync_client_volume_desc">Громкость на iPhone, iPad или Mac управляет громкостью воспроизведения на телевизоре.</string>
+
+    <!-- Settings: Developer -->
+    <string name="setting_developer_options">Для разработчиков</string>
+    <string name="setting_developer_options_desc">Показать параметры для опытных пользователей</string>
+    <string name="setting_key_allow_frame_drop">MediaFormat.KEY_ALLOW_FRAME_DROP</string>
+    <string name="setting_key_allow_frame_drop_desc">Разрешить видеодекодерам пропускать кадры, чтобы не отставать (Android 10+)</string>
+    <string name="setting_realtime_decoder_priority">MediaFormat.KEY_PRIORITY</string>
+    <string name="setting_realtime_decoder_priority_desc">Запрашивать планирование в реальном времени для аудиодекодера</string>
+    <string name="setting_operating_rate">MediaFormat.KEY_OPERATING_RATE</string>
+    <string name="setting_operating_rate_desc">Запрашивать у декодера максимальную скорость работы</string>
+    <string name="chip_auto">Авто</string>
+    <string name="chip_on">Вкл.</string>
+    <string name="chip_off">Выкл.</string>
+    <string name="setting_low_latency">Низкая задержка</string>
+    <string name="setting_low_latency_desc">Декодировать звук с низкой задержкой; расходует больше энергии и ресурсов процессора</string>
+    <string name="setting_scheduled_output_buffer_release">Выравнивание кадров</string>
+    <string name="setting_scheduled_output_buffer_release_desc">Планировать вывод каждого декодированного кадра на VSYNC, соответствующий его метке времени</string>
+    <string name="setting_audio_delay">Переопределить задержку звука</string>
+    <string name="setting_audio_delay_desc">Задать свою задержку звука, сообщаемую источнику</string>
+    <string name="audio_delay_value">%d мс</string>
+    <string name="setting_audio_auto_buffer">Автоматический размер программного буфера звука</string>
+    <string name="setting_audio_auto_buffer_desc">Подстраивать программный буфер звука под состояние сети и производительность устройства; ползунок задаёт, какой джиттер может поглотить буфер</string>
+    <string name="audio_adaptive_value">%1$d%% (%2$s)</string>
+    <string-array name="audio_adaptive_step_names">
+        <item>Минимальная задержка</item>
+        <item>Низкая задержка</item>
+        <item>Баланс</item>
+        <item>Высокая стабильность</item>
+        <item>Максимальная стабильность</item>
+    </string-array>
+    <string name="setting_audio_cushion_ms">Программный буфер звука (мс)</string>
+    <string name="setting_audio_cushion_ms_desc">Буфер поглощает джиттер сети и декодера: меньше — ниже задержка, больше — меньше сбоев</string>
+    <string name="setting_oboe_buffer_frames">Аппаратный буфер вывода (кадры)</string>
+    <string name="setting_oboe_buffer_frames_desc">Буфер потока между приложением и аудиоустройством, поглощает только джиттер планирования процессора. Оставьте 0 для автоматического размера.</string>
+    <string name="setting_debug_overlay">Показывать отладочные данные</string>
+    <string name="setting_debug_overlay_desc">Показывать поверх видео статистику потока: кодек, FPS, битрейт, джиттер, кадры, пропуски</string>
+    <string name="setting_benchmark_log">Включить отладочный журнал</string>
+    <string name="setting_benchmark_log_desc">Записывать в logcat статистику потока: кодек, FPS, битрейт, джиттер, кадры, пропуски</string>
+
+    <!-- Debug overlay -->
+    <string name="debug_section_video">Видео</string>
+    <string name="debug_section_audio">Звук</string>
+    <string name="debug_section_network">Сеть</string>
+    <string name="debug_video">%1$s %2$s</string>
+    <string name="debug_fps_bitrate">FPS: %1$d  Битрейт: %2$s</string>
+    <string name="debug_frames_drops">Кадры: %1$d  Пропуски: %2$d</string>
+    <string name="debug_jitter">Джиттер: %1$s</string>
+    <string name="debug_audio">%1$s  Приёмник: %2$d%%  Источник: %3$d%%</string>
+    <string name="debug_audio_buffer">Буфер: %1$d мс (цель: %2$d мс)</string>
+    <string name="debug_audio_glitch">Сбои: trim=%1$d drop=%2$d sil=%3$d ur=%4$d xrun=%5$d</string>
+    <string name="debug_audio_decode">Декодирование: %1$s</string>
+    <string name="debug_clients">Источники: %1$d</string>
+    <string name="remote_accessibility_label">Управление с пульта</string>
+    <string name="accessibility_service_description">Позволяет подключённым пультам Apple TV управлять телевизором.</string>
+    <string name="btn_disconnect">Отключить</string>
+    <string name="tv_scroll_hint">Для прокрутки используйте кнопки вверх и вниз.</string>
+</resources>

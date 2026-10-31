@@ -1,0 +1,12 @@
+Telik runs on your Android TV and works with the apps already on your iPhone.
+
+* Apple TV Remote in iPhone Control Center: touch area, click, back, play and pause
+* iPhone keyboard for standard Android text fields, including Cyrillic
+* AirPlay screen mirroring and audio from iPhone, iPad and Mac
+* A TV tile in Apple Home with power, volume and app inputs
+
+Protected video such as Apple TV+ and Netflix is not available over AirPlay. Telik does not decrypt DRM.
+
+Accessibility access is required to press remote buttons and to receive keyboard text. Telik has no analytics and no account.
+
+Not affiliated with or endorsed by Apple or Google.

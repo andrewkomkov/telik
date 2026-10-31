@@ -37,8 +37,7 @@ object KeyDispatcher {
         menuBindingButton = RemoteIdentityStore.getMenuButtonBinding(context)
         Log.i(TAG, "KeyDispatcher initialized: mode=$currentMode, menuBinding=$menuBindingButton")
 
-        // Pre-warm local ADB connection in background if mode is AUTO or ADB
-        if (currentMode == InjectionMode.AUTO || currentMode == InjectionMode.ADB) {
+        if (currentMode == InjectionMode.ADB) {
             LocalAdbDriver.init(context)
         }
     }
@@ -47,7 +46,7 @@ object KeyDispatcher {
         currentMode = mode
         RemoteIdentityStore.setInjectionMode(context, mode.key)
         Log.i(TAG, "InjectionMode updated to: $mode")
-        if (mode == InjectionMode.AUTO || mode == InjectionMode.ADB) {
+        if (mode == InjectionMode.ADB) {
             LocalAdbDriver.init(context)
         }
     }

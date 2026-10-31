@@ -667,6 +667,7 @@ async fn handle_companion(
     );
     let timeout_deadline = session.timeout_deadline();
     let mut disconnect_reason = "peer_closed".to_string();
+    let mut text_focus = crate::text_input::subscribe();
 
     const MAX_FRAME_LENGTH: usize = 2 * 1024 * 1024; // 2MB protection against malformed frames
 
@@ -683,16 +684,20 @@ async fn handle_companion(
 
         let mut header = [0u8; 4];
         tokio::select! {
-            res = reader.read_exact(&mut header) => {
-                match res {
-                    Ok(_) => {}
-                    Err(e) => {
-                        if e.kind() != std::io::ErrorKind::UnexpectedEof {
-                            disconnect_reason = format!("error:{e}");
-                        }
+            res = reader.readable() => {
+                if let Err(e) = res {
+                    disconnect_reason = format!("error:{e}");
+                    break;
+                }
+            }
+            event = text_focus.recv() => {
+                if let Ok(event) = event {
+                    if let Err(e) = session.push_text_focus(event).await {
+                        disconnect_reason = format!("error:{e}");
                         break;
                     }
                 }
+                continue;
             }
             _ = abort_rx.changed() => {
                 disconnect_reason = "superseded".to_string();
@@ -705,7 +710,14 @@ async fn handle_companion(
                     info!("companion connection from {peer} timed out without remote session; closing to free channel");
                     break;
                 }
+                continue;
             }
+        }
+        if let Err(e) = reader.read_exact(&mut header).await {
+            if e.kind() != std::io::ErrorKind::UnexpectedEof {
+                disconnect_reason = format!("error:{e}");
+            }
+            break;
         }
         let Some(frame_type) = FrameType::from_u8(header[0]) else {
             disconnect_reason = format!("error:unknown frame type {}", header[0]);
