@@ -1,0 +1,1 @@
+Screen mirroring and its sound now use AirPlay 2 pairing and encryption. AirPlay no longer needs a code, so any device on your network can mirror to the TV. Legacy AirPlay pairing is removed.

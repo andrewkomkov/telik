@@ -24,7 +24,10 @@ Homebridge, server or iPhone app.
 
 - Protected video such as Apple TV+ and Netflix is not available over AirPlay. Telik does not
   decrypt DRM. Use those apps on the TV.
-- AirPlay uses the UxPlay "legacy protocol". Apple may remove it in a future iOS release.
+- Screen mirroring and its sound use AirPlay 2 pairing and encryption. Multi-room audio is not available,
+  because PTP needs ports 319 and 320, and an app without root cannot open them.
+- AirPlay needs no code. Any device on your network can mirror to the TV.
+- Senders that support only legacy AirPlay pairing cannot connect.
 - Siri itself does not run on the TV. The side button starts Android voice search.
 - Waking the TV from the iPhone needs a TV that keeps networking on in standby.
 - An Android app cannot be made a system app without root, so it can be uninstalled.

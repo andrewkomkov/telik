@@ -1,7 +1,7 @@
 # AirPlay 2 plan for Telik 2.0
 
-Telik 1.x mirrors through the UxPlay legacy protocol. Telik 2.0 moves to the modern AirPlay 2 pairing
-and channel. Legacy stays as a runtime fallback until the new path works.
+Telik 2.0 mirrors with AirPlay 2 pairing and the encrypted channel. Legacy pairing and the code option
+are removed. The app is not a full AirPlay 2 receiver: it has no PTP and no multi-room audio.
 
 Protected video stays out of scope. Telik does not decrypt DRM.
 
@@ -37,7 +37,7 @@ The 9-byte body is `00 01 00 06 01 01 13 01 10`: method, state and the transient
 
 Stage 2 passed on the TV on 2026-10-31 with a `pyatv` client, `check_transient.py`. The client finished transient pairing and read `/info` on the encrypted channel. An iPhone and an iMac then finished the same pairing without a code.
 
-The code for stage 2 is on the branch `airplay2-probe`. It uses `pair_ap` and OpenSSL. It does not add libsodium.
+The pairing code uses `pair_ap` and OpenSSL. It does not add libsodium.
 
 Stage 3 passed on 2026-10-31 with an iPhone 18,4 on iOS 27.2. The screen showed video. The log shows 1801 decrypted frames in 34 seconds and no decryption errors. The sender was on the new channel for the full test.
 
@@ -59,7 +59,8 @@ Video uses ChaCha20-Poly1305:
 - The iPhone still calls `fp-setup`. The video key does not use its result.
 - Nothing public describes how iOS at sender version 980 selects a protocol.
 - `combinedGetInfoWithControlSetup` has no public description.
-- PTP uses ports 319 and 320. An Android app may not be able to bind them.
+- PTP uses ports 319 and 320. On the test TV `ip_unprivileged_port_start` is 1024, so an app without root cannot bind them.
+- The stage 4 realtime audio works. Buffered audio (type 103) and removal of `fp-setup` are not tested.
 
 ## References
 
