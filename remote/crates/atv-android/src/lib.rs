@@ -249,6 +249,45 @@ pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_
     }
 }
 
+static HOMEKIT_MDNS: Lazy<Mutex<Option<mdns_sd::ServiceDaemon>>> = Lazy::new(|| Mutex::new(None));
+
+fn advertise_homekit(name: &str, ip: &str, port: u16, txt: &str) -> Result<(), mdns_sd::Error> {
+    let mut current = HOMEKIT_MDNS.lock().unwrap();
+    if let Some(old) = current.take() {
+        let _ = old.shutdown();
+    }
+    let properties: Vec<(&str, &str)> = txt.lines().filter_map(|line| line.split_once('=')).collect();
+    let info = mdns_sd::ServiceInfo::new("_hap._tcp.local.", name, "telik-homekit.local.", ip, port, &properties[..])?;
+    let daemon = mdns_sd::ServiceDaemon::new()?;
+    daemon.register(info)?;
+    *current = Some(daemon);
+    Ok(())
+}
+
+#[no_mangle]
+pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_RemoteNative_nativeAdvertiseHomeKit(
+    mut env: JNIEnv,
+    _class: JClass,
+    name: JString,
+    ip: JString,
+    port: jint,
+    txt: JString,
+) -> jboolean {
+    let name: String = env.get_string(&name).map(Into::into).unwrap_or_default();
+    let ip: String = env.get_string(&ip).map(Into::into).unwrap_or_default();
+    let txt: String = env.get_string(&txt).map(Into::into).unwrap_or_default();
+    match advertise_homekit(&name, &ip, port as u16, &txt) {
+        Ok(()) => {
+            info!("HomeKit advertised on {ip}:{port}");
+            JNI_TRUE
+        }
+        Err(e) => {
+            error!("HomeKit advertisement failed: {e}");
+            JNI_FALSE
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_RemoteNative_nativeSetTextFocus(
     mut env: JNIEnv,

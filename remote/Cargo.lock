@@ -27,6 +27,7 @@ version = "0.1.0"
 dependencies = [
  "atv-core",
  "jni",
+ "mdns-sd",
  "once_cell",
  "tokio",
  "tracing",

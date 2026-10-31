@@ -6,7 +6,7 @@ import android.os.Build
 import java.net.Inet4Address
 import java.net.NetworkInterface
 
-internal object LocalNetworkAddress {
+object LocalNetworkAddress {
     fun get(context: Context): String? {
         // 1. Try ConnectivityManager on API 23+
         try {

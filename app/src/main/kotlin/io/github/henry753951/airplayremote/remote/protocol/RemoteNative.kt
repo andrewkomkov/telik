@@ -30,4 +30,5 @@ object RemoteNative {
     external fun nativeStopServer()
     external fun nativeIsRunning(): Boolean
     external fun nativeSetTextFocus(focused: Boolean, text: String)
+    external fun nativeAdvertiseHomeKit(name: String, ip: String, port: Int, txt: String): Boolean
 }
