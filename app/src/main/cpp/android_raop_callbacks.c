@@ -34,7 +34,6 @@ void android_callbacks_init(android_callback_ctx_t *ctx, JNIEnv *env, jobject ca
     (*env)->GetJavaVM(env, &ctx->jvm);
     ctx->callback_obj = (*env)->NewGlobalRef(env, callback_obj);
     ctx->h265_enabled = 1;
-    ctx->require_pin = 0;
     ctx->registered_count = 0;
     ctx->audio_engine = NULL;
     memset(ctx->registered_keys, 0, sizeof(ctx->registered_keys));
@@ -58,7 +57,6 @@ void android_callbacks_init(android_callback_ctx_t *ctx, JNIEnv *env, jobject ca
     ctx->on_conn_init = (*env)->GetMethodID(env, cls, "onConnectionInit", "()V");
     ctx->on_conn_destroy = (*env)->GetMethodID(env, cls, "onConnectionDestroy", "()V");
     ctx->on_conn_reset = (*env)->GetMethodID(env, cls, "onConnectionReset", "(I)V");
-    ctx->on_display_pin = (*env)->GetMethodID(env, cls, "onDisplayPin", "(Ljava/lang/String;)V");
     ctx->on_metadata = (*env)->GetMethodID(env, cls, "onMetadata", "([B)V");
     ctx->on_coverart = (*env)->GetMethodID(env, cls, "onCoverArt", "([B)V");
     ctx->on_progress = (*env)->GetMethodID(env, cls, "onProgress", "(JJJ)V");
@@ -180,19 +178,6 @@ static void _video_report_size(void *cls, float *w_src, float *h_src, float *w, 
                            (jfloat)*w_src, (jfloat)*h_src, (jfloat)*w, (jfloat)*h);
 }
 
-static void _display_pin(void *cls, char *pin) {
-    android_callback_ctx_t *ctx = (android_callback_ctx_t *)cls;
-
-    /* certain senders trigger pair-pin-start even when we advertise no auth */
-    if (!ctx->require_pin) return;
-
-    JNIEnv *env = _get_env(ctx);
-    if (!env) return;
-    jstring jpin = (*env)->NewStringUTF(env, pin);
-    (*env)->CallVoidMethod(env, ctx->callback_obj, ctx->on_display_pin, jpin);
-    (*env)->DeleteLocalRef(env, jpin);
-}
-
 /* Stubs for less critical callbacks */
 static void _noop(void *cls) { (void)cls; }
 static void _video_pause(void *cls) { LOGI("video_pause"); }
@@ -280,25 +265,6 @@ static void _mirror_video_running(void *cls, bool running) {
     LOGI("mirror running: %d", running);
     (*env)->CallVoidMethod(env, ctx->callback_obj, ctx->on_mirror_running, (jboolean)running);
 }
-static void _register_client(void *cls, const char *device_id, const char *pk_str, const char *name) {
-    android_callback_ctx_t *ctx = (android_callback_ctx_t *)cls;
-    (void)device_id; (void)name;
-    if (ctx->registered_count >= 16) return;
-    for (int i = 0; i < ctx->registered_count; i++) {
-        if (ctx->registered_keys[i] && strcmp(ctx->registered_keys[i], pk_str) == 0) return;
-    }
-    ctx->registered_keys[ctx->registered_count++] = strdup(pk_str);
-    LOGI("registered client pk (slot %d)", ctx->registered_count);
-}
-
-static bool _check_register(void *cls, const char *pk_str) {
-    android_callback_ctx_t *ctx = (android_callback_ctx_t *)cls;
-    for (int i = 0; i < ctx->registered_count; i++) {
-        if (ctx->registered_keys[i] && strcmp(ctx->registered_keys[i], pk_str) == 0) return true;
-    }
-    return false;
-}
-
 /* --- AirPlay Video (HLS) playback callbacks --- */
 
 static void _video_play(void *cls, const char *location, const float start_position) {
@@ -412,7 +378,6 @@ void android_callbacks_fill(raop_callbacks_t *cbs, android_callback_ctx_t *ctx) 
     cbs->audio_get_format = _audio_get_format;
     cbs->video_report_size = _video_report_size;
     cbs->mirror_video_running = _mirror_video_running;
-    cbs->display_pin = _display_pin;
     cbs->video_set_codec = _video_set_codec;
     cbs->on_video_play = _video_play;
     cbs->on_video_wait_ready = _video_wait_ready;
@@ -421,8 +386,4 @@ void android_callbacks_fill(raop_callbacks_t *cbs, android_callback_ctx_t *ctx) 
     cbs->on_video_stop = _video_stop;
     cbs->on_video_acquire_playback_info = _video_acquire_playback_info;
     cbs->on_video_playlist_remove = _video_playlist_remove;
-    if (ctx->require_pin) {
-        cbs->check_register = _check_register;
-        cbs->register_client = _register_client;
-    }
 }

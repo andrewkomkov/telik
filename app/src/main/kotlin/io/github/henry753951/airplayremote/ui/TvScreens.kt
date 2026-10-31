@@ -782,7 +782,6 @@ private fun TvGuidePage(
 @Composable
 private fun TvCastGuide(viewModel: MainViewModel, onBack: () -> Unit, go: (TvPage) -> Unit) {
     val serverName by viewModel.pref(Prefs.SERVER_NAME).collectAsState()
-    val requirePin by viewModel.pref(Prefs.REQUIRE_PIN).collectAsState()
     TvGuidePage(
         title = stringResource(R.string.tv_cast_guide_title),
         lead = stringResource(R.string.tv_cast_guide_lead),
@@ -791,7 +790,7 @@ private fun TvCastGuide(viewModel: MainViewModel, onBack: () -> Unit, go: (TvPag
             stringResource(R.string.tv_cast_step_mirror),
             stringResource(R.string.tv_cast_step_pick, serverName),
         ),
-        note = stringResource(if (requirePin) R.string.tv_cast_note_pin else R.string.tv_cast_note_mac),
+        note = stringResource(R.string.tv_cast_note_mac),
         actions = listOf(stringResource(R.string.tv_cast_guide_rename) to { go(TvPage.GENERAL) }),
         onBack = onBack,
         art = { TvCastArt() }
@@ -1170,7 +1169,6 @@ private fun generalItems(viewModel: MainViewModel, onRename: () -> Unit): List<T
     val autoLaunch = launchOnConnect && hasOverlayPermission
     return listOf(
         TvItem(stringResource(R.string.tv_name), stringResource(R.string.tv_name_desc), value = serverName, onClick = onRename),
-        toggle(viewModel, Prefs.REQUIRE_PIN, R.string.tv_require_pin, R.string.tv_require_pin_desc),
         TvItem(
             stringResource(R.string.setting_launch_on_connect),
             stringResource(
@@ -1450,43 +1448,20 @@ private fun GrayRow(levels: List<Int>, surround: Color, modifier: Modifier) {
 
 // ---- pairing ----
 
-internal enum class TvPairing { AIRPLAY, REMOTE }
-
-// a second request waits for the first screen to finish, so two dialogs never fight over focus
 @Composable
 internal fun TvPinOverlays(
-    airPlayPin: String?,
     remotePin: String?,
-    airPlaySucceeded: () -> Boolean,
     remoteSucceeded: () -> Boolean,
-    onDismissAirPlay: () -> Unit,
     onDismissRemote: () -> Unit
 ) {
-    var owner by remember { mutableStateOf<TvPairing?>(null) }
-    LaunchedEffect(owner, airPlayPin, remotePin) {
-        if (owner == null) {
-            owner = when {
-                airPlayPin != null -> TvPairing.AIRPLAY
-                remotePin != null -> TvPairing.REMOTE
-                else -> null
-            }
-        }
-    }
-    when (owner) {
-        TvPairing.AIRPLAY -> key(TvPairing.AIRPLAY) {
-            TvPinOverlay(TvPairing.AIRPLAY, airPlayPin, airPlaySucceeded, onDismissAirPlay) { owner = null }
-        }
-        TvPairing.REMOTE -> key(TvPairing.REMOTE) {
-            TvPinOverlay(TvPairing.REMOTE, remotePin, remoteSucceeded, onDismissRemote) { owner = null }
-        }
-        null -> {}
-    }
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(remotePin) { if (remotePin != null) shown = true }
+    if (shown) TvPinOverlay(remotePin, remoteSucceeded, onDismissRemote) { shown = false }
 }
 
 // keeps the last code up through a short "done" beat, only when that service reports success
 @Composable
 private fun TvPinOverlay(
-    kind: TvPairing,
     pin: String?,
     succeeded: () -> Boolean,
     onDismiss: () -> Unit,
@@ -1532,16 +1507,11 @@ private fun TvPinOverlay(
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // which service is asking matters: the two codes are entered in different places
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (kind == TvPairing.AIRPLAY) {
-                        AirPlayMark(24.dp, TvMuted)
-                    } else {
-                        Icon(Icons.Default.SettingsRemote, null, Modifier.size(26.dp), tint = TvMuted)
-                    }
+                    Icon(Icons.Default.SettingsRemote, null, Modifier.size(26.dp), tint = TvMuted)
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        stringResource(if (kind == TvPairing.AIRPLAY) R.string.tv_service_airplay else R.string.tv_remote_enable),
+                        stringResource(R.string.tv_remote_enable),
                         color = TvMuted, fontSize = 18.sp
                     )
                 }
@@ -1551,7 +1521,6 @@ private fun TvPinOverlay(
                         stringResource(
                             when {
                                 !done -> R.string.tv_pair_title
-                                kind == TvPairing.AIRPLAY -> R.string.tv_paired
                                 else -> R.string.tv_remote_paired
                             }
                         ),
@@ -1568,7 +1537,7 @@ private fun TvPinOverlay(
                 Spacer(Modifier.height(36.dp))
                 val hintAlpha by animateFloatAsState(if (paired) 0f else 1f, tween(160), label = "hint")
                 Text(
-                    stringResource(if (kind == TvPairing.AIRPLAY) R.string.tv_pair_hint else R.string.tv_remote_pair_hint),
+                    stringResource(R.string.tv_remote_pair_hint),
                     color = TvMuted, fontSize = 18.sp,
                     modifier = Modifier.graphicsLayer { alpha = hintAlpha }
                 )

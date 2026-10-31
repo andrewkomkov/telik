@@ -1,13 +1,11 @@
 diff --git a/lib/global.h b/lib/global.h
-index 03f2dcb..064348c 100644
+index 03f2dcb..58975f6 100644
 --- a/lib/global.h
 +++ b/lib/global.h
-@@ -22 +22,4 @@
+@@ -22 +22,2 @@
 -#define GLOBAL_VERSION  "220.68"
-+/* The advertised version selects the protocol that a sender uses. See telik_hk.h. */
-+const char *telik_version(void);
-+const char *telik_server_name(void);
-+#define GLOBAL_VERSION  telik_version()
++/* This version makes a sender use AirPlay 2 pairing. */
++#define GLOBAL_VERSION  "366.0"
 diff --git a/lib/httpd.c b/lib/httpd.c
 index 56a3742..572512e 100644
 --- a/lib/httpd.c
@@ -63,7 +61,7 @@ index 72cc137..6d11a01 100644
 +    void  (*conn_reply_sent)(void *ptr);
 +#endif
 diff --git a/lib/raop.c b/lib/raop.c
-index 07564e1..7293bff 100644
+index 07564e1..37abbd6 100644
 --- a/lib/raop.c
 +++ b/lib/raop.c
 @@ -17,0 +18,3 @@
@@ -98,7 +96,7 @@ index 07564e1..7293bff 100644
 +#endif
 @@ -404,0 +431,11 @@ conn_request(void *ptr, http_request_t *request, http_response_t **response) {
 +#ifdef TELIK_AIRPLAY2
-+    if (telik_airplay2_enabled() && !strcmp(method, "POST") && http_request_get_header(request, "X-Apple-HKP")) {
++    if (!strcmp(method, "POST") && http_request_get_header(request, "X-Apple-HKP")) {
 +        if (!strcmp(url, "/pair-pin-start")) {
 +            handler = &raop_handler_hk_pin_start;
 +        } else if (!strcmp(url, "/pair-setup")) {
@@ -108,15 +106,21 @@ index 07564e1..7293bff 100644
 +    if (handler) {
 +    } else
 +#endif
-@@ -488 +525 @@ conn_request(void *ptr, http_request_t *request, http_response_t **response) {
--        http_response_add_header(*response, "Server", "AirTunes/"GLOBAL_VERSION);
-+        http_response_add_header(*response, "Server", telik_server_name());
-@@ -551,0 +589,4 @@ conn_destroy(void *ptr) {
+@@ -409,8 +445,0 @@ conn_request(void *ptr, http_request_t *request, http_response_t **response) {
+-            } else if (!strcmp(url, "/pair-pin-start")) {
+-                handler = &raop_handler_pairpinstart;
+-            } else if (!strcmp(url, "/pair-setup-pin")) {
+-                handler = &raop_handler_pairsetup_pin;
+-            } else if (!strcmp(url, "/pair-setup")) {
+-                handler = &raop_handler_pairsetup;
+-            } else if (!strcmp(url, "/pair-verify")) {
+-                handler = &raop_handler_pairverify;
+@@ -551,0 +581,4 @@ conn_destroy(void *ptr) {
 +#ifdef TELIK_AIRPLAY2
 +    telik_hk_free(conn->hk);
 +    conn->hk = NULL;
 +#endif
-@@ -690,0 +732,5 @@ raop_init2(raop_t *raop, int nohold, const char *device_id, const char *keyfile)
+@@ -690,0 +724,5 @@ raop_init2(raop_t *raop, int nohold, const char *device_id, const char *keyfile)
 +#ifdef TELIK_AIRPLAY2
 +    httpd_cbs.conn_decrypt = &conn_decrypt;
 +    httpd_cbs.conn_encrypt = &conn_encrypt;

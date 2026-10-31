@@ -15,9 +15,6 @@ extern "C" {
 #include "pairing.h"
 #include "android_raop_callbacks.h"
 #include "android_dnssd_shim.h"
-extern "C" {
-#include "telik_hk.h"
-}
 }
 
 #include "audio_engine.h"
@@ -50,7 +47,7 @@ JNIEXPORT jlong JNICALL
 Java_io_github_henry753951_airplayremote_airplay_bridge_NativeBridge_nativeInit(
         JNIEnv *env, jobject thiz,
         jobject callback, jbyteArray hwAddr, jstring name, jstring keyFile,
-        jboolean nohold, jboolean requirePin) {
+        jboolean nohold) {
 
     server_ctx_t *ctx = new server_ctx_t();
 
@@ -59,7 +56,6 @@ Java_io_github_henry753951_airplayremote_airplay_bridge_NativeBridge_nativeInit(
     env->GetByteArrayRegion(hwAddr, 0, hw_len, (jbyte *)ctx->hw_addr);
 
     android_callbacks_init(&ctx->cb_ctx, env, callback);
-    ctx->cb_ctx.require_pin = requirePin ? 1 : 0;
     android_callbacks_fill(&ctx->callbacks, &ctx->cb_ctx);
 
     ctx->raop = raop_init(&ctx->callbacks);
@@ -88,22 +84,9 @@ Java_io_github_henry753951_airplayremote_airplay_bridge_NativeBridge_nativeInit(
         LOGE("raop_init2 failed: %d", ret);
     }
 
-    telik_airplay2_set_enabled(requirePin ? 0 : 1);
-
-    if (requirePin) {
-        /* avoid UxPlay's random-PIN retry path: use one random PIN for this server run */
-        int pin = random_pin();
-        if (pin < 0) {
-            LOGE("Failed to generate random pin");
-            pin = 1234;
-        }
-        raop_set_plist(ctx->raop, "pin", pin + 10000);
-    }
-
     /* shim dnssd_init only builds txt records; kotlin does the actual nsd registration */
     int dns_err = 0;
-    unsigned char pin_pw = requirePin ? 1 : 0;
-    ctx->dnssd = dnssd_init(name_c, (int)strlen(name_c), ctx->hw_addr, 6, &dns_err, pin_pw);
+    ctx->dnssd = dnssd_init(name_c, (int)strlen(name_c), ctx->hw_addr, 6, &dns_err, 0);
     if (!ctx->dnssd) {
         LOGE("dnssd_init failed: %d", dns_err);
     } else {

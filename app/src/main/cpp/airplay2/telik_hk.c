@@ -12,24 +12,6 @@
 #define STREAM_TAG_SIZE 16
 #define STREAM_KEY_SIZE 32
 
-static int airplay2_enabled = 1;
-
-void telik_airplay2_set_enabled(int enabled) {
-    airplay2_enabled = enabled;
-}
-
-int telik_airplay2_enabled(void) {
-    return airplay2_enabled;
-}
-
-const char *telik_version(void) {
-    return airplay2_enabled ? "366.0" : "220.68";
-}
-
-const char *telik_server_name(void) {
-    return airplay2_enabled ? "AirTunes/366.0" : "AirTunes/220.68";
-}
-
 struct telik_hk {
     char *device_id;
     struct pair_setup_context *setup;

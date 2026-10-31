@@ -81,7 +81,6 @@ class MainViewModel @Inject constructor(app: Application) : AndroidViewModel(app
     private val prefs = app.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
     private val logFile = File(app.filesDir, "airplay_logs.txt")
     private var service: AirPlayService? = null
-    fun pairingSucceeded(): Boolean = service?.pairingSucceeded == true
     val dacpPlayer: Player? get() = service?.dacpPlayer
 
     fun audioScanBegin(forward: Boolean) {
@@ -101,8 +100,6 @@ class MainViewModel @Inject constructor(app: Application) : AndroidViewModel(app
     private val _connectionCount = MutableStateFlow(0)
     val connectionCount: StateFlow<Int> = _connectionCount.asStateFlow()
 
-    private val _pinCode = MutableStateFlow<String?>(null)
-    val pinCode: StateFlow<String?> = _pinCode.asStateFlow()
 
     private val _videoAspect = MutableStateFlow(16f / 9f)
     val videoAspect: StateFlow<Float> = _videoAspect.asStateFlow()
@@ -369,14 +366,6 @@ class MainViewModel @Inject constructor(app: Application) : AndroidViewModel(app
         val svc = service ?: return
         if (_videoDownloadProgress.value != null) svc.videoDownloader.cancel() else svc.downloadVideo()
         showVideoOverlay()
-    }
-
-    fun dismissPin() {
-        _pinCode.value = null
-    }
-
-    fun showPin(pin: String?) {
-        _pinCode.value = pin
     }
 
     fun updateFromService() {

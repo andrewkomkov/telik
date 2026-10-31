@@ -13,8 +13,7 @@ object NativeBridge {
         hwAddr: ByteArray,
         name: String,
         keyFile: String,
-        nohold: Boolean,
-        requirePin: Boolean
+        nohold: Boolean
     ): Long
 
     external fun nativeStart(handle: Long, port: Int): Int

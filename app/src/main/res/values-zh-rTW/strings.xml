@@ -57,7 +57,6 @@
     <string name="tv_cast_step_open">在 iPhone 或 iPad 上開啟「控制中心」；在 Mac 上，從選單列開啟「控制中心」。</string>
     <string name="tv_cast_step_mirror">選擇「螢幕鏡像輸出」。</string>
     <string name="tv_cast_step_pick">從清單中選擇「%1$s」。</string>
-    <string name="tv_cast_note_pin">連線時，請在裝置上輸入電視顯示的驗證碼。傳送裝置需要與電視連上同一個網路。</string>
     <string name="tv_cast_note_mac">傳送裝置需要與電視連上同一個網路。在 Mac 上，可於「系統設定」›「顯示器」選擇鏡像或延伸顯示。</string>
     <string name="tv_cast_guide_rename">名稱與驗證碼設定</string>
     <string name="tv_remote_guide_title">Apple TV 遙控器</string>
@@ -69,15 +68,11 @@
     <string name="tv_remote_guide_note">若控制中心沒有遙控器，可編輯控制中心並加入「Apple TV 遙控器」。若偏好方向按鈕，可在 iPhone 的「設定」›「輔助使用」›「Apple TV 遙控器」中開啟。</string>
     <string name="tv_remote_turn_on">開啟遙控器</string>
     <string name="tv_remote_guide_settings">遙控器設定</string>
-    <string name="tv_require_pin">連線時需要驗證碼</string>
     <string name="tv_advanced">進階設定</string>
     <string name="tv_logs_desc">查看接收服務的運作紀錄，協助排除問題。</string>
     <string name="tv_save">儲存</string>
     <string name="tv_cancel">取消</string>
     <string name="tv_pair_title">輸入驗證碼</string>
-    <string name="tv_pair_hint">請在 iPhone、iPad 或 Mac 上輸入此驗證碼</string>
-    <string name="tv_paired">已連線</string>
-    <string name="tv_service_airplay">AirPlay</string>
     <string name="tv_state_ready">就緒</string>
     <string name="tv_stage_connecting">正在連線</string>
     <string name="tv_state_connected">已連線</string>
@@ -103,7 +98,6 @@
     <string name="tv_name_error_empty">請輸入名稱</string>
     <string name="tv_name_error_long">名稱過長，請縮短至約 21 個中文字或 63 個英文字元以內</string>
     <string name="tv_name_error_control">名稱包含無法使用的字元</string>
-    <string name="tv_require_pin_desc">關閉時，同一網路上的任何裝置都能透過 AirPlay 2 投放到這台電視。開啟後，裝置需要輸入電視上顯示的 4 位數驗證碼，並使用舊版 AirPlay 協定。Apple TV 遙控器配對時一律需要驗證碼。</string>
     <string name="tv_color_range">色彩範圍</string>
     <string name="tv_color_range_desc">設定影像的黑色與白色範圍。若暗部呈現灰色，或暗部細節不易辨識，可嘗試其他設定，並搭配「灰階對照」確認。</string>
     <string name="tv_color_range_full">完整（0–255）</string>
@@ -123,8 +117,6 @@
     <string name="notification_channel">AirPlay 接收服務</string>
     <string name="notification_title">AirPlay 接收中</string>
     <string name="notification_text">已準備好接收 AirPlay 連線</string>
-    <string name="notification_pin_title">請輸入 AirPlay 驗證碼</string>
-    <string name="notification_pin_text">驗證碼：%1$s</string>
     <string name="stop_service">停止</string>
     <string name="tab_overview">投放畫面</string>
     <string name="tab_logs">診斷紀錄</string>
@@ -171,7 +163,6 @@
     <string name="scale_stretch">拉伸填滿</string>
     <string name="scale_crop">裁切填滿</string>
     <string name="scale_hundred_percent">100%</string>
-    <string name="dialog_pin_title">在裝置上輸入此 AirPlay 驗證碼</string>
     <string name="btn_ok">確定</string>
     <string name="btn_export">匯出</string>
     <string name="btn_clear">清除</string>
@@ -189,8 +180,6 @@
     <string name="setting_boot_auto_start_desc">電視開機後自動啟動接收服務，不需要手動開啟本 App。</string>
     <string name="setting_run_in_background">背景接收</string>
     <string name="setting_run_in_background_desc">離開本 App 後，仍持續接收 AirPlay 與遙控器連線。</string>
-    <string name="setting_require_pin">連線需要驗證碼</string>
-    <string name="setting_require_pin_desc">新連線需要輸入 4 位數驗證碼</string>
     <string name="setting_allow_new_conn">允許新裝置連線</string>
     <string name="setting_allow_new_conn_desc">投放期間若有其他裝置要求連線，將由新裝置接手，目前的投放會結束。</string>
     <string name="setting_idle_preview">待連線時顯示預覽</string>

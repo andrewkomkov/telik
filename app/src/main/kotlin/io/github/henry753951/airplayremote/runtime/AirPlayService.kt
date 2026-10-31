@@ -180,7 +180,6 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     lateinit var dacpPlayer: DacpPlayer
         private set
     private val _mainHandler = Handler(Looper.getMainLooper())
-    private val pinTimeout = Runnable { clearPin() }
     @Volatile private var _coverArtBytes: ByteArray? = null
     private var mediaSession: MediaSessionCompat? = null
     private var mediaReceiver: BroadcastReceiver? = null
@@ -198,13 +197,6 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
 
     var logCallback: ((String) -> Unit)? = null
 
-    @Volatile private var _lastPin: String? = null
-    @Volatile var pairingSucceeded = false; private set
-    var pinCallback: ((String?) -> Unit)? = null
-        set(value) {
-            field = value
-            value?.invoke(_lastPin)
-        }
 
     private fun log(msg: String) {
         Log.i(TAG, msg)
@@ -392,7 +384,6 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         val hwAddr = identity.hardwareAddress()
         val keyFile = filesDir.resolve("airplay.pem").absolutePath
         val nohold = prefs[Prefs.ALLOW_NEW_CONN]
-        val requirePin = prefs[Prefs.REQUIRE_PIN]
 
         // oboe's OpenSL ES backend (pre-AAudio devices, API < 27) can't discover native
         // rate / burst size itself; feed it AudioManager values so low-latency buffer
@@ -402,7 +393,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
             audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE)?.toIntOrNull() ?: 0,
             audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER)?.toIntOrNull() ?: 0
         )
-        nativeHandle = NativeBridge.nativeInit(this, hwAddr, effectiveName, keyFile, nohold, requirePin)
+        nativeHandle = NativeBridge.nativeInit(this, hwAddr, effectiveName, keyFile, nohold)
         if (nativeHandle == 0L) {
             log("Native init failed")
             _failStart()
@@ -537,7 +528,6 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     fun disconnectSession() {
         if (nativeHandle != 0L) NativeBridge.nativeDisconnect(nativeHandle)
         _endVideoPlayback("AirPlay session ended locally")
-        clearPin()
     }
 
     fun stopServer() {
@@ -582,7 +572,6 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         _durationMs.value = 0
         _serverState.value = ServerState.STOPPED
         _connectionCount.value = 0
-        clearPin()
         _clientVol = null
         _clientVolDriveEnd()
         _applyClientVol()
@@ -702,7 +691,6 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     override fun onVideoStop() = _endVideoPlayback("AirPlay Video stopped")
 
     override fun onAudioFormat(ct: Int, spf: Int, usingScreen: Boolean) {
-        clearPin(successful = true)
         audioRenderer.start()
         audioRenderer.setFormat(ct, spf)
         if (!usingScreen) {
@@ -717,7 +705,6 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     }
 
     override fun onVideoSize(srcW: Float, srcH: Float, w: Float, h: Float) {
-        clearPin(successful = true)
         if (w > 0 && h > 0) {
             _videoAspect.value = w / h
             _videoResolution.value = "${w.toInt()}x${h.toInt()}"
@@ -865,17 +852,6 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
 
     override fun onConnectionReset(reason: Int) {
         log("Connection reset: $reason")
-    }
-
-    override fun onDisplayPin(pin: String) {
-        if (_lastPin == pin) return
-        pairingSucceeded = false
-        _mainHandler.removeCallbacks(pinTimeout)
-        _mainHandler.postDelayed(pinTimeout, 120_000)
-        _lastPin = pin
-        pinCallback?.invoke(pin)
-        showSession()
-        _updateMediaNotification()
     }
 
     override fun onMetadata(data: ByteArray) {
@@ -1041,14 +1017,6 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         _mainHandler.post { dacpPlayer.refresh() }
     }
 
-    private fun clearPin(successful: Boolean = false) {
-        _mainHandler.removeCallbacks(pinTimeout)
-        pairingSucceeded = successful
-        _lastPin = null
-        pinCallback?.invoke(null)
-        _updateMediaNotification()
-    }
-
     fun collectDebugInfo() = DebugInfo(
         videoCodec = videoRenderer.codecName,
         videoRes = _videoResolution.value,
@@ -1125,13 +1093,8 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
                 builder.addAction(android.R.drawable.ic_media_next, "Next", _mediaAction(ACTION_NEXT))
             }
         } else {
-            if (_lastPin != null) {
-                builder.setContentTitle(getString(R.string.notification_pin_title))
-                    .setContentText(getString(R.string.notification_pin_text, _lastPin))
-            } else {
-                builder.setContentTitle(getString(R.string.app_name))
-                    .setContentText(prefs[Prefs.SERVER_NAME])
-            }
+            builder.setContentTitle(getString(R.string.app_name))
+                .setContentText(prefs[Prefs.SERVER_NAME])
         }
         return builder.build()
     }

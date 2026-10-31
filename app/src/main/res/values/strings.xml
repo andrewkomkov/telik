@@ -59,7 +59,6 @@
     <string name="tv_cast_step_open">On iPhone or iPad, open Control Center. On Mac, open Control Center from the menu bar.</string>
     <string name="tv_cast_step_mirror">Select Screen Mirroring.</string>
     <string name="tv_cast_step_pick">Choose “%1$s” from the list.</string>
-    <string name="tv_cast_note_pin">When asked, enter the code shown on this TV. Your device must be on the same network as this TV.</string>
     <string name="tv_cast_note_mac">Your device must be on the same network as this TV. On Mac, choose mirroring or extended display in System Settings › Displays.</string>
     <string name="tv_cast_guide_rename">Name and Code Settings</string>
     <string name="tv_remote_guide_title">Apple TV Remote</string>
@@ -71,15 +70,11 @@
     <string name="tv_remote_guide_note">If the remote isn’t in Control Center, edit Control Center and add Apple TV Remote. For directional buttons, go to iPhone Settings › Accessibility › Apple TV Remote.</string>
     <string name="tv_remote_turn_on">Turn On Remote</string>
     <string name="tv_remote_guide_settings">Remote Settings</string>
-    <string name="tv_require_pin">Require Code</string>
     <string name="tv_advanced">Advanced</string>
     <string name="tv_logs_desc">View the receiver’s activity log for troubleshooting.</string>
     <string name="tv_save">Save</string>
     <string name="tv_cancel">Cancel</string>
     <string name="tv_pair_title">Enter Code</string>
-    <string name="tv_pair_hint">Enter this code on your iPhone, iPad or Mac</string>
-    <string name="tv_paired">Connected</string>
-    <string name="tv_service_airplay">AirPlay</string>
     <string name="tv_state_ready">Ready</string>
     <string name="tv_stage_connecting">Connecting</string>
     <string name="tv_state_connected">Connected</string>
@@ -105,7 +100,6 @@
     <string name="tv_name_error_empty">Enter a name</string>
     <string name="tv_name_error_long">Name is too long. Use up to about 63 letters.</string>
     <string name="tv_name_error_control">Name contains characters that can’t be used</string>
-    <string name="tv_require_pin_desc">When off, anyone on your network can mirror to this TV over AirPlay 2. When on, devices enter the 4-digit code shown on this TV and use the older AirPlay protocol. Apple TV Remote pairing always requires a code.</string>
     <string name="tv_color_range">Color Range</string>
     <string name="tv_color_range_desc">Sets the black and white levels of the picture. If dark areas look gray, or shadow detail is hard to see, try another setting and check it with Grayscale Reference.</string>
     <string name="tv_color_range_full">Full (0–255)</string>
@@ -127,8 +121,6 @@
     <string name="notification_channel">AirPlay Service</string>
     <string name="notification_title">AirPlay Server Running</string>
     <string name="notification_text">Accepting AirPlay connections</string>
-    <string name="notification_pin_title">AirPlay PIN Required</string>
-    <string name="notification_pin_text">PIN: %1$s</string>
     <string name="stop_service">Stop</string>
 
     <!-- Tabs -->
@@ -189,7 +181,6 @@
     <string name="scale_hundred_percent">100%</string>
 
     <!-- Dialogs -->
-    <string name="dialog_pin_title">AirPlay PIN</string>
     <string name="btn_ok">OK</string>
 
     <!-- Logs screen -->
@@ -215,8 +206,6 @@
     <string name="setting_run_in_background_desc">Keep receiving AirPlay and remote connections after you leave this app.</string>
 
     <!-- Settings: Connection -->
-    <string name="setting_require_pin">Require Code</string>
-    <string name="setting_require_pin_desc">Require a 4-digit code for each new connection</string>
     <string name="setting_allow_new_conn">Allow New Connections</string>
     <string name="setting_allow_new_conn_desc">If another device connects during casting, it takes over and the current session ends.</string>
 

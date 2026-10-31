@@ -106,15 +106,11 @@ fun MainScreen(
     val tvDevice = isTv()
     var tab by remember { mutableStateOf(Tab.OVERVIEW) }
     var fullscreen by remember { mutableStateOf(false) }
-    val pin by viewModel.pinCode.collectAsState()
     val remotePin by RemoteState.pin.collectAsState()
-    // one pairing screen at a time, shared by AirPlay and the Apple TV Remote
     val tvPins: @Composable () -> Unit = {
         TvPinOverlays(
-            airPlayPin = pin, remotePin = remotePin,
-            airPlaySucceeded = { viewModel.pairingSucceeded() },
+            remotePin = remotePin,
             remoteSucceeded = { RemoteState.paired.value },
-            onDismissAirPlay = { viewModel.dismissPin() },
             onDismissRemote = { RemoteState.dismissPin() }
         )
     }
@@ -129,7 +125,7 @@ fun MainScreen(
             connected = connections > 0,
             // a pending video session is still loading; keep the stage up until it actually plays
             streaming = mirroringActive || videoPlaybackActive || audioOnly,
-            pinShowing = pin != null || remotePin != null
+            pinShowing = remotePin != null
         )
     } else null
     val autoFullscreen by viewModel.pref(Prefs.AUTO_FULLSCREEN).collectAsState()
@@ -146,10 +142,10 @@ fun MainScreen(
 
     // fullscreen only once mirroring reports a size: connections rise before the kind is known
     var prevMirroringActive by remember { mutableStateOf(false) }
-    LaunchedEffect(mirroringActive, audioOnly, videoPlaybackActive, pin, remotePin) {
+    LaunchedEffect(mirroringActive, audioOnly, videoPlaybackActive, remotePin) {
         val justStarted = !prevMirroringActive && mirroringActive
         prevMirroringActive = mirroringActive
-        if (justStarted && !audioOnly && !videoPlaybackActive && autoFullscreen && pin == null && remotePin == null) {
+        if (justStarted && !audioOnly && !videoPlaybackActive && autoFullscreen && remotePin == null) {
             fullscreen = true
         }
     }
@@ -534,8 +530,8 @@ fun MainScreen(
     }
 
     // exit fullscreen while a pin is being shown so the dialog isn't covered
-    LaunchedEffect(pin, remotePin) {
-        if (pin != null || remotePin != null) fullscreen = false
+    LaunchedEffect(remotePin) {
+        if (remotePin != null) fullscreen = false
     }
 
     if (fullscreen) {
@@ -612,25 +608,7 @@ fun MainScreen(
     castStage?.let { TvCastStageLayer(it, viewModel::disconnectSession) }
 
     // pin dialog
-    if (isTv()) {
-        tvPins()
-    } else if (pin != null) {
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissPin() },
-            title = { Text(stringResource(R.string.dialog_pin_title)) },
-            text = {
-                Text(
-                    text = pin!!,
-                    style = MaterialTheme.typography.displayMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { viewModel.dismissPin() }) { Text(stringResource(R.string.btn_ok)) }
-            }
-        )
-    }
+    if (isTv()) tvPins()
 
 }
 

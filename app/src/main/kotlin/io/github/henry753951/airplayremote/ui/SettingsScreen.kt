@@ -52,7 +52,6 @@ fun SettingsScreen(viewModel: MainViewModel) {
     val launchOnConnect by viewModel.pref(Prefs.LAUNCH_ON_CONNECT).collectAsState()
     val maxFps by viewModel.pref(Prefs.MAX_FPS).collectAsState()
     val overscanned by viewModel.pref(Prefs.OVERSCANNED).collectAsState()
-    val requirePin by viewModel.pref(Prefs.REQUIRE_PIN).collectAsState()
     val allowNewConn by viewModel.pref(Prefs.ALLOW_NEW_CONN).collectAsState()
     val usbOnly by viewModel.pref(Prefs.USB_ONLY).collectAsState()
     val autoStart by viewModel.pref(Prefs.AUTO_START).collectAsState()
@@ -132,13 +131,6 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 true to stringResource(R.string.chip_usb_only),
             ),
             onValueChange = { viewModel.set(Prefs.USB_ONLY, it) }
-        )
-
-        SettingSwitch(
-            title = stringResource(R.string.setting_require_pin),
-            description = stringResource(R.string.setting_require_pin_desc),
-            checked = requirePin,
-            onCheckedChange = { viewModel.set(Prefs.REQUIRE_PIN, it) }
         )
 
         SettingSwitch(

@@ -10,7 +10,6 @@
 #include "dnssd.h"
 #include "dnssdint.h"
 #include "global.h"
-#include "telik_hk.h"
 #include "utils.h"
 
 #define MAX_SERVNAME 256
@@ -80,12 +79,10 @@ dnssd_init(const char *name, int name_len, const char *hw_addr, int hw_addr_len,
     dnssd->hw_addr_len = hw_addr_len;
     dnssd->features1 = (uint32_t) strtoul(FEATURES_1, NULL, 16);
     dnssd->features2 = (uint32_t) strtoul(FEATURES_2, NULL, 16);
-    if (telik_airplay2_enabled()) {
-        /* Clear legacy pairing (27) and set HomeKit pairing (48). See docs/AIRPLAY2.md. */
-        dnssd->features1 &= ~((uint32_t) 1 << 27);
-        dnssd->features2 |= (uint32_t) 1 << (48 - 32);
-    }
-    dnssd->pin_pw = pin_pw;
+    /* Clear legacy pairing (27) and set HomeKit pairing (48). See docs/AIRPLAY2.md. */
+    dnssd->features1 &= ~((uint32_t) 1 << 27);
+    dnssd->features2 |= (uint32_t) 1 << (48 - 32);
+    dnssd->pin_pw = 0;
     strncpy(dnssd->codec_cn, RAOP_CN, sizeof(dnssd->codec_cn) - 1);
     return dnssd;
 }
@@ -177,17 +174,6 @@ dnssd_register_airplay(dnssd_t *dnssd, unsigned short port)
     _txt_set(rec, "deviceid", device_id);
     _txt_set(rec, "features", features);
 
-    if (!telik_airplay2_enabled())
-    switch (dnssd->pin_pw) {
-    case 1:
-    case 2:
-    case 3:
-        _txt_set(rec, "pw", "true");
-        break;
-    default:
-        _txt_set(rec, "pw", "false");
-        break;
-    }
     _txt_set(rec, "flags", "0x4");
     _txt_set(rec, "model", GLOBAL_MODEL);
     if (dnssd->pk) {

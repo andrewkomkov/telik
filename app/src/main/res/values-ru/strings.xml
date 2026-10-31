@@ -25,7 +25,6 @@
     <string name="tv_cast_step_open">На iPhone или iPad откройте Пункт управления. На Mac откройте его в строке меню.</string>
     <string name="tv_cast_step_mirror">Выберите «Повтор экрана».</string>
     <string name="tv_cast_step_pick">Выберите в списке «%1$s».</string>
-    <string name="tv_cast_note_pin">Если появится запрос, введите код с экрана телевизора. Устройство должно быть в той же сети.</string>
     <string name="tv_cast_note_mac">Устройство должно быть в той же сети. На Mac режим повтора или расширения выбирается в Системных настройках › Мониторы.</string>
     <string name="tv_cast_guide_rename">Имя и код</string>
     <string name="tv_remote_guide_title">Пульт Apple TV</string>
@@ -81,15 +80,11 @@
     <string name="tv_power_saving">Энергосбережение</string>
     <string name="tv_attn_permission">Нужно разрешение «Устройства поблизости»</string>
     <string name="tv_retry">Повторить</string>
-    <string name="tv_require_pin">Запрашивать код</string>
     <string name="tv_advanced">Дополнительно</string>
     <string name="tv_logs_desc">Журнал работы приёмника для поиска неполадок.</string>
     <string name="tv_save">Сохранить</string>
     <string name="tv_cancel">Отменить</string>
     <string name="tv_pair_title">Введите код</string>
-    <string name="tv_pair_hint">Введите этот код на iPhone, iPad или Mac</string>
-    <string name="tv_paired">Подключено</string>
-    <string name="tv_service_airplay">AirPlay</string>
     <string name="tv_state_ready">Готово</string>
     <string name="tv_stage_connecting">Подключение</string>
     <string name="tv_state_connected">Подключено</string>
@@ -115,7 +110,6 @@
     <string name="tv_name_error_empty">Введите имя</string>
     <string name="tv_name_error_long">Имя слишком длинное. Максимум около 30 русских или 63 латинских букв.</string>
     <string name="tv_name_error_control">В имени есть недопустимые символы</string>
-    <string name="tv_require_pin_desc">Если выключено, транслировать на телевизор по AirPlay 2 может любое устройство в вашей сети. Если включено, устройства вводят четырёхзначный код с экрана телевизора и работают по старому протоколу AirPlay. Для подключения пульта Apple TV код нужен всегда.</string>
     <string name="tv_color_range">Цветовой диапазон</string>
     <string name="tv_color_range_desc">Задаёт уровни чёрного и белого. Если тёмные области выглядят серыми или детали в тенях плохо видны, выберите другое значение и проверьте его по эталону оттенков серого.</string>
     <string name="tv_color_range_full">Полный (0–255)</string>
@@ -132,8 +126,6 @@
     <string name="notification_channel">Служба AirPlay</string>
     <string name="notification_title">Сервер AirPlay работает</string>
     <string name="notification_text">Принимает подключения AirPlay</string>
-    <string name="notification_pin_title">Нужен PIN-код AirPlay</string>
-    <string name="notification_pin_text">PIN-код: %1$s</string>
     <string name="stop_service">Остановить</string>
 
     <!-- Tabs -->
@@ -193,7 +185,6 @@
     <string name="scale_hundred_percent">100%</string>
 
     <!-- Dialogs -->
-    <string name="dialog_pin_title">PIN-код AirPlay</string>
     <string name="btn_ok">ОК</string>
 
     <!-- Logs screen -->
@@ -219,8 +210,6 @@
     <string name="setting_run_in_background_desc">Продолжать принимать подключения AirPlay и пульта после выхода из приложения.</string>
 
     <!-- Settings: Connection -->
-    <string name="setting_require_pin">Запрашивать код</string>
-    <string name="setting_require_pin_desc">Запрашивать четырёхзначный код при каждом новом подключении</string>
     <string name="setting_allow_new_conn">Разрешить новые подключения</string>
     <string name="setting_allow_new_conn_desc">Если во время трансляции подключится другое устройство, оно заменит текущее, и сеанс завершится.</string>
 

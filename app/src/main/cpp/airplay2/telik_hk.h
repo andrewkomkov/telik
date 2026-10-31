@@ -4,10 +4,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* Off when the TV requires a code: AirPlay 2 pairing here has no code. */
-void telik_airplay2_set_enabled(int enabled);
-int telik_airplay2_enabled(void);
-
 typedef struct telik_hk telik_hk_t;
 
 telik_hk_t *telik_hk_new(const char *device_id);
