@@ -1,0 +1,1 @@
+The iPhone remote now wakes a sleeping TV. Opening the remote or a press on it turns the screen on. Volume buttons do not wake the TV.

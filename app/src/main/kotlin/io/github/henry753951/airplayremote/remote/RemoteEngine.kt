@@ -1,5 +1,6 @@
 package io.github.henry753951.airplayremote.remote
 
+import dev.tvhomekit.HomeKitService
 import io.github.henry753951.airplayremote.remote.identity.RemoteIdentityStore
 import io.github.henry753951.airplayremote.platform.LocalNetworkAddress
 import io.github.henry753951.airplayremote.remote.input.KeyDispatcher
@@ -106,17 +107,41 @@ class RemoteEngine(
         RemoteState.mutablePaired.value = false
         RemoteState.mutableStatus.value = "stopped"
     }
-    override fun onButton(name: String) { if (enabled && !closed) KeyDispatcher.dispatchButton(name) }
+    override fun onButton(name: String) {
+        if (!enabled || closed) return
+        Log.i("RemoteEngine", "Button: $name")
+        if (!handlePowerButton(name)) KeyDispatcher.dispatchButton(name)
+    }
+
+    /** The first press on a sleeping TV only wakes it, as on an Apple TV. Volume does not wake it. */
+    private fun handlePowerButton(name: String): Boolean {
+        val tv = HomeKitService.tv ?: return false
+        if (tv.isAsleep) {
+            if (name in VOLUME_BUTTONS) return false
+            if (name != "sleep") tv.setActive(true)
+            return true
+        }
+        if (name == "sleep" || name == "power") {
+            tv.setActive(false)
+            return true
+        }
+        return name == "wake"
+    }
+
+    private fun wakeIfAsleep() {
+        HomeKitService.tv?.takeIf { it.isAsleep }?.setActive(true)
+    }
+
     override fun onTouch(dx: Double, dy: Double, phase: Int) {
+        if (phase == TOUCH_BEGAN) wakeIfAsleep()
         RemoteAccessibilityService.instance?.handleTouch(dx, dy, phase)
     }
     override fun onAudio(volume: Double, muted: Boolean) = Unit
     override fun onEvent(kind: String, detail: String) {
         if (!enabled || closed) return
-        if (kind == "ControlMessage" && detail.contains("_ti")) {
-            android.util.Log.i("AtvText", "iPhone: ${detail.take(120)}")
-        }
+        logEvent(kind, detail)
         when (kind) {
+            "RemoteReady" -> wakeIfAsleep()
             "ClientConnected", "ClientDisconnected" -> worker.post {
                 clients = (clients + if (kind == "ClientConnected") 1 else -1).coerceAtLeast(0)
                 RemoteState.mutableConnected.value = clients > 0
@@ -151,10 +176,22 @@ class RemoteEngine(
             }
         }
     }
+    /** Logs names only. Typed text stays out of the log. */
+    private fun logEvent(kind: String, detail: String) {
+        val name = if (kind == "ControlMessage") CONTROL_NAME.find(detail)?.groupValues?.get(1) else null
+        Log.i("RemoteEngine", if (name == null) "Event: $kind" else "Event: $kind $name")
+    }
+
     fun close() {
         closed = true
         enabled = false
         try { cm.unregisterNetworkCallback(callback) } catch (_: IllegalArgumentException) {}
         worker.post { stopNative(); thread.quitSafely() }
+    }
+
+    private companion object {
+        const val TOUCH_BEGAN = 1
+        val VOLUME_BUTTONS = setOf("volume_up", "volume_down", "mute")
+        val CONTROL_NAME = Regex("\"(?:_i|model)\": \"([^\"]+)\"")
     }
 }

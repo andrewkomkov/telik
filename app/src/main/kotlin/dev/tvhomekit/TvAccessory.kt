@@ -140,7 +140,9 @@ class TvAccessory internal constructor(context: Context, private val store: Stor
         )
     }
 
-    private fun setActive(on: Boolean) {
+    val isAsleep: Boolean get() = !power.isInteractive
+
+    fun setActive(on: Boolean) {
         Log.i(TAG, "Питание: $on")
         main.post { if (on) wakeScreen() else global(AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN) }
     }
