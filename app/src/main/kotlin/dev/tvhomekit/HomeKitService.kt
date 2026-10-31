@@ -14,7 +14,9 @@ import android.net.Network
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.net.wifi.WifiManager
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Base64
@@ -25,6 +27,7 @@ private const val TAG = "TvHomeKit"
 private const val CHANNEL = "homekit"
 private const val PORT = 51826
 private const val CATEGORY_TELEVISION = 31
+private const val RETRY_MS = 5_000L
 
 /** Держит сервер HomeKit живым: стартует с системой, переживает сон экрана и смену сети. */
 class HomeKitService : Service() {
@@ -33,6 +36,8 @@ class HomeKitService : Service() {
     private var configIndex = 1
     private var nsd: NsdManager? = null
     private var registration: NsdManager.RegistrationListener? = null
+    private var advertisePending = false
+    private val main = Handler(Looper.getMainLooper())
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
 
@@ -101,10 +106,24 @@ class HomeKitService : Service() {
         }
     }
 
+    /** NsdManager не даёт повторно зарегистрировать службу, пока старая не снята. */
     @Synchronized
     private fun advertise() {
         if (server == null) return
-        registration?.let { old -> runCatching { nsd?.unregisterService(old) } }
+        val current = registration
+        if (current == null) {
+            register()
+        } else if (!advertisePending) {
+            advertisePending = true
+            runCatching { nsd?.unregisterService(current) }.onFailure {
+                advertisePending = false
+                registration = null
+                register()
+            }
+        }
+    }
+
+    private fun register() {
         val info = NsdServiceInfo().apply {
             serviceName = "Телик"
             serviceType = "_hap._tcp"
@@ -126,10 +145,28 @@ class HomeKitService : Service() {
 
             override fun onRegistrationFailed(info: NsdServiceInfo, code: Int) {
                 Log.w(TAG, "Не удалось объявить службу: $code")
+                synchronized(this@HomeKitService) { registration = null }
+                main.postDelayed({ advertise() }, RETRY_MS)
             }
 
-            override fun onServiceUnregistered(info: NsdServiceInfo) = Unit
-            override fun onUnregistrationFailed(info: NsdServiceInfo, code: Int) = Unit
+            override fun onServiceUnregistered(info: NsdServiceInfo) {
+                synchronized(this@HomeKitService) {
+                    registration = null
+                    if (advertisePending) {
+                        advertisePending = false
+                        register()
+                    }
+                }
+            }
+
+            override fun onUnregistrationFailed(info: NsdServiceInfo, code: Int) {
+                Log.w(TAG, "Не удалось снять службу: $code")
+                synchronized(this@HomeKitService) {
+                    advertisePending = false
+                    registration = null
+                    register()
+                }
+            }
         }
         registration = listener
         nsd?.registerService(info, NsdManager.PROTOCOL_DNS_SD, listener)

@@ -1,0 +1,1 @@
+Fix the Apple Home service that could disappear from the network.
