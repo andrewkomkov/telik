@@ -685,6 +685,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         _videoTitle.value = ""
         _videoPlaybackActive.value = true
         airPlayVideoPlayer.play(location, startPositionSeconds)
+        showSession()
         // claim media-button routing for keys that arrive as media-session events
         mediaSession?.isActive = true
         log("AirPlay Video play: $location @ ${startPositionSeconds}s")
@@ -704,7 +705,10 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         clearPin(successful = true)
         audioRenderer.start()
         audioRenderer.setFormat(ct, spf)
-        if (!usingScreen) _setPlaying(true)
+        if (!usingScreen) {
+            _setPlaying(true)
+            showSession()
+        }
         if (!usingScreen && !_audioOnly.value) {
             // pure music streaming (not screen mirroring audio)
             _setAudioOnly(true)
@@ -817,17 +821,19 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         _clientVolDir = 0
     }
 
+    @Volatile
+    private var _sessionShown = false
+
     override fun onConnectionInit() {
-        val firstConnection = _connectionCount.value == 0
         _connectionCount.value++
         _mainHandler.post { updatePowerPolicy() }
         log("Sender connected (${_connectionCount.value})")
-        if (firstConnection && shouldLaunchOnConnect()) launchMainActivity()
     }
 
     override fun onConnectionDestroy() {
         _connectionCount.value = (_connectionCount.value - 1).coerceAtLeast(0)
         if (_connectionCount.value == 0) {
+            _sessionShown = false
             // clients may drop without POST /stop; must run before the poll-state reset
             _endVideoPlayback("AirPlay Video stopped (disconnect)")
             // last client gone: release audio output devices to save power
@@ -868,6 +874,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         _mainHandler.postDelayed(pinTimeout, 120_000)
         _lastPin = pin
         pinCallback?.invoke(pin)
+        showSession()
         _updateMediaNotification()
     }
 
@@ -914,7 +921,10 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     }
 
     override fun onMirrorRunning(running: Boolean) {
-        if (running) videoRenderer.startSession() else {
+        if (running) {
+            videoRenderer.startSession()
+            showSession()
+        } else {
             videoRenderer.stopSession()
             _mirroringActive.value = false
         }
@@ -1124,6 +1134,13 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
             }
         }
         return builder.build()
+    }
+
+    /** A bare TCP connection or an /info probe must not wake the TV or cover the current app. */
+    private fun showSession() {
+        if (_sessionShown) return
+        _sessionShown = true
+        if (shouldLaunchOnConnect()) launchMainActivity()
     }
 
     private fun launchMainActivity() {

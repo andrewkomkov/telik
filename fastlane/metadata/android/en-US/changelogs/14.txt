@@ -1,0 +1,1 @@
+A network connection without an AirPlay session no longer wakes the TV or opens the app.
