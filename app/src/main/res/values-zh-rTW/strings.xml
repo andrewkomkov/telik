@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Android TV AirPlay Hub</string>
+    <string name="app_name">Telik</string>
     <string name="tv_settings">設定</string>
     <string name="tv_now_playing">正在播放</string>
     <string name="tv_cd_previous">上一首</string>
