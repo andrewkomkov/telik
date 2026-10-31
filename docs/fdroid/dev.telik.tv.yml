@@ -15,7 +15,7 @@ Repo: https://github.com/andrewkomkov/telik.git
 
 Builds:
   - versionName: 1.0.6
-    versionCode: 14
+    versionCode: 15
     commit: v1.0.6
     subdir: app
     submodules: true
@@ -37,4 +37,4 @@ Builds:
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
 CurrentVersion: 1.0.6
-CurrentVersionCode: 14
+CurrentVersionCode: 15
