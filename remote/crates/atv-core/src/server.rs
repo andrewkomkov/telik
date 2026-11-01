@@ -13,6 +13,7 @@ use std::time::Duration;
 #[cfg(not(target_os = "macos"))]
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 use tokio::io::AsyncReadExt;
+use tokio::net::tcp::OwnedReadHalf;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{watch, Mutex};
 use tokio::task::JoinHandle;
@@ -613,6 +614,14 @@ async fn companion_loop(
     }
 }
 
+/// Waits until the connection has bytes or is closed, and does not read them.
+/// `readable()` can stay ready after `read_exact` used all bytes. The next read
+/// then blocks, and the session timeout, abort and text focus events do not run.
+async fn wait_for_data(reader: &mut OwnedReadHalf) -> std::io::Result<usize> {
+    let mut probe = [0u8; 1];
+    reader.peek(&mut probe).await
+}
+
 async fn handle_companion(
     stream: TcpStream,
     identity: DeviceIdentity,
@@ -684,7 +693,7 @@ async fn handle_companion(
 
         let mut header = [0u8; 4];
         tokio::select! {
-            res = reader.readable() => {
+            res = wait_for_data(&mut reader) => {
                 if let Err(e) = res {
                     disconnect_reason = format!("error:{e}");
                     break;
@@ -1241,4 +1250,41 @@ fn peer_string(stream: &TcpStream) -> String {
         .peer_addr()
         .map(|a: SocketAddr| a.to_string())
         .unwrap_or_else(|_| "?".into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio::io::AsyncWriteExt;
+
+    async fn pair() -> (OwnedReadHalf, TcpStream) {
+        let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).await.unwrap();
+        let client = TcpStream::connect(listener.local_addr().unwrap()).await.unwrap();
+        let (server, _) = listener.accept().await.unwrap();
+        (server.into_split().0, client)
+    }
+
+    #[tokio::test]
+    async fn stale_readiness_does_not_hide_an_idle_connection() {
+        let (mut reader, mut client) = pair().await;
+        client.write_all(&[1, 2, 3, 4]).await.unwrap();
+        let mut frame = [0u8; 4];
+        reader.read_exact(&mut frame).await.unwrap();
+
+        let idle = tokio::time::timeout(Duration::from_millis(200), wait_for_data(&mut reader)).await;
+        assert!(idle.is_err(), "an idle connection must keep waiting");
+
+        client.write_all(&[5]).await.unwrap();
+        assert_eq!(wait_for_data(&mut reader).await.unwrap(), 1);
+        let mut byte = [0u8; 1];
+        reader.read_exact(&mut byte).await.unwrap();
+        assert_eq!(byte, [5], "waiting must not use the bytes");
+    }
+
+    #[tokio::test]
+    async fn closed_connection_ends_the_wait() {
+        let (mut reader, client) = pair().await;
+        drop(client);
+        assert_eq!(wait_for_data(&mut reader).await.unwrap(), 0);
+    }
 }
