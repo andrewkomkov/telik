@@ -178,7 +178,11 @@ class RemoteEngine(
     }
     /** Logs names only. Typed text stays out of the log. */
     private fun logEvent(kind: String, detail: String) {
-        val name = if (kind == "ControlMessage") CONTROL_NAME.find(detail)?.groupValues?.get(1) else null
+        val name = when (kind) {
+            "ControlMessage" -> CONTROL_NAME.find(detail)?.groupValues?.get(1)
+            "ClientDisconnected" -> detail.substringAfter("reason=", "")
+            else -> null
+        }
         Log.i("RemoteEngine", if (name == null) "Event: $kind" else "Event: $kind $name")
     }
 
