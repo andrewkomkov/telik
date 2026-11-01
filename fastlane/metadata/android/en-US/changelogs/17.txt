@@ -1,0 +1,1 @@
+The remote closes idle connections on time, to make a return to the remote faster. A new Headphones button on the home screen connects and disconnects AirPods. An optional setting connects them when the TV turns on. This feature needs network debugging on the TV and one approval on the TV screen.

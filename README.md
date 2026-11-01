@@ -18,7 +18,8 @@ Homebridge, server or iPhone app.
 - AirPlay screen mirroring and audio from iPhone, iPad and Mac.
 - A TV tile in Apple Home with power, volume and app inputs.
 - Experimental TV audio output to a HomePod.
-- No root and no local ADB connection after setup. Services start after the TV boots.
+- A Headphones button on the home screen connects and disconnects AirPods. An optional setting connects them when the TV turns on. Needs network debugging on the TV.
+- No root. After setup, only the Headphones button uses a local ADB connection. Services start after the TV boots.
 
 ## Limits
 
