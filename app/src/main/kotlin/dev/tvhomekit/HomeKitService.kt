@@ -21,6 +21,7 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.util.Base64
 import android.util.Log
+import io.github.henry753951.airplayremote.headphones.HeadphonesController
 import io.github.henry753951.airplayremote.platform.LocalNetworkAddress
 import io.github.henry753951.airplayremote.remote.protocol.RemoteNative
 import java.security.MessageDigest
@@ -119,6 +120,7 @@ class HomeKitService : Service() {
             Log.e(TAG, "Сервер не запустился", e)
         }
         getSystemService(ConnectivityManager::class.java).registerDefaultNetworkCallback(networkCallback)
+        HeadphonesController.start(this)
     }
 
     /** С включённым режимом телевизор пропадает из сети примерно через минуту сна. Разрешение выдаётся через adb. */

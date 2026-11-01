@@ -1,5 +1,7 @@
 package io.github.henry753951.airplayremote.ui
 
+import io.github.henry753951.airplayremote.headphones.HeadphonesController
+import io.github.henry753951.airplayremote.headphones.HeadphonesStatus
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -1256,7 +1258,31 @@ private fun audioItems(viewModel: MainViewModel): List<TvItem> {
             onPick = { v -> v.toIntOrNull()?.let { viewModel.set(Prefs.AUDIO_LATENCY_MS, it) } }
         ),
         toggle(viewModel, Prefs.AUDIO_AUTO_BUFFER, R.string.tv_audio_smooth, R.string.tv_audio_auto_buffer_desc),
+        toggle(viewModel, Prefs.HEADPHONES_AUTO_CONNECT, R.string.tv_headphones_auto, R.string.tv_headphones_auto_desc),
+        TvItem(
+            stringResource(R.string.tv_headphones_connect), stringResource(R.string.tv_headphones_connect_desc),
+            value = headphonesValue(), onClick = HeadphonesController::connectNow
+        ),
     )
+}
+
+@Composable
+private fun headphonesValue(): String {
+    val status by HeadphonesController.status.collectAsState()
+    val battery by HeadphonesController.batteryPercent.collectAsState()
+    val label = stringResource(
+        when (status) {
+            HeadphonesStatus.IDLE -> R.string.tv_headphones_idle
+            HeadphonesStatus.WAITING -> R.string.tv_headphones_waiting
+            HeadphonesStatus.NEEDS_APPROVAL -> R.string.tv_headphones_needs_approval
+            HeadphonesStatus.NO_DEBUGGING -> R.string.tv_headphones_no_debugging
+            HeadphonesStatus.NOT_PAIRED -> R.string.tv_headphones_not_paired
+            HeadphonesStatus.CONNECTING -> R.string.tv_headphones_connecting
+            HeadphonesStatus.CONNECTED -> R.string.tv_headphones_connected
+            HeadphonesStatus.NOT_REACHED -> R.string.tv_headphones_not_reached
+        }
+    )
+    return battery?.let { stringResource(R.string.tv_headphones_battery, label, it) } ?: label
 }
 
 @Composable
