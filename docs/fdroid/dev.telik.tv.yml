@@ -21,14 +21,15 @@ Builds:
     submodules: true
     sudo:
       - apt-get update
-      - apt-get install -y cmake ninja-build
-    output: build/outputs/apk/release/app-release-unsigned.apk
+      - apt-get install -y build-essential cmake ninja-build
     gradle:
       - yes
+    output: build/outputs/apk/release/app-release-unsigned.apk
     srclibs:
       - rustup@stable
-    prebuild:
-      - $$rustup$$/rustup-init.sh -y --default-toolchain 1.98.0 --target armv7-linux-androideabi
+    prebuild: $$rustup$$/rustup-init.sh -y --default-toolchain 1.98.0 --target armv7-linux-androideabi
+    scandelete:
+      - app/src/main/cpp/third_party/libplist/fuzz
     build:
       - source $HOME/.cargo/env
       - ANDROID_HOME=$$SDK$$ ANDROID_NDK_HOME=$$NDK$$ ../scripts/build-remote.sh
@@ -36,5 +37,7 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
+UpdateCheckData: app/build.gradle.kts|getOrElse\((\d+)\)|app/build.gradle.kts|versionName
+  = "(.*)"
 CurrentVersion: 2.0.0
 CurrentVersionCode: 16
