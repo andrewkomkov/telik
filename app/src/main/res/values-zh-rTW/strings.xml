@@ -289,17 +289,13 @@
     <string name="tv_home_homekit">Apple 家庭</string>
     <string name="tv_home_homekit_sub">將這台電視加入「家庭」App</string>
     <string name="tv_headphones_title">耳機</string>
-    <string name="tv_headphones_auto">自動連線</string>
+    <string name="tv_headphones_auto">自動連線耳機</string>
     <string name="tv_headphones_auto_desc">螢幕開啟時連線。正在 iPhone 上使用的耳機可能會轉到這台電視。電視也可能自行連線上次的裝置。首次使用時會顯示偵錯要求，請選擇「一律允許」。</string>
-    <string name="tv_headphones_connect">連線耳機</string>
-    <string name="tv_headphones_connect_desc">將已配對的 AirPods 連線到這台電視。</string>
-    <string name="tv_headphones_disconnect">中斷耳機連線</string>
-    <string name="tv_headphones_disconnect_desc">釋放耳機，讓 iPhone 可以使用。</string>
-    <string name="tv_headphones_idle">未連線</string>
+    <string name="tv_headphones_idle">未連線。按 OK 連線</string>
     <string name="tv_headphones_needs_approval">請在電視上允許偵錯後再試一次</string>
     <string name="tv_headphones_no_debugging">網路偵錯已關閉</string>
     <string name="tv_headphones_not_paired">沒有已配對的 AirPods</string>
     <string name="tv_headphones_connecting">連線中…</string>
-    <string name="tv_headphones_connected">已連線</string>
-    <string name="tv_headphones_not_reached">找不到耳機</string>
+    <string name="tv_headphones_connected">已連線。按 OK 中斷連線</string>
+    <string name="tv_headphones_not_reached">找不到。按 OK 重試</string>
 </resources>

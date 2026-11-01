@@ -121,7 +121,7 @@ private val TV_ART_SIZE = 340.dp
 // every page knows where Back goes; parents are declared before children
 internal enum class TvPage(val parent: TvPage?) {
     HOME(null),
-    CAST_GUIDE(HOME), REMOTE_GUIDE(HOME), SPEAKERS(HOME), HEADPHONES(HOME),
+    CAST_GUIDE(HOME), REMOTE_GUIDE(HOME), SPEAKERS(HOME),
     SETTINGS(HOME),
     GENERAL(SETTINGS), VIDEO(SETTINGS), AUDIO(SETTINGS), REMOTE(SETTINGS), POWER(SETTINGS), DIAGNOSTICS(SETTINGS),
     GRAYSCALE(VIDEO),
@@ -198,7 +198,7 @@ internal fun TvRouter(
                 TvPage.REMOTE_GUIDE -> TvRemoteGuide(viewModel, back, go)
                 TvPage.SPEAKERS -> TvSubPage(stringResource(R.string.speaker_title), back) { HomePodScreen(onLocalNetwork) }
                 TvPage.SETTINGS -> TvRootSettings(viewModel, memo(target), saveFocus(target), back, go)
-                TvPage.GENERAL, TvPage.VIDEO, TvPage.AUDIO, TvPage.REMOTE, TvPage.POWER, TvPage.DIAGNOSTICS, TvPage.HEADPHONES ->
+                TvPage.GENERAL, TvPage.VIDEO, TvPage.AUDIO, TvPage.REMOTE, TvPage.POWER, TvPage.DIAGNOSTICS ->
                     TvCategory(viewModel, target, memo(target), saveFocus(target), back, go)
                 TvPage.GRAYSCALE -> TvGrayscaleScreen(back)
                 TvPage.ADVANCED -> TvSubPage(stringResource(R.string.tv_advanced), back) { SettingsScreen(viewModel) }
@@ -441,7 +441,7 @@ internal fun TvIdleScreen(
                             when (entry) {
                                 TvHomeEntry.CAST -> go(TvPage.CAST_GUIDE)
                                 TvHomeEntry.REMOTE -> go(TvPage.REMOTE_GUIDE)
-                                TvHomeEntry.HEADPHONES -> go(TvPage.HEADPHONES)
+                                TvHomeEntry.HEADPHONES -> HeadphonesController.toggleConnection()
                                 TvHomeEntry.HOMEKIT -> homeContext.startActivity(
                                     Intent(homeContext, dev.tvhomekit.HomeKitActivity::class.java)
                                 )
@@ -1127,7 +1127,6 @@ private fun TvCategory(
         TvPage.GENERAL -> generalItems(viewModel) { renaming = true }
         TvPage.VIDEO -> videoItems(viewModel, go)
         TvPage.AUDIO -> audioItems(viewModel)
-        TvPage.HEADPHONES -> headphonesItems(viewModel)
         TvPage.REMOTE -> remoteItems(viewModel)
         TvPage.POWER -> powerItems(viewModel)
         else -> diagnosticsItems(viewModel, go)
@@ -1137,14 +1136,12 @@ private fun TvCategory(
             TvPage.GENERAL -> R.string.tv_cat_general
             TvPage.VIDEO -> R.string.tv_cat_video
             TvPage.AUDIO -> R.string.tv_cat_audio
-            TvPage.HEADPHONES -> R.string.tv_headphones_title
             TvPage.REMOTE -> R.string.tv_cat_remote
             TvPage.POWER -> R.string.tv_cat_power
             else -> R.string.tv_cat_diagnostics
         }
     )
-    val parent = stringResource(if (page == TvPage.HEADPHONES) R.string.tv_home_title else R.string.tv_settings)
-    TvSettingsList(title, parent, items, focusIndex, onFocusIndex, onBack)
+    TvSettingsList(title, stringResource(R.string.tv_settings), items, focusIndex, onFocusIndex, onBack)
 
     if (renaming) {
         val serverName by viewModel.pref(Prefs.SERVER_NAME).collectAsState()
@@ -1266,20 +1263,6 @@ private fun audioItems(viewModel: MainViewModel): List<TvItem> {
             onPick = { v -> v.toIntOrNull()?.let { viewModel.set(Prefs.AUDIO_LATENCY_MS, it) } }
         ),
         toggle(viewModel, Prefs.AUDIO_AUTO_BUFFER, R.string.tv_audio_smooth, R.string.tv_audio_auto_buffer_desc),
-    )
-}
-
-@Composable
-private fun headphonesItems(viewModel: MainViewModel): List<TvItem> {
-    val status by HeadphonesController.status.collectAsState()
-    val connected = status == HeadphonesStatus.CONNECTED
-    return listOf(
-        TvItem(
-            stringResource(if (connected) R.string.tv_headphones_disconnect else R.string.tv_headphones_connect),
-            stringResource(if (connected) R.string.tv_headphones_disconnect_desc else R.string.tv_headphones_connect_desc),
-            value = headphonesValue(),
-            onClick = HeadphonesController::toggleConnection
-        ),
         toggle(viewModel, Prefs.HEADPHONES_AUTO_CONNECT, R.string.tv_headphones_auto, R.string.tv_headphones_auto_desc),
     )
 }

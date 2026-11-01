@@ -321,17 +321,13 @@
     <string name="speaker_home_sub">Send TV audio to an AirPlay speaker</string>
     <string name="speaker_notification">Speaker output session active. Open the app to view status or stop.</string>
     <string name="tv_headphones_title">Headphones</string>
-    <string name="tv_headphones_auto">Connect Automatically</string>
+    <string name="tv_headphones_auto">Connect Headphones Automatically</string>
     <string name="tv_headphones_auto_desc">Connects when the screen turns on. Headphones in use on iPhone can move to this TV. The TV can also connect the last device by itself. The first use shows a debugging request on this TV: choose Always allow.</string>
-    <string name="tv_headphones_connect">Connect Headphones</string>
-    <string name="tv_headphones_connect_desc">Connects paired AirPods to this TV.</string>
-    <string name="tv_headphones_disconnect">Disconnect Headphones</string>
-    <string name="tv_headphones_disconnect_desc">Releases the headphones, so that iPhone can use them.</string>
-    <string name="tv_headphones_idle">Not connected</string>
+    <string name="tv_headphones_idle">Not connected. Press OK to connect</string>
     <string name="tv_headphones_needs_approval">Allow debugging on this TV, then try again</string>
     <string name="tv_headphones_no_debugging">Network debugging is off</string>
     <string name="tv_headphones_not_paired">No paired AirPods</string>
     <string name="tv_headphones_connecting">Connecting…</string>
-    <string name="tv_headphones_connected">Connected</string>
-    <string name="tv_headphones_not_reached">Headphones not found</string>
+    <string name="tv_headphones_connected">Connected. Press OK to disconnect</string>
+    <string name="tv_headphones_not_reached">Not found. Press OK to try again</string>
 </resources>
