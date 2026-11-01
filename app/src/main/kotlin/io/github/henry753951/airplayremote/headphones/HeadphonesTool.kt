@@ -11,9 +11,11 @@ object HeadphonesTool {
     @JvmStatic
     fun main(args: Array<String>) {
         try {
-            println("connect=${connect(args.single())}")
+            println("result=${run(args[0], args[1])}")
         } catch (e: ReflectiveOperationException) {
             println("failed=${e.cause ?: e}")
+        } catch (e: IndexOutOfBoundsException) {
+            println("failed=$e")
         } catch (e: IllegalArgumentException) {
             println("failed=$e")
         }
@@ -21,7 +23,7 @@ object HeadphonesTool {
     }
 
     @Suppress("DEPRECATION")
-    private fun connect(address: String): Any? {
+    private fun run(method: String, address: String): Any? {
         Looper.prepareMainLooper()
         Class.forName("android.app.ActivityThread").getMethod("initializeMainlineModules").invoke(null)
         val source = AttributionSource.Builder(SHELL_UID).setPackageName(SHELL_PACKAGE).build()
@@ -29,7 +31,7 @@ object HeadphonesTool {
             .getMethod("createAdapter", AttributionSource::class.java)
             .invoke(null, source) as BluetoothAdapter
         val device = adapter.getRemoteDevice(address)
-        return BluetoothDevice::class.java.getMethod("connect").invoke(device)
+        return BluetoothDevice::class.java.getMethod(method).invoke(device)
     }
 
     private const val SHELL_UID = 2000

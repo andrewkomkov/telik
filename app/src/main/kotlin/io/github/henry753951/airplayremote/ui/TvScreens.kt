@@ -1270,22 +1270,26 @@ private fun audioItems(viewModel: MainViewModel): List<TvItem> {
 }
 
 @Composable
-private fun headphonesItems(viewModel: MainViewModel): List<TvItem> = listOf(
-    TvItem(
-        stringResource(R.string.tv_headphones_connect), stringResource(R.string.tv_headphones_connect_desc),
-        value = headphonesValue(), onClick = HeadphonesController::connectNow
-    ),
-    toggle(viewModel, Prefs.HEADPHONES_AUTO_CONNECT, R.string.tv_headphones_auto, R.string.tv_headphones_auto_desc),
-)
+private fun headphonesItems(viewModel: MainViewModel): List<TvItem> {
+    val status by HeadphonesController.status.collectAsState()
+    val connected = status == HeadphonesStatus.CONNECTED
+    return listOf(
+        TvItem(
+            stringResource(if (connected) R.string.tv_headphones_disconnect else R.string.tv_headphones_connect),
+            stringResource(if (connected) R.string.tv_headphones_disconnect_desc else R.string.tv_headphones_connect_desc),
+            value = headphonesValue(),
+            onClick = HeadphonesController::toggleConnection
+        ),
+        toggle(viewModel, Prefs.HEADPHONES_AUTO_CONNECT, R.string.tv_headphones_auto, R.string.tv_headphones_auto_desc),
+    )
+}
 
 @Composable
 private fun headphonesValue(): String {
     val status by HeadphonesController.status.collectAsState()
-    val battery by HeadphonesController.batteryPercent.collectAsState()
-    val label = stringResource(
+    return stringResource(
         when (status) {
             HeadphonesStatus.IDLE -> R.string.tv_headphones_idle
-            HeadphonesStatus.WAITING -> R.string.tv_headphones_waiting
             HeadphonesStatus.NEEDS_APPROVAL -> R.string.tv_headphones_needs_approval
             HeadphonesStatus.NO_DEBUGGING -> R.string.tv_headphones_no_debugging
             HeadphonesStatus.NOT_PAIRED -> R.string.tv_headphones_not_paired
@@ -1294,7 +1298,6 @@ private fun headphonesValue(): String {
             HeadphonesStatus.NOT_REACHED -> R.string.tv_headphones_not_reached
         }
     )
-    return battery?.let { stringResource(R.string.tv_headphones_battery, label, it) } ?: label
 }
 
 @Composable
