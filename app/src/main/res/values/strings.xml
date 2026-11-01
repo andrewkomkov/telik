@@ -320,11 +320,12 @@
     <string name="speaker_title">HomePod audio output</string>
     <string name="speaker_home_sub">Send TV audio to an AirPlay speaker</string>
     <string name="speaker_notification">Speaker output session active. Open the app to view status or stop.</string>
-    <string name="tv_headphones_auto">Connect Headphones Automatically</string>
+    <string name="tv_headphones_title">Headphones</string>
+    <string name="tv_headphones_auto">Connect Automatically</string>
     <string name="tv_headphones_auto_desc">Connects paired AirPods when the screen turns on and when you put them on. Headphones connected to iPhone can move to this TV. The first use shows a USB debugging request on this TV: choose Always allow. This TV must have network debugging on port 5555.</string>
     <string name="tv_headphones_connect">Connect Headphones</string>
     <string name="tv_headphones_connect_desc">Connects paired AirPods now.</string>
-    <string name="tv_headphones_idle">Ready</string>
+    <string name="tv_headphones_idle">Not connected</string>
     <string name="tv_headphones_waiting">Waiting for headphones</string>
     <string name="tv_headphones_needs_approval">Allow debugging on this TV, then try again</string>
     <string name="tv_headphones_no_debugging">Network debugging is off</string>

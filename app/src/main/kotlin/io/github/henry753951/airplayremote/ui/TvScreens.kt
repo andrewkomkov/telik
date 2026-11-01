@@ -5,6 +5,7 @@ import io.github.henry753951.airplayremote.headphones.HeadphonesStatus
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.drawBehind
@@ -120,7 +121,7 @@ private val TV_ART_SIZE = 340.dp
 // every page knows where Back goes; parents are declared before children
 internal enum class TvPage(val parent: TvPage?) {
     HOME(null),
-    CAST_GUIDE(HOME), REMOTE_GUIDE(HOME), SPEAKERS(HOME),
+    CAST_GUIDE(HOME), REMOTE_GUIDE(HOME), SPEAKERS(HOME), HEADPHONES(HOME),
     SETTINGS(HOME),
     GENERAL(SETTINGS), VIDEO(SETTINGS), AUDIO(SETTINGS), REMOTE(SETTINGS), POWER(SETTINGS), DIAGNOSTICS(SETTINGS),
     GRAYSCALE(VIDEO),
@@ -197,7 +198,7 @@ internal fun TvRouter(
                 TvPage.REMOTE_GUIDE -> TvRemoteGuide(viewModel, back, go)
                 TvPage.SPEAKERS -> TvSubPage(stringResource(R.string.speaker_title), back) { HomePodScreen(onLocalNetwork) }
                 TvPage.SETTINGS -> TvRootSettings(viewModel, memo(target), saveFocus(target), back, go)
-                TvPage.GENERAL, TvPage.VIDEO, TvPage.AUDIO, TvPage.REMOTE, TvPage.POWER, TvPage.DIAGNOSTICS ->
+                TvPage.GENERAL, TvPage.VIDEO, TvPage.AUDIO, TvPage.REMOTE, TvPage.POWER, TvPage.DIAGNOSTICS, TvPage.HEADPHONES ->
                     TvCategory(viewModel, target, memo(target), saveFocus(target), back, go)
                 TvPage.GRAYSCALE -> TvGrayscaleScreen(back)
                 TvPage.ADVANCED -> TvSubPage(stringResource(R.string.tv_advanced), back) { SettingsScreen(viewModel) }
@@ -310,7 +311,7 @@ private fun openSystemSettings(ctx: android.content.Context, action: String) {
 
 // ---- home ----
 
-private enum class TvHomeEntry { CAST, REMOTE, HOMEKIT, SPEAKERS }
+private enum class TvHomeEntry { CAST, REMOTE, HEADPHONES, HOMEKIT, SPEAKERS }
 
 private const val ATTENTION_DELAY_MS = 1_500L
 
@@ -418,13 +419,14 @@ internal fun TvIdleScreen(
                         TvHomeEntry.CAST -> R.string.tv_home_cast to R.string.tv_home_cast_sub
                         TvHomeEntry.REMOTE -> R.string.tv_home_remote to
                             if (remoteEnabled) R.string.tv_home_remote_sub else R.string.tv_home_remote_off
+                        TvHomeEntry.HEADPHONES -> R.string.tv_headphones_title to R.string.tv_headphones_idle
                         TvHomeEntry.HOMEKIT -> R.string.tv_home_homekit to R.string.tv_home_homekit_sub
                         TvHomeEntry.SPEAKERS -> R.string.speaker_title to R.string.speaker_home_sub
                     }
                     TvHomeRow(
                         entry = entry,
                         title = stringResource(labels.first),
-                        subtitle = stringResource(labels.second),
+                        subtitle = if (entry == TvHomeEntry.HEADPHONES) headphonesValue() else stringResource(labels.second),
                         modifier = Modifier.weight(1f).focusRequester(requesters[i]).focusProperties {
                             up = if (i == 0) settingsFocus else requesters[i - 1]
                             down = if (i == entries.lastIndex) FocusRequester.Cancel else requesters[i + 1]
@@ -439,6 +441,7 @@ internal fun TvIdleScreen(
                             when (entry) {
                                 TvHomeEntry.CAST -> go(TvPage.CAST_GUIDE)
                                 TvHomeEntry.REMOTE -> go(TvPage.REMOTE_GUIDE)
+                                TvHomeEntry.HEADPHONES -> go(TvPage.HEADPHONES)
                                 TvHomeEntry.HOMEKIT -> homeContext.startActivity(
                                     Intent(homeContext, dev.tvhomekit.HomeKitActivity::class.java)
                                 )
@@ -560,6 +563,7 @@ private fun Modifier.telikBackdrop(): Modifier = drawBehind {
 private fun TvHomeEntry.accent(): List<Color> = when (this) {
     TvHomeEntry.CAST -> listOf(Color(0xFF4FC3FF), Color(0xFF3A6BFF))
     TvHomeEntry.REMOTE -> listOf(Color(0xFFB98CFF), Color(0xFF6A4DFF))
+    TvHomeEntry.HEADPHONES -> listOf(Color(0xFFFF8FD0), Color(0xFFB04DFF))
     TvHomeEntry.HOMEKIT -> listOf(Color(0xFFFFB35C), Color(0xFFFF5E8A))
     TvHomeEntry.SPEAKERS -> listOf(Color(0xFF5CE6B8), Color(0xFF12A58F))
 }
@@ -602,6 +606,7 @@ private fun TelikRowIcon(entry: TvHomeEntry) {
                 drawRoundRect(Color.White, cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx()))
                 drawCircle(entry.accent().last(), radius = 4.5.dp.toPx(), center = Offset(size.width / 2, 8.dp.toPx()))
             }
+            TvHomeEntry.HEADPHONES -> Icon(Icons.Default.Headphones, null, Modifier.size(30.dp), tint = Color.White)
             TvHomeEntry.HOMEKIT -> Icon(Icons.Default.Home, null, Modifier.size(30.dp), tint = Color.White)
             TvHomeEntry.SPEAKERS -> Icon(Icons.Default.Speaker, null, Modifier.size(30.dp), tint = Color.White)
         }
@@ -1122,6 +1127,7 @@ private fun TvCategory(
         TvPage.GENERAL -> generalItems(viewModel) { renaming = true }
         TvPage.VIDEO -> videoItems(viewModel, go)
         TvPage.AUDIO -> audioItems(viewModel)
+        TvPage.HEADPHONES -> headphonesItems(viewModel)
         TvPage.REMOTE -> remoteItems(viewModel)
         TvPage.POWER -> powerItems(viewModel)
         else -> diagnosticsItems(viewModel, go)
@@ -1131,12 +1137,14 @@ private fun TvCategory(
             TvPage.GENERAL -> R.string.tv_cat_general
             TvPage.VIDEO -> R.string.tv_cat_video
             TvPage.AUDIO -> R.string.tv_cat_audio
+            TvPage.HEADPHONES -> R.string.tv_headphones_title
             TvPage.REMOTE -> R.string.tv_cat_remote
             TvPage.POWER -> R.string.tv_cat_power
             else -> R.string.tv_cat_diagnostics
         }
     )
-    TvSettingsList(title, stringResource(R.string.tv_settings), items, focusIndex, onFocusIndex, onBack)
+    val parent = stringResource(if (page == TvPage.HEADPHONES) R.string.tv_home_title else R.string.tv_settings)
+    TvSettingsList(title, parent, items, focusIndex, onFocusIndex, onBack)
 
     if (renaming) {
         val serverName by viewModel.pref(Prefs.SERVER_NAME).collectAsState()
@@ -1258,13 +1266,17 @@ private fun audioItems(viewModel: MainViewModel): List<TvItem> {
             onPick = { v -> v.toIntOrNull()?.let { viewModel.set(Prefs.AUDIO_LATENCY_MS, it) } }
         ),
         toggle(viewModel, Prefs.AUDIO_AUTO_BUFFER, R.string.tv_audio_smooth, R.string.tv_audio_auto_buffer_desc),
-        toggle(viewModel, Prefs.HEADPHONES_AUTO_CONNECT, R.string.tv_headphones_auto, R.string.tv_headphones_auto_desc),
-        TvItem(
-            stringResource(R.string.tv_headphones_connect), stringResource(R.string.tv_headphones_connect_desc),
-            value = headphonesValue(), onClick = HeadphonesController::connectNow
-        ),
     )
 }
+
+@Composable
+private fun headphonesItems(viewModel: MainViewModel): List<TvItem> = listOf(
+    TvItem(
+        stringResource(R.string.tv_headphones_connect), stringResource(R.string.tv_headphones_connect_desc),
+        value = headphonesValue(), onClick = HeadphonesController::connectNow
+    ),
+    toggle(viewModel, Prefs.HEADPHONES_AUTO_CONNECT, R.string.tv_headphones_auto, R.string.tv_headphones_auto_desc),
+)
 
 @Composable
 private fun headphonesValue(): String {
