@@ -116,4 +116,5 @@ object Prefs {
     val ADVERTISE_AUDIO = bool("advertise_audio", true, restart = true)
     val LAUNCH_ON_CONNECT = bool("launch_on_connect", true)
     val USB_ONLY = bool("usb_only", false, restart = true)
+    val HEADPHONES_AUTO_CONNECT = bool("headphones_auto_connect", false)
 }

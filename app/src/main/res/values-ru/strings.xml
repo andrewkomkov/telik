@@ -320,4 +320,14 @@
     <string name="btn_disconnect">Отключить</string>
     <string name="tv_scroll_hint">Для прокрутки используйте кнопки вверх и вниз.</string>
     <string name="app_name">Телик</string>
+    <string name="tv_headphones_title">Наушники</string>
+    <string name="tv_headphones_auto">Автоподключение наушников</string>
+    <string name="tv_headphones_auto_desc">Подключает при включении экрана. Наушники, которые играют с iPhone, могут перейти на телевизор. Телевизор и сам может подключать последнее устройство. При первом использовании появится запрос на отладку: выберите «Всегда разрешать».</string>
+    <string name="tv_headphones_idle">Не подключены. Нажмите OK</string>
+    <string name="tv_headphones_needs_approval">Разрешите отладку на телевизоре и повторите</string>
+    <string name="tv_headphones_no_debugging">Отладка по сети выключена</string>
+    <string name="tv_headphones_not_paired">Нет сопряжённых AirPods</string>
+    <string name="tv_headphones_connecting">Подключение…</string>
+    <string name="tv_headphones_connected">Подключены. OK, чтобы отключить</string>
+    <string name="tv_headphones_not_reached">Недоступны. Отключите от телефона</string>
 </resources>

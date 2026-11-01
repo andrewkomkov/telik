@@ -13,6 +13,8 @@ coroutines = "1.9.0"
 media3 = "1.11.1"
 oboe = "1.9.3"
 bouncycastle = "1.79"
+dadb = "2.0.0"
+okio = "3.18.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
@@ -44,6 +46,8 @@ kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutin
 
 oboe = { group = "com.google.oboe", name = "oboe", version.ref = "oboe" }
 bouncycastle = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
+dadb = { group = "dev.mobile", name = "dadb", version.ref = "dadb" }
+okio = { group = "com.squareup.okio", name = "okio", version.ref = "okio" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

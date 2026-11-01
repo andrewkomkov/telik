@@ -133,6 +133,8 @@ dependencies {
     implementation(libs.media3.transformer)
     implementation(libs.kotlinx.coroutines)
     implementation(libs.bouncycastle)
+    implementation(libs.dadb)
+    implementation(libs.okio)
     implementation(libs.oboe)
 
     implementation(platform(libs.compose.bom))

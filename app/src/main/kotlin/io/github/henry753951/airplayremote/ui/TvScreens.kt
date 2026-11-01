@@ -1,8 +1,11 @@
 package io.github.henry753951.airplayremote.ui
 
+import io.github.henry753951.airplayremote.headphones.HeadphonesController
+import io.github.henry753951.airplayremote.headphones.HeadphonesStatus
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.drawBehind
@@ -308,7 +311,7 @@ private fun openSystemSettings(ctx: android.content.Context, action: String) {
 
 // ---- home ----
 
-private enum class TvHomeEntry { CAST, REMOTE, HOMEKIT, SPEAKERS }
+private enum class TvHomeEntry { CAST, REMOTE, HEADPHONES, HOMEKIT, SPEAKERS }
 
 private const val ATTENTION_DELAY_MS = 1_500L
 
@@ -388,16 +391,16 @@ internal fun TvIdleScreen(
             Modifier
                 .weight(1f - TV_ART_WEIGHT)
                 .fillMaxHeight()
-                .padding(top = 40.dp, bottom = 32.dp, end = 40.dp)
+                .padding(top = 24.dp, bottom = 20.dp, end = 40.dp)
                 .graphicsLayer { translationY = (1f - reveal.value) * 12.dp.toPx() }
         ) {
             Text(
                 stringResource(R.string.tv_home_title),
-                color = TvText, fontSize = 52.sp, lineHeight = 60.sp, fontWeight = FontWeight.SemiBold,
+                color = TvText, fontSize = 44.sp, lineHeight = 50.sp, fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-1).sp,
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(6.dp))
             // the name sits in the sentence the viewer needs it for, not as a headline
             val waiting = state == ServerState.RUNNING && connections > 0
             Text(
@@ -409,20 +412,21 @@ internal fun TvIdleScreen(
                 color = TvMuted, fontSize = 16.sp, lineHeight = 24.sp,
                 maxLines = 2, overflow = TextOverflow.Ellipsis
             )
-            Spacer(Modifier.height(24.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Spacer(Modifier.height(14.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 entries.forEachIndexed { i, entry ->
                     val labels = when (entry) {
                         TvHomeEntry.CAST -> R.string.tv_home_cast to R.string.tv_home_cast_sub
                         TvHomeEntry.REMOTE -> R.string.tv_home_remote to
                             if (remoteEnabled) R.string.tv_home_remote_sub else R.string.tv_home_remote_off
+                        TvHomeEntry.HEADPHONES -> R.string.tv_headphones_title to R.string.tv_headphones_idle
                         TvHomeEntry.HOMEKIT -> R.string.tv_home_homekit to R.string.tv_home_homekit_sub
                         TvHomeEntry.SPEAKERS -> R.string.speaker_title to R.string.speaker_home_sub
                     }
                     TvHomeRow(
                         entry = entry,
                         title = stringResource(labels.first),
-                        subtitle = stringResource(labels.second),
+                        subtitle = if (entry == TvHomeEntry.HEADPHONES) headphonesValue() else stringResource(labels.second),
                         modifier = Modifier.weight(1f).focusRequester(requesters[i]).focusProperties {
                             up = if (i == 0) settingsFocus else requesters[i - 1]
                             down = if (i == entries.lastIndex) FocusRequester.Cancel else requesters[i + 1]
@@ -437,6 +441,7 @@ internal fun TvIdleScreen(
                             when (entry) {
                                 TvHomeEntry.CAST -> go(TvPage.CAST_GUIDE)
                                 TvHomeEntry.REMOTE -> go(TvPage.REMOTE_GUIDE)
+                                TvHomeEntry.HEADPHONES -> HeadphonesController.toggleConnection()
                                 TvHomeEntry.HOMEKIT -> homeContext.startActivity(
                                     Intent(homeContext, dev.tvhomekit.HomeKitActivity::class.java)
                                 )
@@ -558,6 +563,7 @@ private fun Modifier.telikBackdrop(): Modifier = drawBehind {
 private fun TvHomeEntry.accent(): List<Color> = when (this) {
     TvHomeEntry.CAST -> listOf(Color(0xFF4FC3FF), Color(0xFF3A6BFF))
     TvHomeEntry.REMOTE -> listOf(Color(0xFFB98CFF), Color(0xFF6A4DFF))
+    TvHomeEntry.HEADPHONES -> listOf(Color(0xFFFF8FD0), Color(0xFFB04DFF))
     TvHomeEntry.HOMEKIT -> listOf(Color(0xFFFFB35C), Color(0xFFFF5E8A))
     TvHomeEntry.SPEAKERS -> listOf(Color(0xFF5CE6B8), Color(0xFF12A58F))
 }
@@ -600,6 +606,7 @@ private fun TelikRowIcon(entry: TvHomeEntry) {
                 drawRoundRect(Color.White, cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx()))
                 drawCircle(entry.accent().last(), radius = 4.5.dp.toPx(), center = Offset(size.width / 2, 8.dp.toPx()))
             }
+            TvHomeEntry.HEADPHONES -> Icon(Icons.Default.Headphones, null, Modifier.size(30.dp), tint = Color.White)
             TvHomeEntry.HOMEKIT -> Icon(Icons.Default.Home, null, Modifier.size(30.dp), tint = Color.White)
             TvHomeEntry.SPEAKERS -> Icon(Icons.Default.Speaker, null, Modifier.size(30.dp), tint = Color.White)
         }
@@ -642,16 +649,15 @@ private fun TvHomeRow(
                 shape,
             )
             .clickable(remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 22.dp, vertical = 10.dp),
+            .padding(horizontal = 22.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         TelikRowIcon(entry)
         Spacer(Modifier.width(20.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, color = fg, fontSize = 22.sp, fontWeight = FontWeight.SemiBold,
+            Text(title, color = fg, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(2.dp))
-            Text(subtitle, color = sub, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(subtitle, color = sub, fontSize = 16.sp, lineHeight = 22.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -1256,6 +1262,23 @@ private fun audioItems(viewModel: MainViewModel): List<TvItem> {
             onPick = { v -> v.toIntOrNull()?.let { viewModel.set(Prefs.AUDIO_LATENCY_MS, it) } }
         ),
         toggle(viewModel, Prefs.AUDIO_AUTO_BUFFER, R.string.tv_audio_smooth, R.string.tv_audio_auto_buffer_desc),
+        toggle(viewModel, Prefs.HEADPHONES_AUTO_CONNECT, R.string.tv_headphones_auto, R.string.tv_headphones_auto_desc),
+    )
+}
+
+@Composable
+private fun headphonesValue(): String {
+    val status by HeadphonesController.status.collectAsState()
+    return stringResource(
+        when (status) {
+            HeadphonesStatus.IDLE -> R.string.tv_headphones_idle
+            HeadphonesStatus.NEEDS_APPROVAL -> R.string.tv_headphones_needs_approval
+            HeadphonesStatus.NO_DEBUGGING -> R.string.tv_headphones_no_debugging
+            HeadphonesStatus.NOT_PAIRED -> R.string.tv_headphones_not_paired
+            HeadphonesStatus.CONNECTING -> R.string.tv_headphones_connecting
+            HeadphonesStatus.CONNECTED -> R.string.tv_headphones_connected
+            HeadphonesStatus.NOT_REACHED -> R.string.tv_headphones_not_reached
+        }
     )
 }
 
