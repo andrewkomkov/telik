@@ -329,5 +329,5 @@
     <string name="tv_headphones_not_paired">Нет сопряжённых AirPods</string>
     <string name="tv_headphones_connecting">Подключение…</string>
     <string name="tv_headphones_connected">Подключены. OK, чтобы отключить</string>
-    <string name="tv_headphones_not_reached">Не найдены. OK, чтобы повторить</string>
+    <string name="tv_headphones_not_reached">Недоступны. Отключите от телефона</string>
 </resources>

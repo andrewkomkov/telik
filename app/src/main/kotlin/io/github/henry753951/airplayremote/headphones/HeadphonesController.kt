@@ -69,6 +69,7 @@ class HeadphonesController private constructor(context: Context) {
 
     private fun toggle() {
         worker.post {
+            if (mutableStatus.value == HeadphonesStatus.CONNECTING) return@post
             val device = if (hasPermission) target() else null
             if (device != null && isConnected(device)) runTool("disconnect", device) else connect(force = true)
         }
