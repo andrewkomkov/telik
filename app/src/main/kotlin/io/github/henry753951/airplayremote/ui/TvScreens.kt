@@ -391,16 +391,16 @@ internal fun TvIdleScreen(
             Modifier
                 .weight(1f - TV_ART_WEIGHT)
                 .fillMaxHeight()
-                .padding(top = 40.dp, bottom = 32.dp, end = 40.dp)
+                .padding(top = 24.dp, bottom = 20.dp, end = 40.dp)
                 .graphicsLayer { translationY = (1f - reveal.value) * 12.dp.toPx() }
         ) {
             Text(
                 stringResource(R.string.tv_home_title),
-                color = TvText, fontSize = 52.sp, lineHeight = 60.sp, fontWeight = FontWeight.SemiBold,
+                color = TvText, fontSize = 44.sp, lineHeight = 50.sp, fontWeight = FontWeight.SemiBold,
                 letterSpacing = (-1).sp,
                 maxLines = 1, overflow = TextOverflow.Ellipsis
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(6.dp))
             // the name sits in the sentence the viewer needs it for, not as a headline
             val waiting = state == ServerState.RUNNING && connections > 0
             Text(
@@ -412,8 +412,8 @@ internal fun TvIdleScreen(
                 color = TvMuted, fontSize = 16.sp, lineHeight = 24.sp,
                 maxLines = 2, overflow = TextOverflow.Ellipsis
             )
-            Spacer(Modifier.height(24.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Spacer(Modifier.height(14.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 entries.forEachIndexed { i, entry ->
                     val labels = when (entry) {
                         TvHomeEntry.CAST -> R.string.tv_home_cast to R.string.tv_home_cast_sub
@@ -649,16 +649,15 @@ private fun TvHomeRow(
                 shape,
             )
             .clickable(remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 22.dp, vertical = 10.dp),
+            .padding(horizontal = 22.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         TelikRowIcon(entry)
         Spacer(Modifier.width(20.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, color = fg, fontSize = 22.sp, fontWeight = FontWeight.SemiBold,
+            Text(title, color = fg, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold,
                 maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(2.dp))
-            Text(subtitle, color = sub, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(subtitle, color = sub, fontSize = 16.sp, lineHeight = 22.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
