@@ -33,7 +33,7 @@ Telik gets a Home screen role. A new Home activity shows an Apple TV style app r
 
 1. **Home role**: What does an Android 14 TV with a locked launcher do when an app declares `HOME` and `DEFAULT`? Test on the target TV with `cmd role` and the system chooser. The answer decides Q1 of the spec.
 2. **App list**: Use `PackageManager.queryIntentActivities` for `LEANBACK_LAUNCHER` and `LAUNCHER`. Check the package visibility rule for Android 11 and later. Telik already declares queries for both categories.
-3. **Top shelf**: Read `TvContract` preview channels and programs. Check that the permission `READ_EPG_DATA` is not required for other apps' preview programs. If it is required, drop story 3 or use a different source.
+3. **Top shelf**: Read `TvContract` preview channels and programs. The AOSP manifest says `READ_EPG_DATA` is no longer enforced. Check that a normal query returns the preview programs of other apps. If it returns nothing, use the Telik content and the media session of the running app. See `research.md`.
 4. **Liquid glass**: Compare three ways on the test TV. The first is `RenderEffect` blur with `Modifier.graphicsLayer`. The second is an AGSL `RuntimeShader` (API 33 and later) for blur, refraction and highlights. The third is a blurred copy of the wallpaper, made once and reused. Choose the cheapest way that holds 30 frames per second. A library such as Haze is allowed only if it is small and faster than own code.
 4b. **Parallax icons**: Apple uses layered images. Android apps give one banner. Plan a depth effect from one image: shadow, scale, tilt and a light sweep. No layered art is copied.
 5. **Slow chip**: Measure frame time on the test TV with 40 icons before choosing the animation level.
