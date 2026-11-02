@@ -994,12 +994,13 @@ impl CompanionSession {
                 info!("<< _systemInfo: replied and refreshed power state (session_id={session_id}, renewed={is_renewed})");
                 self.send_power_state(None).await?;
 
-                // The Apple Watch remote also sends xid with the high bit set and starts its
-                // session later, so a short timeout closed it. A new connection from the same IP
-                // already aborts an unestablished one, so a long timeout cannot block the channel.
+                // Background probes from sharingd/rapportd have the high bit set in xid and never
+                // send _sessionStart. The iPhone opens its real connection only after the TV closes
+                // the probe, so a long timeout delays the remote. A real remote (iPhone or Apple
+                // Watch) sends _sessionStart within milliseconds.
                 let is_background_probe = xid.map_or(false, |x| (x & 0x8000_0000) != 0);
                 let timeout = if is_background_probe {
-                    std::time::Duration::from_millis(30_000)
+                    std::time::Duration::from_millis(1000)
                 } else {
                     std::time::Duration::from_millis(2500)
                 };
