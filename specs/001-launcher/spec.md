@@ -155,4 +155,4 @@ The user reaches the HDMI inputs, the system settings and the search from the Ho
 
 - **Q1**: Should Telik replace the maker Home screen, or open only from a button? Desk research says an app can be a selectable Home app without root. A test on the target TV decides (see `research.md` and T001). [NEEDS CLARIFICATION]
 - **Q2**: Which wallpaper and screensaver sources are free to use? [NEEDS CLARIFICATION]
-- **Q3**: Can a third-party launcher read the preview programs of other apps? The AOSP manifest says the read permission is no longer enforced. Test T003 decides story 3. [NEEDS CLARIFICATION]
+- **Q3**: Can a third-party launcher read the preview programs of other apps? Reports say it needs the runtime permission `READ_TV_LISTINGS`, which the user grants on the TV with no adb. Test T003 decides story 3. [NEEDS CLARIFICATION]

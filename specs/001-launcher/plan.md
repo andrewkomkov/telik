@@ -11,7 +11,7 @@ Telik gets a Home screen role. A new Home activity shows an Apple TV style app r
 ## Technical Context
 
 **Language/Version**: Kotlin 2.x, Jetpack Compose (BOM 2026.05.00), minSdk 33
-**Primary Dependencies**: Compose (BOM 2026.05.00), `androidx.tv` Compose for TV, DataStore. No image library: the icons come from `PackageManager` and a small own cache.
+**Primary Dependencies**: Compose (BOM 2026.05.00), `androidx.tv:tv-material` 1.1.0, `androidx.tv:tv-foundation` 1.0.0, DataStore. No image library: the icons come from `PackageManager` and a small own cache.
 **Storage**: DataStore preferences for order and hidden apps
 **Testing**: JUnit unit tests for ordering and filtering. Checks on the real TV for focus and speed.
 **Target Platform**: Android TV 13 or later, 32-bit ARM, tested on a Dahua 4K TV with Android 14
@@ -33,7 +33,7 @@ Telik gets a Home screen role. A new Home activity shows an Apple TV style app r
 
 1. **Home role**: What does an Android 14 TV with a locked launcher do when an app declares `HOME` and `DEFAULT`? Test on the target TV with `cmd role` and the system chooser. The answer decides Q1 of the spec.
 2. **App list**: Use `PackageManager.queryIntentActivities` for `LEANBACK_LAUNCHER` and `LAUNCHER`. Check the package visibility rule for Android 11 and later. Telik already declares queries for both categories.
-3. **Top shelf**: Read `TvContract` preview channels and programs. The AOSP manifest says `READ_EPG_DATA` is no longer enforced. Check that a normal query returns the preview programs of other apps. If it returns nothing, use the Telik content and the media session of the running app. See `research.md`.
+3. **Top shelf**: Read `TvContract` preview channels and programs. The AOSP manifest says `READ_EPG_DATA` is no longer enforced, but community reports say a launcher needs `READ_TV_LISTINGS`. Declare it, ask for it on the TV, and check that a query returns the programs of other apps. If it returns nothing, use the Telik content and the media session of the running app. See `research.md`.
 4. **Liquid glass**: Compare three ways on the test TV. The first is `RenderEffect` blur with `Modifier.graphicsLayer`. The second is an AGSL `RuntimeShader` (API 33 and later) for blur, refraction and highlights. The third is a blurred copy of the wallpaper, made once and reused. Choose the cheapest way that holds 30 frames per second. A library such as Haze is allowed only if it is small and faster than own code.
 4b. **Parallax icons**: Apple uses layered images. Android apps give one banner. Plan a depth effect from one image: shadow, scale, tilt and a light sweep. No layered art is copied.
 5. **Slow chip**: Measure frame time on the test TV with 40 icons before choosing the animation level.
