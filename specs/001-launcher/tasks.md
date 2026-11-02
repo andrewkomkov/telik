@@ -12,6 +12,7 @@
 - [ ] T003 [P] Check whether Telik can read `TvContract` preview programs and Watch Next of other apps with the runtime permission `READ_TV_LISTINGS`. Record the result in `research.md`.
 - [ ] T004 [P] Measure the frame time of 40 focusable tiles with scale and tilt on the TV. Record the result in `research.md`.
 - [ ] T006 [P] Build a test screen with three glass methods: `RenderEffect` blur, an AGSL shader and a pre-blurred wallpaper. Measure frame time and memory on the TV for each. Record the result in `research.md`.
+- [ ] T009 [P] Measure the time from key press to the drawn frame in an empty Compose list on the TV, with `JankStats` and a Perfetto trace. This is the base for the 50 ms budget.
 - [ ] T007 [P] Measure the cold start of an empty Compose Home activity on the TV. This is the base for the 800 ms budget.
 - [ ] T008 [P] Check that the HDMI inputs and the system settings open from an own activity on the TV. Record the intents in `research.md`.
 - [ ] T005 Update the open questions Q1, Q2 and Q3 in `spec.md` with the results.
@@ -29,7 +30,7 @@
 - [ ] T016 [US2] Create the app row with D-pad focus in `launcher/ui/`, reusing `ui/TvFocus.kt`.
 - [ ] T017 [US2] Add the focus effect: scale, tilt and light sweep, with a plain-frame fallback on slow TVs.
 - [ ] T017a [US1] Add the liquid glass panels with the method that T006 chose, the automatic fallback at 33 ms per frame, and a switch in the settings.
-- [ ] T017b [US1] Add a Baseline Profile and a cold start Macrobenchmark. Add R8 full mode. Check the budgets SC-001, SC-005 and SC-006 on the TV.
+- [ ] T017b [US1] Add a Baseline Profile and a cold start Macrobenchmark. Add R8 full mode. Check the budgets SC-001, SC-005, SC-006 and SC-009 on the TV.
 - [ ] T018 [US2] Add the edit mode: move, hide and open information.
 - [ ] T018a [US6] Add tiles for the HDMI inputs, the system settings and the search.
 - [ ] T018b [US6] Send the D-pad keys from the Telik remote service to the Home screen and check that the remote Home action opens it.
