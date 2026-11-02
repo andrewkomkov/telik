@@ -38,7 +38,8 @@ Telik gets a Home screen role. A new Home activity shows an Apple TV style app r
 4b. **Parallax icons**: Apple uses layered images. Android apps give one banner. Plan a depth effect from one image: shadow, scale, tilt and a light sweep. No layered art is copied.
 5. **Slow chip**: Measure frame time on the test TV with 40 icons before choosing the animation level.
 6. **Speed and size**: Add a Baseline Profile and a Macrobenchmark for cold start. Keep the Home activity in its own small process path, with no Hilt and no dependency injection graph. Use R8 full mode. Draw with `drawWithCache` and keep recompositions low. Check with the layout inspector and the frame time on the TV.
-7. **Screensaver**: Use `DreamService` for the screensaver. Choose free landscape video that has a license that allows redistribution.
+7. **Responsiveness**: Measure the time from key press to the drawn frame with `JankStats` and Perfetto traces on the TV. Decode icons off the main thread and load the next icons ahead of the focus. Use `graphicsLayer` for focus animation, so that it runs on the render thread without recomposition.
+8. **Screensaver**: Use `DreamService` for the screensaver. Choose free landscape video that has a license that allows redistribution.
 
 ## Project Structure
 

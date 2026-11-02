@@ -121,6 +121,7 @@ The user reaches the HDMI inputs, the system settings and the search from the Ho
 - **FR-011**: The Home screen MUST use a liquid glass look: translucent blurred panels, soft highlights and depth, over a moving background.
 - **FR-012**: The glass look MUST switch to a plain translucent panel with no blur when a frame takes more than 33 ms, and the user MUST be able to switch the glass off.
 - **FR-013**: The launcher MUST stay light: no heavy library, no work in the background while the Home screen is hidden, and cached icons.
+- **FR-018**: The Home screen MUST answer a key press at once. Icons decode off the main thread, the next icons load before the user reaches them, and animations run on the render thread.
 - **FR-014**: The launcher MUST use the newest stable platform APIs and tools, with exact version pins.
 
 ### Key Entities
@@ -140,6 +141,8 @@ The user reaches the HDMI inputs, the system settings and the search from the Ho
 - **SC-005**: The APK grows by 2 MB or less.
 - **SC-006**: The Home screen uses 100 MB of memory or less when it is idle.
 - **SC-007**: With the glass look on, focus moves at 30 frames per second or more. When it cannot, the plain panel starts by itself.
+- **SC-009**: The time from a key press to the drawn focus change is 50 ms or less on the test TV.
+- **SC-010**: The target is 60 frames per second. The floor is 30 frames per second, and below it the plain panel starts.
 - **SC-008**: The Home screen uses no CPU in the background when it is hidden.
 
 ## Assumptions
