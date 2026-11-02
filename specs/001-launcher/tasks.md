@@ -9,7 +9,7 @@
 
 - [ ] T001 Test the Home role on the Dahua TV: declare `HOME` in a debug build and read the result of the system chooser. Record the result in `specs/001-launcher/research.md`.
 - [ ] T002 [P] Check `PackageManager.queryIntentActivities` for `LEANBACK_LAUNCHER` and `LAUNCHER` on the TV and list the apps that it returns. Record the result in `research.md`.
-- [ ] T003 [P] Check whether Telik can read `TvContract` preview programs of other apps without a special permission. Record the result in `research.md`.
+- [ ] T003 [P] Check whether Telik can read `TvContract` preview programs and Watch Next of other apps with the runtime permission `READ_TV_LISTINGS`. Record the result in `research.md`.
 - [ ] T004 [P] Measure the frame time of 40 focusable tiles with scale and tilt on the TV. Record the result in `research.md`.
 - [ ] T006 [P] Build a test screen with three glass methods: `RenderEffect` blur, an AGSL shader and a pre-blurred wallpaper. Measure frame time and memory on the TV for each. Record the result in `research.md`.
 - [ ] T007 [P] Measure the cold start of an empty Compose Home activity on the TV. This is the base for the 800 ms budget.
