@@ -179,7 +179,9 @@ class RemoteEngine(
     /** Logs names only. Typed text stays out of the log. */
     private fun logEvent(kind: String, detail: String) {
         val name = when (kind) {
-            "ControlMessage" -> CONTROL_NAME.find(detail)?.groupValues?.get(1)
+            "ControlMessage" -> CONTROL_NAME.find(detail)?.groupValues?.get(1)?.let { name ->
+                if (name == "_hidC") "$name ${HID_CODE.find(detail)?.groupValues?.get(1)}/${HID_STATE.find(detail)?.groupValues?.get(1)}" else name
+            }
             "ClientDisconnected" -> detail.substringAfter("reason=", "")
             else -> null
         }
@@ -197,5 +199,7 @@ class RemoteEngine(
         const val TOUCH_BEGAN = 1
         val VOLUME_BUTTONS = setOf("volume_up", "volume_down", "mute")
         val CONTROL_NAME = Regex("\"(?:_i|model)\": \"([^\"]+)\"")
+        val HID_CODE = Regex("\"_hidC\": (\\d+)")
+        val HID_STATE = Regex("\"_hBtS\": (\\d+)")
     }
 }

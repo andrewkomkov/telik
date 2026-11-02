@@ -39,6 +39,28 @@ const ALT_IRK: [u8; 16] = [
 
 pub type SharedWriter = Arc<Mutex<OwnedWriteHalf>>;
 
+/// Decides whether a button event acts. An iPhone sends 1 (down) and 2 (up). An Apple Watch
+/// sends 1 (down) and 0 (up), and its Digital Crown sends a single 0 for each step.
+/// Direction buttons act on press, and the other buttons act on release or on a single pulse.
+fn hid_fires(command: u64, state: u64, held: &mut Option<u64>) -> bool {
+    let direction = (1..=4).contains(&command);
+    match state {
+        1 => {
+            *held = Some(command);
+            direction
+        }
+        2 => {
+            *held = None;
+            !direction
+        }
+        0 => {
+            let released = held.take() == Some(command);
+            !(direction && released)
+        }
+        _ => false,
+    }
+}
+
 fn hid_command_name(command: u64) -> String {
     match command {
         1 => "up".into(),
@@ -94,6 +116,7 @@ pub struct CompanionSession {
     touch_origin: Option<(f64, f64)>,
     touch_last: Option<(f64, f64)>,
     touch_moved: bool,
+    hid_held: Option<u64>,
     volume: f64,
     muted: bool,
     system_status: u64,
@@ -158,6 +181,7 @@ impl CompanionSession {
             touch_origin: None,
             touch_last: None,
             touch_moved: false,
+            hid_held: None,
             volume: initial_volume,
             muted: initial_muted,
             system_status: 3, // Awake
@@ -970,12 +994,12 @@ impl CompanionSession {
                 info!("<< _systemInfo: replied and refreshed power state (session_id={session_id}, renewed={is_renewed})");
                 self.send_power_state(None).await?;
 
-                // Background probes from sharingd/rapportd have high bit set in xid (>= 0x80000000)
-                // and never send _sessionStart. Real remote control (tvremoted) sends _sessionStart
-                // within 10-20ms. If probe, set a short 1.0s timeout to release the channel.
+                // The Apple Watch remote also sends xid with the high bit set and starts its
+                // session later, so a short timeout closed it. A new connection from the same IP
+                // already aborts an unestablished one, so a long timeout cannot block the channel.
                 let is_background_probe = xid.map_or(false, |x| (x & 0x8000_0000) != 0);
                 let timeout = if is_background_probe {
-                    std::time::Duration::from_millis(1000)
+                    std::time::Duration::from_millis(30_000)
                 } else {
                     std::time::Duration::from_millis(2500)
                 };
@@ -999,9 +1023,7 @@ impl CompanionSession {
         let command_name = hid_command_name(command);
         self.send_response(xid, None, 0).await?;
 
-        // Direction buttons should move on press, rather than wait for release.
-        let trigger_state = if (1..=4).contains(&command) { 1 } else { 2 };
-        if state == trigger_state {
+        if hid_fires(command, state, &mut self.hid_held) {
             match command_name.as_str() {
                 "volume_up" | "volume_down" => {
                     self.delegate.on_button(&command_name);
@@ -1374,6 +1396,25 @@ mod auth_tests {
             *buttons.0.lock().unwrap(),
             vec!["up", "down", "left", "right"]
         );
+    }
+
+    #[test]
+    fn watch_buttons_act_once_and_the_crown_acts_on_each_step() {
+        let mut held = None;
+        // iPhone: 1 down, 2 up.
+        assert!(!hid_fires(14, 1, &mut held));
+        assert!(hid_fires(14, 2, &mut held));
+        assert!(hid_fires(2, 1, &mut held));
+        assert!(!hid_fires(2, 2, &mut held));
+        // Apple Watch: 1 down, 0 up.
+        assert!(!hid_fires(14, 1, &mut held));
+        assert!(hid_fires(14, 0, &mut held));
+        assert!(hid_fires(2, 1, &mut held));
+        assert!(!hid_fires(2, 0, &mut held));
+        // Digital Crown: a single 0 for each step.
+        assert!(hid_fires(8, 0, &mut held));
+        assert!(hid_fires(8, 0, &mut held));
+        assert!(hid_fires(9, 0, &mut held));
     }
 
     #[tokio::test]
