@@ -970,12 +970,12 @@ impl CompanionSession {
                 info!("<< _systemInfo: replied and refreshed power state (session_id={session_id}, renewed={is_renewed})");
                 self.send_power_state(None).await?;
 
-                // Background probes from sharingd/rapportd have high bit set in xid (>= 0x80000000)
-                // and never send _sessionStart. Real remote control (tvremoted) sends _sessionStart
-                // within 10-20ms. If probe, set a short 1.0s timeout to release the channel.
+                // The Apple Watch remote also sends xid with the high bit set and starts its
+                // session later, so a short timeout closed it. A new connection from the same IP
+                // already aborts an unestablished one, so a long timeout cannot block the channel.
                 let is_background_probe = xid.map_or(false, |x| (x & 0x8000_0000) != 0);
                 let timeout = if is_background_probe {
-                    std::time::Duration::from_millis(1000)
+                    std::time::Duration::from_millis(30_000)
                 } else {
                     std::time::Duration::from_millis(2500)
                 };
