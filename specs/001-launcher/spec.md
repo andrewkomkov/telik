@@ -79,6 +79,19 @@ The Home screen has a moving background and a screensaver with slow landscape vi
 1. **Given** the Home screen is idle for the set time, **When** the time ends, **Then** the screensaver starts.
 2. **Given** the screensaver runs, **When** the user presses any key, **Then** the Home screen returns at once.
 
+### User Story 6 - Inputs, settings and remote keep working (Priority: P1)
+
+The user reaches the HDMI inputs, the system settings and the search from the Home screen. The iPhone remote and the Apple Watch remote keep working, and the TV button of the phone opens the Home screen.
+
+**Why this priority**: A Home screen without inputs and settings locks the user out of the TV. This story blocks the release of story 1.
+
+**Independent Test**: From the Home screen, open an HDMI input, open the settings and go back. Then press the TV button in the iPhone remote.
+
+**Acceptance Scenarios**:
+1. **Given** the Home screen is open, **When** the user selects an HDMI input, **Then** the input opens.
+2. **Given** the Home screen is open, **When** the user selects settings, **Then** the system settings open.
+3. **Given** the iPhone remote is connected, **When** the user presses the TV button, **Then** the Home screen opens.
+
 ### Edge Cases
 
 - The TV has an old low-end chip. Animations must degrade to a plain focus frame at under 30 frames per second.
@@ -102,6 +115,9 @@ The Home screen has a moving background and a screensaver with slow landscape vi
 - **FR-008**: Telik MUST NOT require a permission that the user must grant through adb, except the existing headphones feature.
 - **FR-009**: Telik MUST NOT bypass any protection of other apps and MUST NOT read their private data.
 - **FR-010**: All text MUST exist in English and Russian.
+- **FR-015**: Telik MUST show tiles for the HDMI inputs and the system settings, and MUST show a search entry.
+- **FR-016**: The Home screen MUST accept the D-pad keys from the Telik remote service, and the remote Home action MUST open it.
+- **FR-017**: If Telik fails to start as Home three times in a row, the system MUST get a plain Home screen from the maker. Telik drops the Home role by itself and shows a notice.
 - **FR-011**: The Home screen MUST use a liquid glass look: translucent blurred panels, soft highlights and depth, over a moving background.
 - **FR-012**: The glass look MUST switch to a plain translucent panel with no blur when a frame takes more than 33 ms, and the user MUST be able to switch the glass off.
 - **FR-013**: The launcher MUST stay light: no heavy library, no work in the background while the Home screen is hidden, and cached icons.
@@ -137,5 +153,6 @@ The Home screen has a moving background and a screensaver with slow landscape vi
 
 ## Open Questions
 
-- **Q1**: Should Telik replace the maker Home screen, or open only from a button? This is open until a test on the target TV shows that the Home role can change. [NEEDS CLARIFICATION]
+- **Q1**: Should Telik replace the maker Home screen, or open only from a button? Desk research says an app can be a selectable Home app without root. A test on the target TV decides (see `research.md` and T001). [NEEDS CLARIFICATION]
 - **Q2**: Which wallpaper and screensaver sources are free to use? [NEEDS CLARIFICATION]
+- **Q3**: Can a third-party launcher read the preview programs of other apps? The AOSP manifest says the read permission is no longer enforced. Test T003 decides story 3. [NEEDS CLARIFICATION]

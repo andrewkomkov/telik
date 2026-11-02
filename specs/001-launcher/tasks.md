@@ -13,7 +13,8 @@
 - [ ] T004 [P] Measure the frame time of 40 focusable tiles with scale and tilt on the TV. Record the result in `research.md`.
 - [ ] T006 [P] Build a test screen with three glass methods: `RenderEffect` blur, an AGSL shader and a pre-blurred wallpaper. Measure frame time and memory on the TV for each. Record the result in `research.md`.
 - [ ] T007 [P] Measure the cold start of an empty Compose Home activity on the TV. This is the base for the 800 ms budget.
-- [ ] T005 Update the open questions Q1 and Q2 in `spec.md` with the results.
+- [ ] T008 [P] Check that the HDMI inputs and the system settings open from an own activity on the TV. Record the intents in `research.md`.
+- [ ] T005 Update the open questions Q1, Q2 and Q3 in `spec.md` with the results.
 
 **Checkpoint**: The Home role works on the target TV, or the plan stops here.
 
@@ -30,6 +31,9 @@
 - [ ] T017a [US1] Add the liquid glass panels with the method that T006 chose, the automatic fallback at 33 ms per frame, and a switch in the settings.
 - [ ] T017b [US1] Add a Baseline Profile and a cold start Macrobenchmark. Add R8 full mode. Check the budgets SC-001, SC-005 and SC-006 on the TV.
 - [ ] T018 [US2] Add the edit mode: move, hide and open information.
+- [ ] T018a [US6] Add tiles for the HDMI inputs, the system settings and the search.
+- [ ] T018b [US6] Send the D-pad keys from the Telik remote service to the Home screen and check that the remote Home action opens it.
+- [ ] T018c [US1] Add the fallback: after three failed starts as Home, drop the Home role and show a notice. Test it with a forced crash.
 - [ ] T019 [US1] Add English and Russian strings in `app/src/main/res/values/` and `values-ru/`.
 - [ ] T020 [US1] Check on the TV: Home opens in 1 second or less, the order survives a reboot, the removal path works, and a crash test leaves a usable Home.
 - [ ] T021 Add changelog files `fastlane/metadata/android/*/changelogs/20.txt`, bump the version to 2.1.0 and release.
