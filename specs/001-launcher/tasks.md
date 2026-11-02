@@ -11,6 +11,8 @@
 - [ ] T002 [P] Check `PackageManager.queryIntentActivities` for `LEANBACK_LAUNCHER` and `LAUNCHER` on the TV and list the apps that it returns. Record the result in `research.md`.
 - [ ] T003 [P] Check whether Telik can read `TvContract` preview programs of other apps without a special permission. Record the result in `research.md`.
 - [ ] T004 [P] Measure the frame time of 40 focusable tiles with scale and tilt on the TV. Record the result in `research.md`.
+- [ ] T006 [P] Build a test screen with three glass methods: `RenderEffect` blur, an AGSL shader and a pre-blurred wallpaper. Measure frame time and memory on the TV for each. Record the result in `research.md`.
+- [ ] T007 [P] Measure the cold start of an empty Compose Home activity on the TV. This is the base for the 800 ms budget.
 - [ ] T005 Update the open questions Q1 and Q2 in `spec.md` with the results.
 
 **Checkpoint**: The Home role works on the target TV, or the plan stops here.
@@ -25,6 +27,8 @@
 - [ ] T015 [P] [US2] Add unit tests for ordering and hiding in `app/src/test/`.
 - [ ] T016 [US2] Create the app row with D-pad focus in `launcher/ui/`, reusing `ui/TvFocus.kt`.
 - [ ] T017 [US2] Add the focus effect: scale, tilt and light sweep, with a plain-frame fallback on slow TVs.
+- [ ] T017a [US1] Add the liquid glass panels with the method that T006 chose, the automatic fallback at 33 ms per frame, and a switch in the settings.
+- [ ] T017b [US1] Add a Baseline Profile and a cold start Macrobenchmark. Add R8 full mode. Check the budgets SC-001, SC-005 and SC-006 on the TV.
 - [ ] T018 [US2] Add the edit mode: move, hide and open information.
 - [ ] T019 [US1] Add English and Russian strings in `app/src/main/res/values/` and `values-ru/`.
 - [ ] T020 [US1] Check on the TV: Home opens in 1 second or less, the order survives a reboot, the removal path works, and a crash test leaves a usable Home.
