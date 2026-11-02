@@ -43,11 +43,33 @@ jobs:
         run: cargo test --locked -p atv-core
       - name: Build Remote native library
         run: scripts/build-remote.sh
+      - name: Prepare signing key
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          KEYSTORE: ${{ secrets.TELIK_KEYSTORE_BASE64 }}
+          PASSWORD: ${{ secrets.TELIK_KEYSTORE_PASSWORD }}
+        run: |
+          printf '%s' "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/telik.keystore"
+          {
+            printf 'storeFile=%s\n' "$RUNNER_TEMP/telik.keystore"
+            printf 'storePassword=%s\n' "$PASSWORD"
+            printf 'keyAlias=telik\n'
+            printf 'keyPassword=%s\n' "$PASSWORD"
+          } >> local.properties
       - name: Build, unit test and lint
         run: ./gradlew :app:testDebugUnitTest :app:assembleRelease :app:lintRelease --max-workers 4
       - name: Check whitespace
         run: git diff --check
+      - name: Upload signed test APK
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: telik-signed-armv7
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 3
       - name: Upload unsigned development APK
+        if: github.event_name != 'workflow_dispatch'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: telik-unsigned-armv7
