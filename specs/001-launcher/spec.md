@@ -5,7 +5,7 @@
 **Feature Branch**: `001-launcher`
 **Created**: 2026-11-02
 **Status**: Draft (plan only, no code)
-**Input**: "Make our app a launcher. It must look and behave like Apple TV, and it must look modern."
+**Input**: "Make our app a launcher. It must look and behave like Apple TV. It must be as light and fast as possible, use the newest technology, and have a liquid glass look."
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -102,6 +102,10 @@ The Home screen has a moving background and a screensaver with slow landscape vi
 - **FR-008**: Telik MUST NOT require a permission that the user must grant through adb, except the existing headphones feature.
 - **FR-009**: Telik MUST NOT bypass any protection of other apps and MUST NOT read their private data.
 - **FR-010**: All text MUST exist in English and Russian.
+- **FR-011**: The Home screen MUST use a liquid glass look: translucent blurred panels, soft highlights and depth, over a moving background.
+- **FR-012**: The glass look MUST switch to a plain translucent panel with no blur when a frame takes more than 33 ms, and the user MUST be able to switch the glass off.
+- **FR-013**: The launcher MUST stay light: no heavy library, no work in the background while the Home screen is hidden, and cached icons.
+- **FR-014**: The launcher MUST use the newest stable platform APIs and tools, with exact version pins.
 
 ### Key Entities
 
@@ -113,16 +117,20 @@ The Home screen has a moving background and a screensaver with slow landscape vi
 
 ### Measurable Outcomes
 
-- **SC-001**: After Home is pressed, the Home screen is visible in less than 1 second on the test TV (Dahua 4K, Android 14, 32-bit).
+- **SC-001**: After Home is pressed, the first frame is visible in 800 ms or less on the test TV (Dahua 4K, Android 14, 32-bit).
 - **SC-002**: Focus moves at 30 frames per second or more with 40 apps installed.
 - **SC-003**: The app starts as the Home app after a reboot in less than 10 seconds.
 - **SC-004**: The user restores the old Home screen in 3 steps or fewer.
-- **SC-005**: The APK grows by 4 MB or less.
+- **SC-005**: The APK grows by 2 MB or less.
+- **SC-006**: The Home screen uses 100 MB of memory or less when it is idle.
+- **SC-007**: With the glass look on, focus moves at 30 frames per second or more. When it cannot, the plain panel starts by itself.
+- **SC-008**: The Home screen uses no CPU in the background when it is hidden.
 
 ## Assumptions
 
 - The target is the same as for Telik today: Android TV 13 or later, 32-bit ARM.
 - Android TV preview channels are the only content source in the first version. Other sources are out of scope.
+- Liquid glass means blur, translucency, highlights and depth. Telik draws it with its own code on current Compose APIs. It is not a copy of Apple artwork.
 - Apple trademarks and artwork are not copied. Telik copies the behavior and the layout idea, with its own icons, fonts and wallpapers.
 - The first release has stories 1 and 2. Stories 3, 4 and 5 follow in separate releases.
 - Some TV makers lock the Home role. On such a TV, Telik stays a normal app and says so.
