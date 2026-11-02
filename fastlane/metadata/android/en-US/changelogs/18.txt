@@ -1,0 +1,1 @@
+The Apple Watch remote now connects and works: the Digital Crown changes the volume, and play and pause, menu and select work.
