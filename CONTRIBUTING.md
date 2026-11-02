@@ -11,3 +11,8 @@ focus visibility and background lifecycle when changing the interface.
 
 Run the CI checks locally before submitting. Contributions are distributed under
 the project's GPL-3.0 license; preserve existing copyright and dependency notices.
+
+## Specifications
+
+Larger features start with a specification in `specs/NNN-name/` (`spec.md`, `plan.md`, `tasks.md`).
+The tool is [Spec Kit](https://github.com/github/spec-kit), and the project rules are in `.specify/memory/constitution.md`.
