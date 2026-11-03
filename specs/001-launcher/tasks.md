@@ -1,7 +1,7 @@
 # Tasks: Telik as the TV Launcher
 
 **Input**: `specs/001-launcher/spec.md` and `plan.md`
-**Status**: Phase 1 code is written (ticked tasks) but not built or run: the cloud session had no Android SDK. Phase 0 and the TV checks (T020) are open.
+**Status**: Phase 1 code (ticked tasks) builds: `assembleDebug` (armeabi-v7a) and `testDebugUnitTest` (35 tests) pass on 2026-11-03. It is not run on the TV yet. Phase 0 and the TV checks (T020) are open.
 
 <!-- STE exception: task lines use the spec-kit format [ID] [P] [Story]. -->
 
