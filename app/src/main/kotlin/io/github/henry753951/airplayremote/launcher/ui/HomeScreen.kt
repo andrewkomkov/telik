@@ -228,8 +228,14 @@ internal fun HomeScreen(
                     Row(
                         Modifier.fillMaxWidth().padding(horizontal = SafeH).onFocusChanged { if (it.hasFocus) onRowFocus(-1) },
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
+                      // The pills scroll. The clock keeps its place.
+                      Row(
+                        Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                      ) {
                         Pill(Icons.Default.Settings, stringResource(R.string.home_entry_telik), fancy, { focusStamp++ }, onClick = onTelik)
                         state.inputs.forEach { i ->
                             Pill(Icons.AutoMirrored.Filled.Input, i.label, fancy, { focusStamp++ }, { onToggleFavorite(Favorites.INPUT + i.id) }) {
@@ -239,7 +245,7 @@ internal fun HomeScreen(
                         Pill(Icons.Default.Search, stringResource(R.string.home_entry_search), fancy, { focusStamp++ }, onClick = onSearch)
                         Pill(Icons.Default.Tune, stringResource(R.string.home_entry_settings), fancy, { focusStamp++ }, onClick = onSettings)
                         Pill(Icons.Default.Home, stringResource(R.string.home_entry_home), fancy, { focusStamp++ }) { onMenu(true) }
-                        Box(Modifier.weight(1f))
+                      }
                         Clock()
                     }
 
@@ -288,23 +294,12 @@ internal fun HomeScreen(
                         }
                     }
 
-                    // Row 1: Telik, the same tiles as the apps; the state shows in the title area on focus.
-                    if (editing == null) {
-                        RowTitle(stringResource(R.string.tv_home_title))
-                        TileRow(1, rowTops, onRowFocus) {
-                            TvHomeEntry.entries.forEach { entry ->
-                                val (title, subtitle, active) = telikCardText(entry, state.telik)
-                                TelikTile(entry, title, subtitle, active, fancy, firstMod(), focusOn, { onToggleFavorite(Favorites.TELIK + entry.name) }) {
-                                    onTelikEntry(entry)
-                                }
-                            }
-                        }
-                    }
-
-                    // Rows 2 and down: all apps in a grid of five columns (HIG: 320 pt tiles, 40 pt gaps).
+                    // Rows 1 and down: all apps in a grid of five columns (HIG: 320 pt tiles, 40 pt gaps).
                     RowTitle(stringResource(R.string.home_apps_title))
-                    gridTiles.chunked(Columns).forEachIndexed { r, line ->
-                        TileRow(2 + r, rowTops, onRowFocus, scrollable = false) {
+                    val gridLines = gridTiles.chunked(Columns)
+                    val gridRows = gridLines.size
+                    gridLines.forEachIndexed { r, line ->
+                        TileRow(1 + r, rowTops, onRowFocus, scrollable = false) {
                             line.forEach { app ->
                                 AppTileView(
                                     app,
@@ -319,6 +314,19 @@ internal fun HomeScreen(
                             }
                         }
                     }
+                    // Last row: Telik, under the apps, as the user asked. Its state shows in the title area on focus.
+                    if (editing == null) {
+                        RowTitle(stringResource(R.string.tv_home_title))
+                        TileRow(1 + gridRows, rowTops, onRowFocus) {
+                            TvHomeEntry.entries.forEach { entry ->
+                                val (title, subtitle, active) = telikCardText(entry, state.telik)
+                                TelikTile(entry, title, subtitle, active, fancy, firstMod(), focusOn, { onToggleFavorite(Favorites.TELIK + entry.name) }) {
+                                    onTelikEntry(entry)
+                                }
+                            }
+                        }
+                    }
+
                     Box(Modifier.height(ShelfHeight))
                 }
             }
@@ -503,7 +511,9 @@ private fun Clock() {
         }
     }
     val text = remember(now) { android.text.format.DateFormat.getTimeFormat(ctx).format(java.util.Date(now)) }
-    Text(text, color = Color.White, fontSize = TvType.Headline, fontWeight = FontWeight.Medium)
+    Text(text, color = Color.White, fontSize = TvType.Headline, fontWeight = FontWeight.Medium,
+        maxLines = 1, softWrap = false,
+    )
 }
 
 @Composable

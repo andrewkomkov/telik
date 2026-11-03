@@ -143,6 +143,8 @@ The user asked for a Home screen that looks like Apple TV and follows the Apple 
 - **FR-013**: The layout MUST use the tvOS guidelines at 0.5 dp per point: a safe area of 80 pt at the sides and 60 pt at the top and bottom.
   The app grid MUST have five columns of 320 pt with 40 pt gaps. The text MUST use the tvOS styles (Title 1 76 pt, Headline 38 pt, Body 29 pt, Caption 25 pt).
 - **FR-014**: Only the tile in focus MUST show its label. A focused tile MUST grow only into the gap.
+- **FR-015**: The row of the Telik entries MUST sit under the app grid. The user asked for this on 2026-11-03.
+- **FR-016**: The clock MUST stay on one line. When the top bar is too wide, the top bar scrolls.
 
 ### Key Entities
 
