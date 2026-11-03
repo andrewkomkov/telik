@@ -1,5 +1,22 @@
 package io.github.henry753951.airplayremote.launcher.ui
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.BringIntoViewSpec
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import io.github.henry753951.airplayremote.ui.accent
+import kotlinx.coroutines.launch
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -113,11 +130,9 @@ data class HomeState(
     val nowPlayingHint: Boolean = false,
 )
 
-private val TileShape = RoundedCornerShape(16.dp)
-private val EdgeMargin = 56.dp
-private val ActiveDot = Color(0xFF34C759)
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 internal fun HomeScreen(
     state: HomeState,
     onFirstFrame: () -> Unit,
@@ -169,195 +184,169 @@ internal fun HomeScreen(
     }
 
     val editing = state.editing
-    val rowTiles = if (editing != null) state.editTiles else state.tiles
-    val listState = rememberLazyListState()
+    val gridTiles = if (editing != null) state.editTiles else state.tiles
     val firstTile = remember { FocusRequester() }
+    val scroll = rememberScrollState()
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    // The item in focus drives the backdrop and the title area, as on the Apple TV Home screen.
+    var info by remember { mutableStateOf<FocusInfo?>(null) }
+    val focusOn: (FocusInfo) -> Unit = { i -> info = i; focusStamp++ }
+
+    // Rows scroll as a whole (HIG: never half a row). The top rows keep the page at the top; a
+    // lower row moves up to a fixed place under the safe area.
+    val rowTops = remember { mutableStateMapOf<Int, Int>() }
+    val onRowFocus = { row: Int ->
+        val target = if (row <= 0) 0 else ((rowTops[row] ?: 0) - with(density) { RowPivot.roundToPx() }).coerceAtLeast(0)
+        scope.launch { scroll.animateScrollTo(target, tween(320, easing = FastOutSlowInEasing)) }
+        Unit
+    }
 
     LaunchedEffect(state.homeTick) {
         if (state.homeTick > 0) {
-            listState.scrollToItem(0)
+            scroll.scrollTo(0)
             firstTile.requestFocusUntilLanded()
         }
     }
     LaunchedEffect(Unit) { firstTile.requestFocusUntilLanded() }
 
-    Box(
-        Modifier.fillMaxSize().background(
-            Brush.verticalGradient(listOf(Color(0xFF1B2433), Color(0xFF0B0D12))),
-        ),
-    ) {
-        // Rows run to the screen edges and keep the margin as content padding, so a cut tile
-        // at the edge shows that the row scrolls.
-        // Rows scroll up and down; a focused tile brings its row into view.
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 28.dp)) {
-            // shortcuts: Telik, HDMI inputs, search, settings, Home screen menu
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                contentPadding = PaddingValues(horizontal = EdgeMargin),
-            ) {
-                item { Pill(Icons.Default.Settings, stringResource(R.string.home_entry_telik), fancy, { focusStamp++ }, onClick = onTelik) }
-                items(state.inputs, key = { it.id }) { i ->
-                    Pill(Icons.AutoMirrored.Filled.Input, i.label, fancy, { focusStamp++ }, { onToggleFavorite(Favorites.INPUT + i.id) }) {
-                        onInput(i.id)
-                    }
-                }
-                item { Pill(Icons.Default.Search, stringResource(R.string.home_entry_search), fancy, { focusStamp++ }, onClick = onSearch) }
-                item { Pill(Icons.Default.Settings, stringResource(R.string.home_entry_settings), fancy, { focusStamp++ }, onClick = onSettings) }
-                item { Pill(Icons.Default.Home, stringResource(R.string.home_entry_home), fancy, { focusStamp++ }) { onMenu(true) } }
-            }
-            // FR-019: the problems of the old Telik start page. States settle for a moment after a
-            // start (the service binds, the network comes up), so only a lasting problem shows.
-            val pending = Attentions.pick(
-                state.localNetwork, state.telik.server, state.telik.remoteEnabled, state.telik.remote,
-            )
-            var shown by remember { mutableStateOf<Attention?>(null) }
-            LaunchedEffect(pending) {
-                if (pending == null) shown = null else { delay(ATTENTION_DELAY_MS); shown = pending }
-            }
-            shown?.let { AttentionRow(it, fancy) { onAttention(it) } }
-            if (!state.isDefault) {
-                Text(
-                    stringResource(R.string.home_not_default),
-                    Modifier.padding(start = EdgeMargin, top = 12.dp),
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 16.sp,
-                )
-            }
+    val pending = Attentions.pick(state.localNetwork, state.telik.server, state.telik.remoteEnabled, state.telik.remote)
+    var attention by remember { mutableStateOf<Attention?>(null) }
+    LaunchedEffect(pending) { if (pending == null) attention = null else { delay(ATTENTION_DELAY_MS); attention = pending } }
 
-            if (editing == null) state.nowPlaying?.let { NowPlayingCard(it, fancy, { focusStamp++ }, onNowPlaying, onPlayPause, onNext) }
-            if (editing == null && state.nowPlayingHint) {
-                Row(
-                    Modifier.padding(start = EdgeMargin, end = EdgeMargin, top = 16.dp).fillMaxWidth()
-                        .glassPanel(TileShape, fancy).padding(horizontal = 20.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.home_np_hint), Modifier.weight(1f), color = Color.White, fontSize = 16.sp,
-                        maxLines = 2, overflow = TextOverflow.Ellipsis,
-                    )
-                    ActionButton(stringResource(R.string.btn_allow), fancy, onClick = onAllowNowPlaying)
-                    ActionButton(stringResource(R.string.home_np_not_now), fancy, onClick = onDismissNowPlaying)
-                }
-            }
+    Box(Modifier.fillMaxSize().background(Color(0xFF0B0D12))) {
+        Backdrop(info, state.nowPlaying, fancy)
 
-            // Favorites (005 US1): apps, inputs and Telik cards that the user pinned. Hold OK to move
-            // or remove. With no favorites yet, the row suggests the apps opened most from Telik.
-            if (editing == null && state.favorites.isNotEmpty()) {
-                Text(
-                    stringResource(if (state.favoritesSuggested) R.string.home_fav_suggested else R.string.home_fav_title),
-                    Modifier.padding(start = EdgeMargin, top = 16.dp),
-                    color = Color.White.copy(alpha = 0.7f), fontSize = 16.sp,
-                )
-                val byPackage = state.editTiles.associateBy { it.packageName }
-                val inputs = state.inputs.associateBy { it.id }
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    contentPadding = PaddingValues(vertical = 12.dp, horizontal = EdgeMargin),
-                ) {
-                    items(state.favorites, key = { it }) { key ->
-                        val selected = state.editingFavorite == key
-                        val onLong = { onEditFavorite(key) }
-                        when {
-                            key.startsWith(Favorites.APP) -> byPackage[key.removePrefix(Favorites.APP)]?.let { app ->
-                                AppCard(
-                                    app = app, dim = false, selected = selected, fancy = fancy, modifier = Modifier,
-                                    onFocused = { focusStamp++ },
-                                    onClick = { if (state.editingFavorite != null) onEditFavorite(key) else onLaunch(app) },
-                                    onLongClick = onLong, compact = true,
-                                )
-                            }
-                            key.startsWith(Favorites.INPUT) -> inputs[key.removePrefix(Favorites.INPUT)]?.let { i ->
-                                Pill(Icons.AutoMirrored.Filled.Input, i.label, fancy, { focusStamp++ }, onLong) { onInput(i.id) }
-                            }
-                            key.startsWith(Favorites.TELIK) ->
-                                TvHomeEntry.entries.firstOrNull { it.name == key.removePrefix(Favorites.TELIK) }?.let { entry ->
-                                    val (title, subtitle, active) = telikCardText(entry, state.telik)
-                                    TelikCard(entry, title, subtitle, active, fancy, { focusStamp++ }, onLong) { onTelikEntry(entry) }
-                                }
-                        }
-                    }
-                }
-                state.editingFavorite?.let { key ->
+        val defaultSpec = LocalBringIntoViewSpec.current
+        CompositionLocalProvider(LocalBringIntoViewSpec provides NoVerticalBringIntoView) {
+            Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(vertical = SafeV)) {
+                CompositionLocalProvider(LocalBringIntoViewSpec provides defaultSpec) {
+                    // Top bar: Telik settings, inputs, search, settings, menu, and the clock.
                     Row(
-                        Modifier.padding(horizontal = EdgeMargin).fillMaxWidth()
-                            .glassPanel(RoundedCornerShape(20.dp), fancy)
-                            .horizontalScroll(rememberScrollState()).padding(16.dp),
+                        Modifier.fillMaxWidth().padding(horizontal = SafeH).onFocusChanged { if (it.hasFocus) onRowFocus(-1) },
+                        verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        if (!state.favoritesSuggested) {
-                            ActionButton(stringResource(R.string.home_edit_left), fancy) { onMoveFavorite(key, -1) }
-                            ActionButton(stringResource(R.string.home_edit_right), fancy) { onMoveFavorite(key, 1) }
+                        Pill(Icons.Default.Settings, stringResource(R.string.home_entry_telik), fancy, { focusStamp++ }, onClick = onTelik)
+                        state.inputs.forEach { i ->
+                            Pill(Icons.AutoMirrored.Filled.Input, i.label, fancy, { focusStamp++ }, { onToggleFavorite(Favorites.INPUT + i.id) }) {
+                                onInput(i.id)
+                            }
                         }
-                        ActionButton(
-                            stringResource(if (key in state.favoriteKeys) R.string.home_fav_remove else R.string.home_fav_add), fancy,
-                        ) { onToggleFavorite(key) }
-                        ActionButton(stringResource(R.string.home_edit_done), fancy) { onEditFavorite(null) }
+                        Pill(Icons.Default.Search, stringResource(R.string.home_entry_search), fancy, { focusStamp++ }, onClick = onSearch)
+                        Pill(Icons.Default.Tune, stringResource(R.string.home_entry_settings), fancy, { focusStamp++ }, onClick = onSettings)
+                        Pill(Icons.Default.Home, stringResource(R.string.home_entry_home), fancy, { focusStamp++ }) { onMenu(true) }
+                        Box(Modifier.weight(1f))
+                        Clock()
                     }
-                }
-            }
 
-            // Telik row: AirPlay and its accessories as part of the Home screen, each with its state.
-            // Edit mode is about the app row, so this row steps aside to make room for the panel.
-            if (editing == null) {
-                LazyRow(
-                    Modifier.padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    contentPadding = PaddingValues(vertical = 16.dp, horizontal = EdgeMargin),
-                ) {
-                    items(TvHomeEntry.entries) { entry ->
-                        val (title, subtitle, active) = telikCardText(entry, state.telik)
-                        TelikCard(entry, title, subtitle, active, fancy, { focusStamp++ }, { onToggleFavorite(Favorites.TELIK + entry.name) }) {
-                            onTelikEntry(entry)
+                    // Title area (the Top Shelf place): a problem, the media that plays, or the item in focus.
+                    Box(Modifier.fillMaxWidth().height(ShelfHeight).padding(horizontal = SafeH), contentAlignment = Alignment.BottomStart) {
+                        val a = attention
+                        val np = state.nowPlaying
+                        when {
+                            a != null -> AttentionRow(a, fancy) { onAttention(a) }
+                            np != null -> NowPlayingCard(np, fancy, { focusStamp++; onRowFocus(-1) }, onNowPlaying, onPlayPause, onNext)
+                            state.nowPlayingHint -> NowPlayingHint(fancy, onAllowNowPlaying, onDismissNowPlaying)
+                            else -> FocusTitle(info, state.isDefault)
                         }
                     }
+
+                    // Row 0: favorites, the top row of the grid. It never gets a title, as the Apple TV dock.
+                    val byPackage = state.editTiles.associateBy { it.packageName }
+                    val inputs = state.inputs.associateBy { it.id }
+                    var firstSet = false
+                    fun firstMod(): Modifier = if (!firstSet) { firstSet = true; Modifier.focusRequester(firstTile) } else Modifier
+                    if (editing == null && state.favorites.isNotEmpty()) {
+                        RowTitle(if (state.favoritesSuggested) stringResource(R.string.home_fav_suggested) else null)
+                        TileRow(0, rowTops, onRowFocus) {
+                            state.favorites.forEach { key ->
+                                val selected = state.editingFavorite == key
+                                val onLong = { onEditFavorite(key) }
+                                when {
+                                    key.startsWith(Favorites.APP) -> byPackage[key.removePrefix(Favorites.APP)]?.let { app ->
+                                        AppTileView(
+                                            app, dim = false, selected = selected, fancy = fancy, modifier = firstMod(),
+                                            onFocused = focusOn,
+                                            onClick = { if (state.editingFavorite != null) onEditFavorite(key) else onLaunch(app) },
+                                            onLongClick = onLong,
+                                        )
+                                    }
+                                    key.startsWith(Favorites.INPUT) -> inputs[key.removePrefix(Favorites.INPUT)]?.let { i ->
+                                        InputTile(i, fancy, firstMod(), focusOn, onLong) { onInput(i.id) }
+                                    }
+                                    key.startsWith(Favorites.TELIK) ->
+                                        TvHomeEntry.entries.firstOrNull { it.name == key.removePrefix(Favorites.TELIK) }?.let { entry ->
+                                            val (title, subtitle, active) = telikCardText(entry, state.telik)
+                                            TelikTile(entry, title, subtitle, active, fancy, firstMod(), focusOn, onLong) { onTelikEntry(entry) }
+                                        }
+                                }
+                            }
+                        }
+                    }
+
+                    // Row 1: Telik, the same tiles as the apps; the state shows in the title area on focus.
+                    if (editing == null) {
+                        RowTitle(stringResource(R.string.tv_home_title))
+                        TileRow(1, rowTops, onRowFocus) {
+                            TvHomeEntry.entries.forEach { entry ->
+                                val (title, subtitle, active) = telikCardText(entry, state.telik)
+                                TelikTile(entry, title, subtitle, active, fancy, firstMod(), focusOn, { onToggleFavorite(Favorites.TELIK + entry.name) }) {
+                                    onTelikEntry(entry)
+                                }
+                            }
+                        }
+                    }
+
+                    // Rows 2 and down: all apps in a grid of five columns (HIG: 320 pt tiles, 40 pt gaps).
+                    RowTitle(stringResource(R.string.home_apps_title))
+                    gridTiles.chunked(Columns).forEachIndexed { r, line ->
+                        TileRow(2 + r, rowTops, onRowFocus, scrollable = false) {
+                            line.forEach { app ->
+                                AppTileView(
+                                    app,
+                                    dim = editing != null && app.packageName in state.hidden,
+                                    selected = editing == app.packageName,
+                                    fancy = fancy,
+                                    modifier = firstMod(),
+                                    onFocused = focusOn,
+                                    onClick = { if (editing != null) onEdit(app.packageName) else onLaunch(app) },
+                                    onLongClick = { onEdit(app.packageName) },
+                                )
+                            }
+                        }
+                    }
+                    Box(Modifier.height(ShelfHeight))
                 }
             }
+        }
 
-            Spacer(Modifier.height(8.dp))
-
-            LazyRow(
-                state = listState,
-                horizontalArrangement = Arrangement.spacedBy(28.dp),
-                contentPadding = PaddingValues(vertical = 24.dp, horizontal = EdgeMargin),
-            ) {
-                items(rowTiles, key = { it.packageName }) { app ->
-                    val isFirst = app === rowTiles.first()
-                    AppCard(
-                        app = app,
-                        dim = editing != null && app.packageName in state.hidden,
-                        selected = editing == app.packageName,
-                        fancy = fancy,
-                        modifier = if (isFirst) Modifier.focusRequester(firstTile) else Modifier,
-                        onFocused = { focusStamp++ },
-                        onClick = { if (editing != null) onEdit(app.packageName) else onLaunch(app) },
-                        onLongClick = { onEdit(app.packageName) },
-                    )
+        // Edit panels float over the bottom edge, inside the safe area.
+        val panelMod = Modifier.align(Alignment.BottomCenter).padding(horizontal = SafeH, vertical = SafeV)
+        if (editing != null) {
+            val isHidden = editing in state.hidden
+            val favKey = Favorites.APP + editing
+            EditPanel(fancy, panelMod) {
+                ActionButton(stringResource(R.string.home_edit_left), fancy) { onMove(editing, -1) }
+                ActionButton(stringResource(R.string.home_edit_right), fancy) { onMove(editing, 1) }
+                ActionButton(stringResource(if (favKey in state.favoriteKeys) R.string.home_fav_remove else R.string.home_fav_add), fancy) {
+                    onToggleFavorite(favKey)
                 }
+                ActionButton(stringResource(if (isHidden) R.string.home_edit_show else R.string.home_edit_hide), fancy) { onHide(editing, !isHidden) }
+                ActionButton(stringResource(R.string.home_edit_info), fancy) { onInfo(editing) }
+                ActionButton(stringResource(R.string.home_edit_done), fancy, onClick = onCloseEdit)
             }
-
-            if (editing != null) {
-                val isHidden = editing in state.hidden
-                Row(
-                    Modifier.padding(horizontal = EdgeMargin).fillMaxWidth()
-                        .glassPanel(RoundedCornerShape(20.dp), fancy)
-                        .horizontalScroll(rememberScrollState()).padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    ActionButton(stringResource(R.string.home_edit_left), fancy) { onMove(editing, -1) }
-                    ActionButton(stringResource(R.string.home_edit_right), fancy) { onMove(editing, 1) }
-                    ActionButton(
-                        stringResource(if (isHidden) R.string.home_edit_show else R.string.home_edit_hide), fancy,
-                    ) { onHide(editing, !isHidden) }
-                    val favKey = Favorites.APP + editing
-                    ActionButton(
-                        stringResource(if (favKey in state.favoriteKeys) R.string.home_fav_remove else R.string.home_fav_add), fancy,
-                    ) { onToggleFavorite(favKey) }
-                    ActionButton(stringResource(R.string.home_edit_info), fancy) { onInfo(editing) }
-                    ActionButton(stringResource(R.string.home_edit_done), fancy, onClick = onCloseEdit)
+        }
+        state.editingFavorite?.let { key ->
+            EditPanel(fancy, panelMod) {
+                if (!state.favoritesSuggested) {
+                    ActionButton(stringResource(R.string.home_edit_left), fancy) { onMoveFavorite(key, -1) }
+                    ActionButton(stringResource(R.string.home_edit_right), fancy) { onMoveFavorite(key, 1) }
                 }
-            } else {
-                Box(Modifier.height(24.dp))
+                ActionButton(stringResource(if (key in state.favoriteKeys) R.string.home_fav_remove else R.string.home_fav_add), fancy) {
+                    onToggleFavorite(key)
+                }
+                ActionButton(stringResource(R.string.home_edit_done), fancy) { onEditFavorite(null) }
             }
         }
 
@@ -386,50 +375,252 @@ internal fun HomeScreen(
     }
 }
 
+// ---- layout from the tvOS Human Interface Guidelines; 1 pt on a 1080p TV is 0.5 dp here ----
+
+/** Safe area: 80 pt at the sides, 60 pt at the top and bottom. */
+private val SafeH = 40.dp
+private val SafeV = 30.dp
+/** Five-column grid: 320 pt tiles with 40 pt gaps. Tiles are 16:9, as Android TV banners. */
+private const val Columns = 5
+private val TileW = 160.dp
+private val TileH = 90.dp
+private val Gap = 20.dp
+/** A focused tile grows into the gap and no further: 160 dp * 1.12 leaves 0.4 dp of each 10 dp. */
+private const val FocusGrow = 1.12f
+private val ShelfHeight = 170.dp
+/** Where a focused lower row stops: its title stays just under the safe area. */
+private val RowPivot = 40.dp
+private val TileShape = RoundedCornerShape(10.dp)
+private val ActiveDot = Color(0xFF34C759)
+
+/** tvOS text styles (Medium weight) at 0.5 dp per pt. */
+private object TvType {
+    val Title1 = 38.sp
+    val Title3 = 24.sp
+    val Headline = 19.sp
+    val Body = 15.sp
+    val Caption = 13.sp
+}
+
+/** What the item in focus shows in the title area and the backdrop. */
+private data class FocusInfo(val title: String, val subtitle: String, val pkg: String? = null, val activity: String? = null, val entry: TvHomeEntry? = null)
+
+@OptIn(ExperimentalFoundationApi::class)
+private val NoVerticalBringIntoView = object : BringIntoViewSpec {
+    override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float = 0f
+}
+
 @Composable
-private fun AppCard(
+private fun RowTitle(text: String?) {
+    if (text == null) return
+    Text(
+        text, Modifier.padding(start = SafeH, top = 6.dp, bottom = 2.dp),
+        color = Color.White.copy(alpha = 0.75f), fontSize = TvType.Headline, fontWeight = FontWeight.Medium,
+    )
+}
+
+/** One row of tiles. Space above and below fits the focus growth and the label (HIG: 100 pt rows). */
+@Composable
+private fun TileRow(
+    index: Int,
+    tops: MutableMap<Int, Int>,
+    onFocus: (Int) -> Unit,
+    scrollable: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    val mod = Modifier.fillMaxWidth()
+        .onPlaced { tops[index] = it.positionInParent().y.toInt() }
+        .onFocusChanged { if (it.hasFocus) onFocus(index) }
+    val arrangement = Arrangement.spacedBy(Gap)
+    if (scrollable) {
+        Row(
+            mod.horizontalScroll(rememberScrollState()).padding(horizontal = SafeH).padding(top = 14.dp, bottom = 34.dp),
+            horizontalArrangement = arrangement,
+        ) { content() }
+    } else {
+        Row(mod.padding(horizontal = SafeH).padding(top = 14.dp, bottom = 34.dp), horizontalArrangement = arrangement) { content() }
+    }
+}
+
+/** Full-screen blurred art of the item in focus, under a dark scrim, as on Apple TV. */
+@Composable
+private fun Backdrop(info: FocusInfo?, np: NowPlaying?, fancy: Boolean) {
+    Box(Modifier.fillMaxSize()) {
+        val npArt = np?.art
+        Crossfade(targetState = npArt ?: info?.pkg ?: info?.entry, animationSpec = tween(450), label = "backdrop") { key ->
+            val blur = if (fancy) Modifier.blur(48.dp) else Modifier
+            when {
+                key is android.graphics.Bitmap -> {
+                    val image = remember(key) { key.asImageBitmap() }
+                    Image(image, null, Modifier.fillMaxSize().then(blur).graphicsLayer { alpha = 0.55f }, contentScale = ContentScale.Crop)
+                }
+                key is String && info?.activity != null -> {
+                    val art by rememberArt(key, info.activity)
+                    art?.let {
+                        Image(it.image, null, Modifier.fillMaxSize().then(blur).graphicsLayer { alpha = 0.45f }, contentScale = ContentScale.Crop)
+                    }
+                }
+                key is TvHomeEntry -> Box(
+                    Modifier.fillMaxSize().graphicsLayer { alpha = 0.35f }.background(Brush.linearGradient(key.accent())),
+                )
+                else -> Box(Modifier.fillMaxSize())
+            }
+        }
+        // Scrim: the text stays readable on any art.
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.25f), Color.Black.copy(alpha = 0.55f), Color.Black.copy(alpha = 0.85f))),
+            ),
+        )
+    }
+}
+
+@Composable
+private fun FocusTitle(info: FocusInfo?, isDefault: Boolean) {
+    Column(Modifier.padding(bottom = 4.dp)) {
+        Text(
+            info?.title ?: stringResource(R.string.tv_home_title), color = Color.White, fontSize = TvType.Title1,
+            fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+        val sub = info?.subtitle?.takeIf { it.isNotBlank() } ?: if (!isDefault) stringResource(R.string.home_not_default) else ""
+        if (sub.isNotBlank()) {
+            Text(sub, color = Color.White.copy(alpha = 0.7f), fontSize = TvType.Body, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+private fun Clock() {
+    val ctx = LocalContext.current
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(60_000L - now % 60_000L)
+        }
+    }
+    val text = remember(now) { android.text.format.DateFormat.getTimeFormat(ctx).format(java.util.Date(now)) }
+    Text(text, color = Color.White, fontSize = TvType.Headline, fontWeight = FontWeight.Medium)
+}
+
+@Composable
+private fun EditPanel(fancy: Boolean, modifier: Modifier, content: @Composable () -> Unit) {
+    Row(
+        modifier.glassPanel(RoundedCornerShape(20.dp), fancy).horizontalScroll(rememberScrollState()).padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) { content() }
+}
+
+@Composable
+private fun NowPlayingHint(fancy: Boolean, onAllow: () -> Unit, onDismiss: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().glassPanel(TileShape, fancy).padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(
+            stringResource(R.string.home_np_hint), Modifier.weight(1f), color = Color.White, fontSize = TvType.Body,
+            maxLines = 2, overflow = TextOverflow.Ellipsis,
+        )
+        ActionButton(stringResource(R.string.btn_allow), fancy, onClick = onAllow)
+        ActionButton(stringResource(R.string.home_np_not_now), fancy, onClick = onDismiss)
+    }
+}
+
+/** Label under a tile: only the tile in focus shows it (Apple TV Home screen). */
+@Composable
+private fun FocusLabel(text: String, visible: Boolean) {
+    val a by animateFloatAsState(if (visible) 1f else 0f, tween(160), label = "label")
+    Text(
+        text, Modifier.padding(top = 12.dp).width(TileW).graphicsLayer { alpha = a },
+        color = Color.White, fontSize = TvType.Caption, fontWeight = FontWeight.Medium,
+        maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+    )
+}
+
+@Composable
+private fun AppTileView(
     app: AppTile,
     dim: Boolean,
     selected: Boolean,
     fancy: Boolean,
     modifier: Modifier,
-    onFocused: () -> Unit,
+    onFocused: (FocusInfo) -> Unit,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    compact: Boolean = false,
 ) {
     val art by rememberArt(app.packageName, app.activity)
-    val w = if (compact) 192.dp else 264.dp
-    val h = if (compact) 108.dp else 148.dp
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    var focused by remember { mutableStateOf(false) }
+    Column(Modifier.onFocusChanged { focused = it.hasFocus }, horizontalAlignment = Alignment.CenterHorizontally) {
         FocusTile(
             fancy = fancy,
-            modifier = Modifier.size(w, h),
+            modifier = modifier.size(TileW, TileH),
             selected = selected,
-            onFocused = onFocused,
+            onFocused = { onFocused(FocusInfo(app.label, "", app.packageName, app.activity)) },
             onClick = onClick,
             onLongClick = onLongClick,
+            grow = FocusGrow,
         ) {
             val a = art
             Box(
-                Modifier.fillMaxSize().background(tileColor(app.packageName)).graphicsLayer { alpha = if (dim) 0.35f else 1f },
+                Modifier.fillMaxSize().background(if (a?.isBanner == true) Color.Black else Color.White.copy(alpha = 0.12f))
+                    .graphicsLayer { alpha = if (dim) 0.35f else 1f },
                 contentAlignment = Alignment.Center,
             ) {
                 if (a != null) {
                     Image(
                         a.image, app.label,
-                        Modifier.fillMaxSize().let { if (a.isBanner) it else it.padding(24.dp) },
+                        Modifier.fillMaxSize().let { if (a.isBanner) it else it.padding(18.dp) },
                         contentScale = if (a.isBanner) ContentScale.Crop else ContentScale.Fit,
                     )
+                } else {
+                    Text(app.label, color = Color.White, fontSize = TvType.Body, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
         }
-        Text(
-            app.label, Modifier.padding(top = if (compact) 10.dp else 18.dp).size(w, 28.dp),
-            color = Color.White.copy(alpha = 0.85f), fontSize = 18.sp,
-            maxLines = 1, overflow = TextOverflow.Ellipsis,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
+        FocusLabel(app.label, focused)
+    }
+}
+
+@Composable
+private fun InputTile(
+    input: InputEntry, fancy: Boolean, modifier: Modifier,
+    onFocused: (FocusInfo) -> Unit, onLongClick: () -> Unit, onClick: () -> Unit,
+) {
+    var focused by remember { mutableStateOf(false) }
+    Column(Modifier.onFocusChanged { focused = it.hasFocus }, horizontalAlignment = Alignment.CenterHorizontally) {
+        FocusTile(fancy, modifier.size(TileW, TileH), false, { onFocused(FocusInfo(input.label, "")) }, onClick, onLongClick, grow = FocusGrow) {
+            Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(Color(0xFF4B5563), Color(0xFF1F2937)))), contentAlignment = Alignment.Center) {
+                Icon(Icons.AutoMirrored.Filled.Input, null, Modifier.size(36.dp), tint = Color.White)
+            }
+        }
+        FocusLabel(input.label, focused)
+    }
+}
+
+@Composable
+private fun TelikTile(
+    entry: TvHomeEntry,
+    title: String,
+    subtitle: String,
+    active: Boolean,
+    fancy: Boolean,
+    modifier: Modifier,
+    onFocused: (FocusInfo) -> Unit,
+    onLongClick: (() -> Unit)?,
+    onClick: () -> Unit,
+) {
+    var focused by remember { mutableStateOf(false) }
+    Column(Modifier.onFocusChanged { focused = it.hasFocus }, horizontalAlignment = Alignment.CenterHorizontally) {
+        FocusTile(fancy, modifier.size(TileW, TileH), false, { onFocused(FocusInfo(title, subtitle, entry = entry)) }, onClick, onLongClick, grow = FocusGrow) {
+            Box(Modifier.fillMaxSize().background(Brush.linearGradient(entry.accent())), contentAlignment = Alignment.Center) {
+                Box(Modifier.graphicsLayer { scaleX = 1.25f; scaleY = 1.25f }) { TelikRowIcon(entry) }
+                if (active) {
+                    Box(Modifier.align(Alignment.TopEnd).padding(10.dp).size(10.dp).clip(CircleShape).background(ActiveDot))
+                }
+            }
+        }
+        FocusLabel(title, focused)
     }
 }
 
@@ -504,11 +695,11 @@ private fun NowPlayingCard(
     onOpen: () -> Unit, onPlayPause: () -> Unit, onNext: () -> Unit,
 ) {
     Row(
-        Modifier.padding(start = EdgeMargin, end = EdgeMargin, top = 16.dp),
+        Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        FocusTile(fancy, Modifier.weight(1f).height(96.dp), false, onFocused, onOpen, null, grow = 1.03f, shadow = false) {
+        FocusTile(fancy, Modifier.weight(1f).height(112.dp), false, onFocused, onOpen, null, grow = 1.03f, shadow = false) {
             Row(
                 Modifier.fillMaxSize().glassPanel(TileShape, fancy).padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -553,7 +744,7 @@ private fun AttentionRow(attention: Attention, fancy: Boolean, onAction: () -> U
             Triple(R.string.tv_attn_remote_error, R.string.tv_attn_remote_error_body, R.string.tv_remote_guide_settings)
     }
     Row(
-        Modifier.padding(start = EdgeMargin, end = EdgeMargin, top = 16.dp).fillMaxWidth()
+        Modifier.fillMaxWidth()
             .glassPanel(TileShape, fancy).padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(20.dp),
@@ -570,53 +761,18 @@ private fun AttentionRow(attention: Attention, fancy: Boolean, onAction: () -> U
 }
 
 @Composable
-private fun TelikCard(
-    entry: TvHomeEntry,
-    title: String,
-    subtitle: String,
-    active: Boolean,
-    fancy: Boolean,
-    onFocused: () -> Unit,
-    onLongClick: (() -> Unit)?,
-    onClick: () -> Unit,
-) {
-    FocusTile(fancy, Modifier.size(272.dp, 96.dp), false, onFocused, onClick, onLongClick, grow = 1.08f, shadow = false) {
-        Row(
-            Modifier.fillMaxSize().glassPanel(TileShape, fancy).padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            TelikRowIcon(entry)
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        title, Modifier.weight(1f, fill = false), color = Color.White, fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    )
-                    if (active) Box(Modifier.padding(start = 8.dp).size(8.dp).clip(CircleShape).background(ActiveDot))
-                }
-                Text(
-                    subtitle, Modifier.padding(top = 2.dp), color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp,
-                    lineHeight = 18.sp, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun Pill(
     icon: ImageVector, label: String, fancy: Boolean, onFocused: () -> Unit,
     onLongClick: (() -> Unit)? = null, onClick: () -> Unit,
 ) {
-    FocusTile(fancy, Modifier.height(56.dp), false, onFocused, onClick, onLongClick, grow = 1.08f, shadow = false) {
+    FocusTile(fancy, Modifier.height(36.dp), false, onFocused, onClick, onLongClick, grow = 1.08f, shadow = false) {
         Row(
-            Modifier.glassPanel(TileShape, fancy).padding(horizontal = 20.dp).height(56.dp),
+            Modifier.glassPanel(RoundedCornerShape(18.dp), fancy).padding(horizontal = 14.dp).height(36.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(icon, null, tint = Color.White)
-            Text(label, color = Color.White, fontSize = 18.sp, maxLines = 1)
+            Icon(icon, null, Modifier.size(18.dp), tint = Color.White)
+            Text(label, color = Color.White, fontSize = TvType.Caption, fontWeight = FontWeight.Medium, maxLines = 1)
         }
     }
 }

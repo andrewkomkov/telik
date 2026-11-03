@@ -322,6 +322,7 @@
     <string name="home_edit_info">應用程式資訊</string>
     <string name="home_edit_done">完成</string>
     <string name="home_fav_title">我的最愛</string>
+    <string name="home_apps_title">應用程式</string>
     <string name="home_fav_suggested">最常開啟</string>
     <string name="home_fav_add">加入我的最愛</string>
     <string name="home_fav_remove">從我的最愛移除</string>

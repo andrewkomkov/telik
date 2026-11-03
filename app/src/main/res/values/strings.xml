@@ -354,6 +354,7 @@
     <string name="home_edit_info">App info</string>
     <string name="home_edit_done">Done</string>
     <string name="home_fav_title">Favorites</string>
+    <string name="home_apps_title">Apps</string>
     <string name="home_fav_suggested">Opened most</string>
     <string name="home_fav_add">Add to Favorites</string>
     <string name="home_fav_remove">Remove from Favorites</string>
