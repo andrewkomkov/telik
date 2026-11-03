@@ -1,1 +1,4 @@
-Telik can be the TV Home screen. It shows HDMI inputs, search, settings, your apps and the Telik cards: Screen Mirroring, Apple TV Remote, Headphones, Home app and HomePod sound, each with its state. Hold OK on an app to move or hide it.
+Telik is now one screen that can also be the TV Home screen. It shows HDMI inputs, search, Telik settings, your apps and the Telik cards with their state. Hold OK on an app to move or hide it.
+YouTube and other apps play over AirPlay again.
+The remote on the iPhone and the Apple Watch keeps working after an update of Telik.
+Experimental: buffered AirPlay audio in the sound settings.
