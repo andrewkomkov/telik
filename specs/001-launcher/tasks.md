@@ -1,7 +1,7 @@
 # Tasks: Telik as the TV Launcher
 
 **Input**: `specs/001-launcher/spec.md` and `plan.md`
-**Status**: Phase 1 code (ticked tasks) builds: `assembleDebug` (armeabi-v7a) and `testDebugUnitTest` (35 tests) pass on 2026-11-03. It is not run on the TV yet. Phase 0 and the TV checks (T020) are open.
+**Status**: Phase 1 code (ticked tasks) builds: `assembleDebug` (armeabi-v7a) and `testDebugUnitTest` pass on 2026-11-03. A debug build (`-PapplicationIdOverride=dev.telik.tv.debug`) ran on the TV on 2026-11-03: the app list, the app row with all apps, edit mode and the Home screen menu work; the Home role was not switched on. Phase 0 and the rest of T020 are open.
 
 <!-- STE exception: task lines use the spec-kit format [ID] [P] [Story]. -->
 

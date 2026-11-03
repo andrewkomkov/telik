@@ -6,7 +6,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Input
@@ -81,6 +84,7 @@ data class HomeState(
 )
 
 private val TileShape = RoundedCornerShape(16.dp)
+private val EdgeMargin = 56.dp
 
 @Composable
 fun HomeScreen(
@@ -141,9 +145,14 @@ fun HomeScreen(
             Brush.verticalGradient(listOf(Color(0xFF1B2433), Color(0xFF0B0D12))),
         ),
     ) {
-        Column(Modifier.fillMaxSize().padding(horizontal = 56.dp, vertical = 32.dp)) {
+        // Rows run to the screen edges and keep the margin as content padding, so a cut tile
+        // at the edge shows that the row scrolls.
+        Column(Modifier.fillMaxSize().padding(vertical = 32.dp)) {
             // shortcuts: Telik, HDMI inputs, search, settings, Home screen menu
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(horizontal = EdgeMargin),
+            ) {
                 item { Pill(Icons.Default.Home, stringResource(R.string.home_entry_telik), fancy, { focusStamp++ }, onTelik) }
                 items(state.inputs, key = { it.id }) { i ->
                     Pill(Icons.AutoMirrored.Filled.Input, i.label, fancy, { focusStamp++ }) { onInput(i.id) }
@@ -155,7 +164,7 @@ fun HomeScreen(
             if (!state.isDefault) {
                 Text(
                     stringResource(R.string.home_not_default),
-                    Modifier.padding(top = 12.dp),
+                    Modifier.padding(start = EdgeMargin, top = 12.dp),
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 16.sp,
                 )
@@ -166,7 +175,7 @@ fun HomeScreen(
             LazyRow(
                 state = listState,
                 horizontalArrangement = Arrangement.spacedBy(28.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 40.dp, horizontal = 12.dp),
+                contentPadding = PaddingValues(vertical = 40.dp, horizontal = EdgeMargin),
             ) {
                 items(rowTiles, key = { it.packageName }) { app ->
                     val isFirst = app === rowTiles.first()
@@ -186,8 +195,10 @@ fun HomeScreen(
             if (editing != null) {
                 val isHidden = editing in state.hidden
                 Row(
-                    Modifier.fillMaxWidth().glassPanel(RoundedCornerShape(20.dp), fancy).padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    Modifier.padding(horizontal = EdgeMargin).fillMaxWidth()
+                        .glassPanel(RoundedCornerShape(20.dp), fancy)
+                        .horizontalScroll(rememberScrollState()).padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     ActionButton(stringResource(R.string.home_edit_left), fancy) { onMove(editing, -1) }
                     ActionButton(stringResource(R.string.home_edit_right), fancy) { onMove(editing, 1) }
@@ -273,7 +284,7 @@ private fun AppCard(
 
 @Composable
 private fun Pill(icon: ImageVector, label: String, fancy: Boolean, onFocused: () -> Unit, onClick: () -> Unit) {
-    FocusTile(fancy, Modifier.height(56.dp), false, onFocused, onClick, null, grow = 1.08f) {
+    FocusTile(fancy, Modifier.height(56.dp), false, onFocused, onClick, null, grow = 1.08f, shadow = false) {
         Row(
             Modifier.glassPanel(TileShape, fancy).padding(horizontal = 20.dp).height(56.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -287,9 +298,9 @@ private fun Pill(icon: ImageVector, label: String, fancy: Boolean, onFocused: ()
 
 @Composable
 private fun ActionButton(label: String, fancy: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    FocusTile(fancy, modifier, false, {}, onClick, null, grow = 1.06f) {
+    FocusTile(fancy, modifier, false, {}, onClick, null, grow = 1.06f, shadow = false) {
         Box(
-            Modifier.glassPanel(TileShape, fancy).padding(horizontal = 24.dp).height(52.dp),
+            Modifier.glassPanel(TileShape, fancy).padding(horizontal = 18.dp).height(52.dp),
             contentAlignment = Alignment.Center,
         ) { Text(label, color = Color.White, fontSize = 18.sp, maxLines = 1) }
     }
@@ -308,6 +319,8 @@ private fun FocusTile(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)?,
     grow: Float = 1.14f,
+    // A shadow shows through translucent glass as a dark band, so glass tiles go without it.
+    shadow: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
@@ -322,7 +335,7 @@ private fun FocusTile(
                     scaleX = s; scaleY = s
                     rotationX = -3f * t
                     cameraDistance = 16f * density
-                    shadowElevation = 24f * t
+                    shadowElevation = if (shadow) 24f * t else 0f
                     shape = TileShape
                     clip = false
                 }
