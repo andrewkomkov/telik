@@ -330,4 +330,24 @@
     <string name="tv_headphones_connecting">Подключение…</string>
     <string name="tv_headphones_connected">Подключены. OK, чтобы отключить</string>
     <string name="tv_headphones_not_reached">Недоступны. Отключите от телефона</string>
+    <string name="home_launcher_label">Телик Домой</string>
+    <string name="home_entry_telik">Телик</string>
+    <string name="home_entry_settings">Настройки</string>
+    <string name="home_entry_search">Поиск</string>
+    <string name="home_entry_input">Вход</string>
+    <string name="home_entry_home">Домашний экран</string>
+    <string name="home_make_default">Сделать Телик домашним экраном</string>
+    <string name="home_restore_old">Вернуть прежний домашний экран</string>
+    <string name="home_restored">Домашний экран Телика выключен. Чтобы включить снова, откройте «Телик Домой» из списка приложений.</string>
+    <string name="home_not_default">Телик пока не домашний экран</string>
+    <string name="home_glass_on">Эффект стекла: включён</string>
+    <string name="home_glass_off">Эффект стекла: выключен</string>
+    <string name="home_edit_left">Сдвинуть влево</string>
+    <string name="home_edit_right">Сдвинуть вправо</string>
+    <string name="home_edit_hide">Скрыть</string>
+    <string name="home_edit_show">Показать</string>
+    <string name="home_edit_info">О приложении</string>
+    <string name="home_edit_done">Готово</string>
+    <string name="home_crash_notice">Домашний экран Телика не запустился и выключен. Вернулся прежний экран.</string>
+    <string name="home_cannot_open">Не удалось открыть приложение</string>
 </resources>

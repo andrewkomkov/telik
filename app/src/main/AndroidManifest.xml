@@ -9,7 +9,14 @@
         </intent>
         <intent>
             <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.HOME" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.HOME_SETTINGS" />
         </intent>
     </queries>
 
@@ -66,6 +73,38 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Telik Home. It opens from the app list too, and offers to become the Home screen. -->
+        <activity
+            android:name=".launcher.LauncherActivity"
+            android:exported="true"
+            android:label="@string/home_launcher_label"
+            android:banner="@drawable/banner"
+            android:launchMode="singleTask"
+            android:stateNotNeeded="true"
+            android:resumeWhilePausing="true"
+            android:excludeFromRecents="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- The Home role lives on an alias. CrashGuard and the settings switch it off
+             without touching the activity, so Telik Home can always be opened again. -->
+        <activity-alias android:name=".launcher.HomeAlias"
+            android:targetActivity=".launcher.LauncherActivity"
+            android:exported="true"
+            android:label="@string/home_launcher_label"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
 
         <activity-alias android:name="io.github.jqssun.airplay.MainActivity"
             android:targetActivity="io.github.henry753951.airplayremote.MainActivity" android:exported="true" />
