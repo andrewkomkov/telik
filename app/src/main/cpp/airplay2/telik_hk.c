@@ -161,6 +161,20 @@ telik_stream_t *telik_stream_new(const uint8_t *secret, size_t secret_len, uint6
     return stream;
 }
 
+telik_stream_t *telik_stream_new_key(const uint8_t *key, size_t key_len) {
+    telik_stream_t *stream;
+    if (!key || key_len != STREAM_KEY_SIZE) return NULL;
+    stream = calloc(1, sizeof(*stream));
+    if (!stream) return NULL;
+    stream->ctx = EVP_CIPHER_CTX_new();
+    if (!stream->ctx) {
+        free(stream);
+        return NULL;
+    }
+    memcpy(stream->key, key, STREAM_KEY_SIZE);
+    return stream;
+}
+
 void telik_stream_free(telik_stream_t *stream) {
     if (!stream) return;
     EVP_CIPHER_CTX_free(stream->ctx);

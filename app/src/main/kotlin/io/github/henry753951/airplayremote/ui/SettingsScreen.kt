@@ -49,6 +49,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
     val advertiseVideo by viewModel.pref(Prefs.ADVERTISE_VIDEO).collectAsState()
     val advertiseMirroring by viewModel.pref(Prefs.ADVERTISE_MIRRORING).collectAsState()
     val advertiseAudio by viewModel.pref(Prefs.ADVERTISE_AUDIO).collectAsState()
+    val bufferedAudio by viewModel.pref(Prefs.BUFFERED_AUDIO).collectAsState()
     val launchOnConnect by viewModel.pref(Prefs.LAUNCH_ON_CONNECT).collectAsState()
     val maxFps by viewModel.pref(Prefs.MAX_FPS).collectAsState()
     val overscanned by viewModel.pref(Prefs.OVERSCANNED).collectAsState()
@@ -287,6 +288,13 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 description = stringResource(R.string.setting_advertise_audio_desc),
                 checked = advertiseAudio,
                 onCheckedChange = { viewModel.set(Prefs.ADVERTISE_AUDIO, it) }
+            )
+
+            SettingSwitch(
+                title = stringResource(R.string.setting_buffered_audio),
+                description = stringResource(R.string.setting_buffered_audio_desc),
+                checked = bufferedAudio,
+                onCheckedChange = { viewModel.set(Prefs.BUFFERED_AUDIO, it) }
             )
 
             SettingSwitch(

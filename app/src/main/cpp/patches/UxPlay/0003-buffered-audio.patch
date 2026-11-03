@@ -1,0 +1,166 @@
+diff --git a/lib/raop.c b/lib/raop.c
+index 37abbd6..e0234bd 100644
+--- a/lib/raop.c
++++ b/lib/raop.c
+@@ -19,0 +20 @@
++#include "telik_buffered.h"
+@@ -127,0 +129,2 @@ struct raop_conn_s {
++    telik_buffered_t *buffered;
++    unsigned char buffered_ct;
+@@ -469,0 +473,6 @@ conn_request(void *ptr, http_request_t *request, http_response_t **response) {
++#ifdef TELIK_AIRPLAY2
++        } else if (!strcmp(method, "SETRATEANCHORTIME")) {
++            handler = &raop_handler_set_rate_anchor_time;
++        } else if (!strcmp(method, "FLUSHBUFFERED")) {
++            handler = &raop_handler_flush_buffered;
++#endif
+@@ -583,0 +593,2 @@ conn_destroy(void *ptr) {
++    telik_buffered_free(conn->buffered);
++    conn->buffered = NULL;
+diff --git a/lib/raop_handlers.h b/lib/raop_handlers.h
+index 1c2238d..cd55fc3 100644
+--- a/lib/raop_handlers.h
++++ b/lib/raop_handlers.h
+@@ -622,0 +623,73 @@ raop_handler_options(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++/* Buffered audio (type 103). Packets arrive ahead of time on a TCP connection. */
++static void
++telik_buffered_audio_sink(void *cls, const uint8_t *data, int len, uint32_t rtp_ts, uint32_t seq, uint64_t remote_ns)
++{
++    raop_conn_t *conn = cls;
++    raop_t *raop = conn->raop;
++    audio_decode_struct audio_data;
++    uint64_t now = raop_ntp_get_local_time();
++    static unsigned count = 0;
++    if (!raop->callbacks.audio_process) return;
++    audio_data.rtp_time = rtp_ts;
++    audio_data.seqnum = (unsigned short) seq;
++    audio_data.data_len = len;
++    audio_data.data = (unsigned char *) data;
++    audio_data.ct = conn->buffered_ct;
++    audio_data.sync_status = 0;
++    audio_data.ntp_time_remote = remote_ns;
++    audio_data.ntp_time_local = conn->raop_ntp ? raop_ntp_convert_remote_time(conn->raop_ntp, remote_ns) : 0;
++    /* The lead is how far ahead of the clock a packet plays. Drift shows as a trend in this number. */
++    if ((count++ % 256) == 0) {
++        logger_log(raop->logger, LOGGER_INFO, "airplay2: buffered audio packet %u, seq %u, lead %.3f s",
++                   count, seq, audio_data.ntp_time_local ? ((double) ((int64_t) audio_data.ntp_time_local - (int64_t) now)) / SECOND_IN_NSECS : 0.0);
++    }
++    raop->callbacks.audio_process(raop->callbacks.cls, conn->raop_ntp, &audio_data);
++}
++
++static void
++raop_handler_set_rate_anchor_time(raop_conn_t *conn,
++                                  http_request_t *request, http_response_t *response,
++                                  char **response_data, int *response_datalen)
++{
++    raop_t *raop = conn->raop;
++    int data_len = 0;
++    const char *data = http_request_get_data(request, &data_len);
++    plist_t root = NULL;
++    double rate = 0.0;
++    uint64_t rtp_time = 0, secs = 0, frac = 0;
++    if (data_len) plist_from_bin(data, data_len, &root);
++    if (!root || !conn->buffered) {
++        logger_log(raop->logger, LOGGER_DEBUG, "airplay2: SETRATEANCHORTIME without buffered audio");
++        plist_free(root);
++        return;
++    }
++    plist_get_real_val(plist_dict_get_item(root, "rate"), &rate);
++    plist_get_uint_val(plist_dict_get_item(root, "rtpTime"), &rtp_time);
++    plist_get_uint_val(plist_dict_get_item(root, "networkTimeSecs"), &secs);
++    plist_get_uint_val(plist_dict_get_item(root, "networkTimeFrac"), &frac);
++    plist_free(root);
++    /* The fraction counts 1/2^64 s. Keep the top 32 bits for nanoseconds. */
++    uint64_t remote_ns = secs * SECOND_IN_NSECS + ((frac >> 32) * SECOND_IN_NSECS >> 32);
++    logger_log(raop->logger, LOGGER_INFO, "airplay2: rate %.1f, rtp %llu, network time %llu ns", rate,
++               (unsigned long long) rtp_time, (unsigned long long) remote_ns);
++    telik_buffered_set_anchor(conn->buffered, (uint32_t) rtp_time, remote_ns, rate > 0.0);
++    if (rate <= 0.0 && raop->callbacks.audio_flush) {
++        raop->callbacks.audio_flush(raop->callbacks.cls);
++    }
++}
++
++static void
++raop_handler_flush_buffered(raop_conn_t *conn,
++                            http_request_t *request, http_response_t *response,
++                            char **response_data, int *response_datalen)
++{
++    raop_t *raop = conn->raop;
++    logger_log(raop->logger, LOGGER_INFO, "airplay2: FLUSHBUFFERED");
++    if (conn->buffered) telik_buffered_flush(conn->buffered);
++    if (raop->callbacks.audio_flush) {
++        raop->callbacks.audio_flush(raop->callbacks.cls);
++    }
++}
++#endif
++
+@@ -1124,0 +1198,51 @@ raop_handler_setup(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++            case 103: {
++                // Buffered audio: the sender pushes encrypted packets over TCP and gives the key in "shk".
++                uint64_t uint_val = 0;
++                unsigned char ct = 0;
++                unsigned short spf = 0;
++                unsigned short dport = 0;
++                uint64_t audio_format = 0;
++                bool is_media = false, using_screen = false;
++                plist_t shk_node = plist_dict_get_item(req_stream_node, "shk");
++                plist_t ct_node = plist_dict_get_item(req_stream_node, "ct");
++                plist_t spf_node = plist_dict_get_item(req_stream_node, "spf");
++                plist_t format_node = plist_dict_get_item(req_stream_node, "audioFormat");
++                uint64_t shk_len = 0;
++                const char *shk = PLIST_IS_DATA(shk_node) ? plist_get_data_ptr(shk_node, &shk_len) : NULL;
++                if (ct_node) { plist_get_uint_val(ct_node, &uint_val); ct = (unsigned char) uint_val; }
++                if (spf_node) { plist_get_uint_val(spf_node, &uint_val); spf = (unsigned short) uint_val; }
++                if (format_node) plist_get_uint_val(format_node, &audio_format);
++                if (!ct) {
++                    /* Derive the codec from the audioFormat mask: 0x40000 ALAC, 0x400000 AAC-LC, 0x1000000 AAC-ELD. */
++                    ct = (audio_format & 0x40000) ? 2 : (audio_format & 0x400000) ? 4 : (audio_format & 0x1000000) ? 8 : 0;
++                }
++                logger_log(raop->logger, LOGGER_INFO, "airplay2: buffered audio SETUP ct %u, audioFormat 0x%llx, spf %u, shk %llu bytes",
++                           ct, (unsigned long long) audio_format, spf, (unsigned long long) shk_len);
++                if (!shk || shk_len != 32 || !ct) {
++                    logger_log(raop->logger, LOGGER_ERR, "airplay2: buffered audio SETUP has no usable key or codec");
++                    http_response_set_disconnect(response, 1);
++                    break;
++                }
++                if (raop->callbacks.audio_get_format) {
++                    raop->callbacks.audio_get_format(raop->callbacks.cls, &ct, &spf, &using_screen, &is_media, &audio_format);
++                }
++                telik_buffered_free(conn->buffered);
++                conn->buffered_ct = ct;
++                conn->buffered = telik_buffered_new((const uint8_t *) shk, (size_t) shk_len, telik_buffered_audio_sink, conn);
++                if (!conn->buffered || telik_buffered_listen(conn->buffered, &dport) != 0) {
++                    logger_log(raop->logger, LOGGER_ERR, "airplay2: cannot open the buffered audio port");
++                    telik_buffered_free(conn->buffered);
++                    conn->buffered = NULL;
++                    http_response_set_disconnect(response, 1);
++                    break;
++                }
++                plist_t res_stream_node = plist_new_dict();
++                plist_dict_set_item(res_stream_node, "dataPort", plist_new_uint(dport));
++                plist_dict_set_item(res_stream_node, "type", plist_new_uint(103));
++                plist_dict_set_item(res_stream_node, "audioBufferSize", plist_new_uint(8388608));
++                plist_dict_set_item(res_stream_node, "streamID", plist_new_uint(3));
++                plist_array_append_item(res_streams_node, res_stream_node);
++                break;
++                }
++#endif
+@@ -1335,0 +1460,3 @@ raop_handler_teardown(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++    bool teardown_103 = false;
++#endif
+@@ -1351,0 +1479,4 @@ raop_handler_teardown(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++            } else if (val == 103) {
++                teardown_103 = true;
++#endif
+@@ -1359,0 +1491,7 @@ raop_handler_teardown(raop_conn_t *conn,
++#ifdef TELIK_AIRPLAY2
++    if (teardown_103) {
++        telik_buffered_free(conn->buffered);
++        conn->buffered = NULL;
++        if (!teardown_96 && !teardown_110) return;
++    }
++#endif

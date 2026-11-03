@@ -221,6 +221,8 @@
     <string name="setting_advertise_mirroring">Advertise AirPlay mirroring support</string>
     <string name="setting_advertise_mirroring_desc">When off, the device is hidden from mirroring</string>
     <string name="setting_advertise_audio">Advertise AirPlay audio support</string>
+    <string name="setting_buffered_audio">Buffered AirPlay audio (experimental)</string>
+    <string name="setting_buffered_audio_desc">Lets the iPhone send audio ahead of time, as AirPlay 2 does. There is no PTP, so sync may drift. Restart to apply</string>
     <string name="setting_advertise_audio_desc">When off, the device can only be used for mirroring and will be hidden from media players</string>
     <string name="setting_alac">Advertise ALAC codec</string>
     <string name="setting_alac_desc">Offer ALAC in the mDNS record; used for music streaming</string>
