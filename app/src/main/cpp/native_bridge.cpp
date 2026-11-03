@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <memory>
 #include <android/log.h>
+#include <sys/system_properties.h>
 
 extern "C" {
 #include "raop.h"
@@ -33,6 +34,17 @@ typedef struct {
     char hw_addr[6];
     std::shared_ptr<LogSink> log;
 } server_ctx_t;
+
+/* debug.telik.loglevel: 0..8 from logger.h, empty or invalid means LOGGER_ERR.
+ * Set it with adb only; levels above LOGGER_INFO can log URLs. */
+static int _native_log_level() {
+    char value[PROP_VALUE_MAX] = {0};
+    if (__system_property_get("debug.telik.loglevel", value) <= 0) return LOGGER_ERR;
+    char *end = NULL;
+    long level = strtol(value, &end, 10);
+    if (end == value || *end != '\0' || level < 0 || level > LOGGER_DEBUG_DATA) return LOGGER_ERR;
+    return (int)level;
+}
 
 static void _log_callback(void *cls, int level, const char *msg) {
     int prio = ANDROID_LOG_DEBUG;
@@ -67,7 +79,7 @@ Java_io_github_henry753951_airplayremote_airplay_bridge_NativeBridge_nativeInit(
     }
     ctx->cb_ctx.raop = ctx->raop;
 
-    raop_set_log_level(ctx->raop, LOGGER_ERR);
+    raop_set_log_level(ctx->raop, _native_log_level());
     raop_set_log_callback(ctx->raop, _log_callback, NULL);
 
     const char *keyfile_c = env->GetStringUTFChars(keyFile, NULL);
