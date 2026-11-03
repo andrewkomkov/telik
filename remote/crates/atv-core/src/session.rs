@@ -994,16 +994,7 @@ impl CompanionSession {
                 info!("<< _systemInfo: replied and refreshed power state (session_id={session_id}, renewed={is_renewed})");
                 self.send_power_state(None).await?;
 
-                // Background probes from sharingd/rapportd have the high bit set in xid and never
-                // send _sessionStart. The iPhone opens its real connection only after the TV closes
-                // the probe, so a long timeout delays the remote. A real remote (iPhone or Apple
-                // Watch) sends _sessionStart within milliseconds.
-                let is_background_probe = xid.map_or(false, |x| (x & 0x8000_0000) != 0);
-                let timeout = if is_background_probe {
-                    std::time::Duration::from_millis(1000)
-                } else {
-                    std::time::Duration::from_millis(2500)
-                };
+                let timeout = sessionless_timeout(xid, model);
                 *self.timeout_deadline.lock().await = Some(tokio::time::Instant::now() + timeout);
             }
             _ => {
@@ -1274,6 +1265,43 @@ impl Drop for CompanionSession {
         if self.session_established.load(Ordering::SeqCst) {
             self.inspector.session_stopped();
         }
+    }
+}
+
+/// Time to send `_sessionStart` after `_systemInfo`. Background probes (high bit in `xid`) close
+/// fast, because the iPhone opens its real connection only after the probe closes. The watch
+/// also sets the high bit but starts its session later. A new connection from the same IP
+/// aborts an unestablished one, so its long time cannot block the channel.
+pub(crate) fn sessionless_timeout(xid: Option<u64>, model: &str) -> std::time::Duration {
+    let background = xid.map_or(false, |x| (x & 0x8000_0000) != 0);
+    let millis = match (background, model.starts_with("Watch")) {
+        (true, true) => 30_000,
+        (true, false) => 1_000,
+        (false, _) => 2_500,
+    };
+    std::time::Duration::from_millis(millis)
+}
+
+#[cfg(test)]
+mod timeout_tests {
+    use super::sessionless_timeout;
+    use std::time::Duration;
+
+    #[test]
+    fn background_probe_of_a_phone_closes_fast() {
+        assert_eq!(sessionless_timeout(Some(0x8000_0001), "iPhone17,1"), Duration::from_millis(1_000));
+        assert_eq!(sessionless_timeout(Some(0x8000_0001), ""), Duration::from_millis(1_000));
+    }
+
+    #[test]
+    fn watch_gets_time_to_start_its_session() {
+        assert_eq!(sessionless_timeout(Some(0x8000_0001), "Watch7,5"), Duration::from_millis(30_000));
+    }
+
+    #[test]
+    fn foreground_connection_keeps_the_default() {
+        assert_eq!(sessionless_timeout(Some(1), "Watch7,5"), Duration::from_millis(2_500));
+        assert_eq!(sessionless_timeout(None, "iPhone17,1"), Duration::from_millis(2_500));
     }
 }
 

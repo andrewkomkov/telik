@@ -180,7 +180,13 @@ class RemoteEngine(
     private fun logEvent(kind: String, detail: String) {
         val name = when (kind) {
             "ControlMessage" -> CONTROL_NAME.find(detail)?.groupValues?.get(1)?.let { name ->
-                if (name == "_hidC") "$name ${HID_CODE.find(detail)?.groupValues?.get(1)}/${HID_STATE.find(detail)?.groupValues?.get(1)}" else name
+                when (name) {
+                    "_hidC" -> "$name ${HID_CODE.find(detail)?.groupValues?.get(1)}/${HID_STATE.find(detail)?.groupValues?.get(1)}"
+                    // the device model tells a watch from a phone; message names start with "_"
+                    "_systemInfo" -> "$name " + MODEL.findAll(detail).map { it.groupValues[1] }
+                        .filterNot { it.startsWith("_") }.distinct().joinToString(",")
+                    else -> name
+                }
             }
             "ClientDisconnected" -> detail.substringAfter("reason=", "")
             else -> null
@@ -199,6 +205,7 @@ class RemoteEngine(
         const val TOUCH_BEGAN = 1
         val VOLUME_BUTTONS = setOf("volume_up", "volume_down", "mute")
         val CONTROL_NAME = Regex("\"(?:_i|model)\": \"([^\"]+)\"")
+        val MODEL = Regex("\"model\": \"([^\"]+)\"")
         val HID_CODE = Regex("\"_hidC\": (\\d+)")
         val HID_STATE = Regex("\"_hBtS\": (\\d+)")
     }
