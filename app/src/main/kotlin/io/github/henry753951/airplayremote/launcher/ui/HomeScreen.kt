@@ -74,6 +74,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -214,15 +215,18 @@ internal fun HomeScreen(
         }
     }
     LaunchedEffect(Unit) { firstTile.requestFocusUntilLanded() }
-    // Favorites load a moment after the first frame; the start focus moves to them if the user has not moved yet.
-    val hasFavorites = state.favorites.isNotEmpty()
-    LaunchedEffect(hasFavorites) { if (hasFavorites && focusStamp <= 1) firstTile.requestFocusUntilLanded() }
+    // Favorites and apps load after the first frame. Until the user presses a key, the start focus
+    // follows the first tile, so it never stays on a row that moved or on nothing.
+    var userMoved by remember { mutableStateOf(false) }
+    LaunchedEffect(state.favorites.firstOrNull(), gridTiles.firstOrNull()?.packageName) {
+        if (!userMoved) firstTile.requestFocusUntilLanded()
+    }
 
     val pending = Attentions.pick(state.localNetwork, state.telik.server, state.telik.remoteEnabled, state.telik.remote)
     var attention by remember { mutableStateOf<Attention?>(null) }
     LaunchedEffect(pending) { if (pending == null) attention = null else { delay(ATTENTION_DELAY_MS); attention = pending } }
 
-    Box(Modifier.fillMaxSize().background(Color(0xFF0B0D12))) {
+    Box(Modifier.fillMaxSize().background(Color(0xFF0B0D12)).onPreviewKeyEvent { userMoved = true; false }) {
         Backdrop(info, state.nowPlaying, fancy)
 
         val defaultSpec = LocalBringIntoViewSpec.current
@@ -247,9 +251,9 @@ internal fun HomeScreen(
                                 onInput(i.id)
                             }
                         }
-                        Pill(Icons.Default.Search, stringResource(R.string.home_entry_search), fancy, { focusStamp++ }, onClick = onSearch)
-                        Pill(Icons.Default.Tune, stringResource(R.string.home_entry_settings), fancy, { focusStamp++ }, onClick = onSettings)
-                        Pill(Icons.Default.Home, stringResource(R.string.home_entry_home), fancy, { focusStamp++ }) { onMenu(true) }
+                        Pill(Icons.Default.Search, stringResource(R.string.home_entry_search), fancy, { focusStamp++ }, iconOnly = true, onClick = onSearch)
+                        Pill(Icons.Default.Tune, stringResource(R.string.home_entry_settings), fancy, { focusStamp++ }, iconOnly = true, onClick = onSettings)
+                        Pill(Icons.Default.Home, stringResource(R.string.home_entry_home), fancy, { focusStamp++ }, iconOnly = true) { onMenu(true) }
                       }
                         Clock()
                     }
@@ -262,7 +266,7 @@ internal fun HomeScreen(
                             a != null -> AttentionRow(a, fancy) { onAttention(a) }
                             np != null -> NowPlayingCard(np, fancy, { focusStamp++; onRowFocus(-1) }, onNowPlaying, onPlayPause, onNext)
                             state.nowPlayingHint -> NowPlayingHint(fancy, onAllowNowPlaying, onDismissNowPlaying)
-                            else -> FocusTitle(info, state.isDefault)
+                            else -> FocusTitle(info, state.isDefault, state.telik)
                         }
                     }
 
@@ -506,7 +510,9 @@ private fun Backdrop(info: FocusInfo?, np: NowPlaying?, fancy: Boolean) {
 }
 
 @Composable
-private fun FocusTitle(info: FocusInfo?, isDefault: Boolean) {
+private fun FocusTitle(focus: FocusInfo?, isDefault: Boolean, telik: TelikStatus) {
+    // A Telik entry shows its live state, not the state at the moment of the focus.
+    val info = focus?.entry?.let { e -> telikCardText(e, telik).let { (t, sub, _) -> focus.copy(title = t, subtitle = sub) } } ?: focus
     Column(Modifier.padding(bottom = 4.dp)) {
         Text(
             info?.title ?: stringResource(R.string.tv_home_title), color = Color.White, fontSize = TvType.Title1,
@@ -819,16 +825,16 @@ private fun AttentionRow(attention: Attention, fancy: Boolean, onAction: () -> U
 @Composable
 private fun Pill(
     icon: ImageVector, label: String, fancy: Boolean, onFocused: () -> Unit,
-    onLongClick: (() -> Unit)? = null, onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null, iconOnly: Boolean = false, onClick: () -> Unit,
 ) {
     FocusTile(fancy, Modifier.height(36.dp), false, onFocused, onClick, onLongClick, grow = 1.08f, shadow = false) {
         Row(
-            Modifier.glassPanel(RoundedCornerShape(18.dp), fancy).padding(horizontal = 14.dp).height(36.dp),
+            Modifier.glassPanel(RoundedCornerShape(18.dp), fancy).padding(horizontal = if (iconOnly) 9.dp else 14.dp).height(36.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(icon, null, Modifier.size(18.dp), tint = Color.White)
-            Text(label, color = Color.White, fontSize = TvType.Caption, fontWeight = FontWeight.Medium, maxLines = 1)
+            Icon(icon, if (iconOnly) label else null, Modifier.size(18.dp), tint = Color.White)
+            if (!iconOnly) Text(label, color = Color.White, fontSize = TvType.Caption, fontWeight = FontWeight.Medium, maxLines = 1)
         }
     }
 }
