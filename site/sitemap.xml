@@ -12,4 +12,16 @@
     <xhtml:link rel="alternate" hreflang="ru" href="https://andrewkomkov.github.io/telik/ru/"/>
     <lastmod>2026-10-31</lastmod>
   </url>
+  <url>
+    <loc>https://andrewkomkov.github.io/telik/privacy.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://andrewkomkov.github.io/telik/privacy.html"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://andrewkomkov.github.io/telik/ru/privacy.html"/>
+    <lastmod>2026-11-03</lastmod>
+  </url>
+  <url>
+    <loc>https://andrewkomkov.github.io/telik/ru/privacy.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://andrewkomkov.github.io/telik/privacy.html"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://andrewkomkov.github.io/telik/ru/privacy.html"/>
+    <lastmod>2026-11-03</lastmod>
+  </url>
 </urlset>

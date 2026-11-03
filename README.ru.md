@@ -43,8 +43,13 @@
 
 ## Установка
 
-1. Установите `telik-*-armv7.apk` со страницы
-   [Releases](https://github.com/andrewkomkov/telik/releases/latest) на Android TV 13+.
+1. Установите Телик на Android TV 13+ одним из способов:
+   - Откройте прямую ссылку на телевизоре, например в приложении Downloader:
+     `https://github.com/andrewkomkov/telik/releases/latest/download/telik-armv7.apk`
+   - Скачайте `telik-*-armv7.apk` со страницы [Releases](https://github.com/andrewkomkov/telik/releases/latest).
+   - Добавьте Телик в [Obtainium](https://github.com/ImranR98/Obtainium). Он сам ставит обновления из Releases.
+
+     [<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="54">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/andrewkomkov/telik)
 2. Откройте Телик и разрешите доступ к специальным возможностям. Он нужен, чтобы нажимать кнопки
    пульта и получать текст с клавиатуры.
 3. На iPhone откройте Пункт управления, нажмите значок пульта, выберите «Телик» и введите код с
