@@ -3,6 +3,7 @@ package io.github.henry753951.airplayremote.airplay.bridge
 object NativeBridge {
     const val FT_MIRROR = 7
     const val FT_AUDIO = 9
+    const val FT_BUFFERED_AUDIO = 40
 
     init {
         System.loadLibrary("airplay_native")

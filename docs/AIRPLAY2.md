@@ -54,13 +54,24 @@ Video uses ChaCha20-Poly1305:
 | Additional data | The 128-byte frame header |
 | Tag | The last 16 bytes of the payload |
 
+## Stage 4 code
+
+Buffered audio is in the code and off by default. The setting "Buffered AirPlay audio (experimental)" sets feature bit 40 after a restart. Without the setting the receiver behaves as before.
+
+- `SETUP` type 103 opens a TCP port. The sender gives the 32-byte key in `shk`. Each frame is a 2-byte big-endian length that counts itself, then a 12-byte header, the ChaCha20-Poly1305 payload, the 16-byte tag and an 8-byte nonce tail. The additional data is bytes 4 to 12 of the header.
+- Packets wait in a queue until `SETRATEANCHORTIME` gives the RTP time and the sender clock. The play time is the anchor plus the RTP distance at 44.1 kHz. `FLUSHBUFFERED` clears the queue.
+- The sender clock converts to the TV clock with the existing NTP timing. There is no PTP.
+- The log line `buffered audio packet N, seq S, lead L s` appears every 256 packets. The lead is how far ahead of the TV clock a packet plays. Drift shows as a trend in it.
+
+Test: turn on the setting, restart Telik, run `python3 app/src/main/cpp/airplay2/check_buffered.py TV_IP` from a computer on the same network, then play audio from an iPhone and read the log. The pass condition is a tone from the script and from the iPhone, and a lead that falls by the play time with no jump. The result is not known yet. Nobody has run this on an iPhone, and an Android build has not been run for this change.
+
 ## Known limits
 
 - The iPhone still calls `fp-setup`. The video key does not use its result.
 - Nothing public describes how iOS at sender version 980 selects a protocol.
 - `combinedGetInfoWithControlSetup` has no public description.
 - PTP uses ports 319 and 320. On the test TV `ip_unprivileged_port_start` is 1024, so an app without root cannot bind them.
-- The stage 4 realtime audio works. Buffered audio (type 103) and removal of `fp-setup` are not tested.
+- The stage 4 realtime audio works. Buffered audio (type 103) has code but no iPhone test, and removal of `fp-setup` is not tested.
 
 ## References
 
