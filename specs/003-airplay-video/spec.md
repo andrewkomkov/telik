@@ -2,7 +2,7 @@
 
 **Feature Branch**: `fix/airplay-video`
 **Created**: 2026-11-03
-**Status**: The fix is written. The TV check is open.
+**Status**: Done. The user checked it on the TV on 2026-11-03.
 **Input**: The user played a YouTube video on the iPhone during mirroring. Nothing plays on the TV. The user says that this worked before.
 
 ## Findings
