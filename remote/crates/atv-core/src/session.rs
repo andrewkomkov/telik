@@ -1269,13 +1269,12 @@ impl Drop for CompanionSession {
 }
 
 /// Time to send `_sessionStart` after `_systemInfo`. Background probes (high bit in `xid`) close
-/// fast, because the iPhone opens its real connection only after the probe closes. The watch
-/// also sets the high bit but starts its session later. A new connection from the same IP
-/// aborts an unestablished one, so its long time cannot block the channel.
+/// fast, because the device opens its real connection only after the probe closes. The watch
+/// sends probes too, but its real session can start up to 1.7 s late, so it gets 3 s.
 pub(crate) fn sessionless_timeout(xid: Option<u64>, model: &str) -> std::time::Duration {
     let background = xid.map_or(false, |x| (x & 0x8000_0000) != 0);
     let millis = match (background, model.starts_with("Watch")) {
-        (true, true) => 30_000,
+        (true, true) => 3_000,
         (true, false) => 1_000,
         (false, _) => 2_500,
     };
@@ -1295,7 +1294,7 @@ mod timeout_tests {
 
     #[test]
     fn watch_gets_time_to_start_its_session() {
-        assert_eq!(sessionless_timeout(Some(0x8000_0001), "Watch7,5"), Duration::from_millis(30_000));
+        assert_eq!(sessionless_timeout(Some(0x8000_0001), "Watch7,5"), Duration::from_millis(3_000));
     }
 
     #[test]

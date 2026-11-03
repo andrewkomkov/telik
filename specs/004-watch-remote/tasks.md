@@ -6,5 +6,6 @@
 - [ ] T004 Check on the TV: the watch connects on the first try, and the iPhone remote reconnects fast. Read the model in the log.
 - [x] T005 Add `AccessibilityRestore` and call it when the remote starts and when a client connects.
 - [x] T006 Add unit tests for the merge of the enabled list.
-- [ ] T007 Check on the TV: turn the service off with adb, connect the remote, and check that the keys work. The service came back after a restart on 2026-11-03 14:28. The key check waits for the user.
+- [x] T007 Check on the TV: turn the service off with adb, connect the remote, and check that the keys work. The service came back after a restart on 2026-11-03 14:28. The user confirmed the keys at 14:38.
+- [ ] T009 Change the watch time from 30 to 3 seconds, because the watch also sends probes. Check the reconnect of the watch on the TV.
 - [x] T008 Abort only stale connections (older than 2 seconds) in `ActiveConnectionTracker::register`. Add a unit test for two parallel connections.
