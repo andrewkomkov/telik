@@ -426,6 +426,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         NativeBridge.nativeSetLang(nativeHandle, ConfigurationCompat.getLocales(resources.configuration).toLanguageTags().replace(',', ':'))
         NativeBridge.nativeSetFeature(nativeHandle, NativeBridge.FT_MIRROR, advertiseMirroring)
         NativeBridge.nativeSetFeature(nativeHandle, NativeBridge.FT_AUDIO, advertiseAudio)
+        NativeBridge.nativeSetFeature(nativeHandle, NativeBridge.FT_BUFFERED_AUDIO, prefs[Prefs.BUFFERED_AUDIO])
         NativeBridge.nativeSetPlist(nativeHandle, "maxFPS", maxFps)
         NativeBridge.nativeSetPlist(nativeHandle, "overscanned", if (overscanned) 1 else 0)
         if (audioLatencyMs >= 0) {

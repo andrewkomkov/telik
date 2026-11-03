@@ -225,6 +225,8 @@
     <string name="setting_advertise_mirroring">Объявлять поддержку повтора экрана AirPlay</string>
     <string name="setting_advertise_mirroring_desc">Если выключено, устройство не отображается для повтора экрана</string>
     <string name="setting_advertise_audio">Объявлять поддержку аудио AirPlay</string>
+    <string name="setting_buffered_audio">Буферизованное аудио AirPlay (экспериментально)</string>
+    <string name="setting_buffered_audio_desc">iPhone присылает звук заранее, как в AirPlay 2. PTP нет, поэтому синхронизация может плыть. Нужен перезапуск</string>
     <string name="setting_advertise_audio_desc">Если выключено, устройство доступно только для повтора экрана и скрыто от медиаплееров</string>
     <string name="setting_alac">Объявлять кодек ALAC</string>
     <string name="setting_alac_desc">Указывать ALAC в записи mDNS; используется для потоковой передачи музыки</string>

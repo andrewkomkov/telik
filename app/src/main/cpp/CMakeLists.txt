@@ -98,6 +98,7 @@ set(PAIR_AP third_party/pair_ap)
 add_library(telik_hk STATIC
         airplay2/pair_fruit_stub.c
         airplay2/sodium_shim.c
+        airplay2/telik_buffered.c
         airplay2/telik_hk.c
         ${PAIR_AP}/pair.c
         ${PAIR_AP}/pair_homekit.c

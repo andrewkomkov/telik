@@ -23,6 +23,8 @@ int telik_hk_encrypt(telik_hk_t *hk, const char *in, size_t in_len, char **out, 
 typedef struct telik_stream telik_stream_t;
 
 telik_stream_t *telik_stream_new(const uint8_t *secret, size_t secret_len, uint64_t stream_connection_id);
+/* A stream with a key that the sender gave in SETUP (buffered audio). The key is 32 bytes. */
+telik_stream_t *telik_stream_new_key(const uint8_t *key, size_t key_len);
 void telik_stream_free(telik_stream_t *stream);
 
 int telik_stream_decrypt(telik_stream_t *stream, const uint8_t *header, size_t header_len, const uint8_t *in,
