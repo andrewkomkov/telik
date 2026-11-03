@@ -73,5 +73,5 @@
 - [x] T064 [US1] Start AirPlay from the Home screen when auto start is on, as `MainActivity` did. Ask for local network access there.
 Note: T060-T064 compile, and `AttentionsTest` passes. The TV check is T065.
 
-- [ ] T065 [US1] Check on the TV: one Telik entry in the app list, settings open and Back returns, a session ends on the Home screen.
+- [x] T065 [US1] Check on the TV: one Telik entry in the app list, settings open and Back returns, a session ends on the Home screen. Result: the user accepted the check on 2026-11-03.
 
