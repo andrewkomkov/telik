@@ -49,7 +49,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.nativeKeyEvent
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
@@ -196,7 +195,7 @@ fun HomeScreen(
                         stringResource(if (isHidden) R.string.home_edit_show else R.string.home_edit_hide), fancy,
                     ) { onHide(editing, !isHidden) }
                     ActionButton(stringResource(R.string.home_edit_info), fancy) { onInfo(editing) }
-                    ActionButton(stringResource(R.string.home_edit_done), fancy, onCloseEdit)
+                    ActionButton(stringResource(R.string.home_edit_done), fancy, onClick = onCloseEdit)
                 }
             } else {
                 Box(Modifier.height(24.dp))
@@ -212,14 +211,15 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     if (!state.isDefault) {
-                        ActionButton(stringResource(R.string.home_make_default), fancy, onMakeDefault, Modifier.focusRequester(first))
+                        ActionButton(stringResource(R.string.home_make_default), fancy, Modifier.focusRequester(first), onMakeDefault)
                     }
                     ActionButton(
                         stringResource(if (state.glass) R.string.home_glass_on else R.string.home_glass_off),
-                        fancy, onToggleGlass,
+                        fancy,
                         if (state.isDefault) Modifier.focusRequester(first) else Modifier,
+                        onToggleGlass,
                     )
-                    ActionButton(stringResource(R.string.home_restore_old), fancy, onRestoreOld)
+                    ActionButton(stringResource(R.string.home_restore_old), fancy, onClick = onRestoreOld)
                     ActionButton(stringResource(R.string.home_edit_done), fancy) { onMenu(false) }
                 }
             }
@@ -286,7 +286,7 @@ private fun Pill(icon: ImageVector, label: String, fancy: Boolean, onFocused: ()
 }
 
 @Composable
-private fun ActionButton(label: String, fancy: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun ActionButton(label: String, fancy: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     FocusTile(fancy, modifier, false, {}, onClick, null, grow = 1.06f) {
         Box(
             Modifier.glassPanel(TileShape, fancy).padding(horizontal = 24.dp).height(52.dp),
