@@ -21,6 +21,25 @@ class LayoutStore(private val context: Context) {
         )
     }
 
+    private val favoritesKey = stringPreferencesKey("favorites")
+    private val launchesKey = stringPreferencesKey("launches")
+
+    val favorites: Flow<List<String>> = context.launcherStore.data.map { p ->
+        p[favoritesKey].orEmpty().lines().filter { it.isNotBlank() }
+    }
+
+    val launches: Flow<List<Launch>> = context.launcherStore.data.map { LaunchLog.parse(it[launchesKey]) }
+
+    suspend fun saveFavorites(keys: List<String>) {
+        context.launcherStore.edit { it[favoritesKey] = keys.joinToString("\n") }
+    }
+
+    suspend fun recordLaunch(packageName: String, now: Long) {
+        context.launcherStore.edit {
+            it[launchesKey] = LaunchLog.format(LaunchLog.record(LaunchLog.parse(it[launchesKey]), packageName, now))
+        }
+    }
+
     suspend fun save(layout: HomeLayout) {
         context.launcherStore.edit {
             it[orderKey] = layout.order.joinToString("\n")

@@ -353,6 +353,26 @@
     <string name="home_edit_show">Показать</string>
     <string name="home_edit_info">О приложении</string>
     <string name="home_edit_done">Готово</string>
+    <string name="home_fav_title">Избранное</string>
+    <string name="home_apps_title">Приложения</string>
+    <string name="home_move_hint">Двигайте стрелками. Нажмите OK, когда закончите.</string>
+    <string name="home_menu_open">Открыть</string>
+    <string name="home_menu_stop">Остановить</string>
+    <string name="home_menu_move">Переместить</string>
+    <string name="home_menu_uninstall">Удалить</string>
+    <string name="home_stopped">Приложение остановлено</string>
+    <string name="home_stop_failed">Телик не смог остановить приложение. Нажмите «Остановить» на этом экране.</string>
+    <string name="home_fav_suggested">Часто открываете</string>
+    <string name="home_fav_add">В избранное</string>
+    <string name="home_fav_remove">Убрать из избранного</string>
+    <string name="home_fav_added">Добавлено в избранное</string>
+    <string name="home_fav_removed">Убрано из избранного</string>
+    <string name="home_np_title">Сейчас играет</string>
+    <string name="home_np_play">Играть</string>
+    <string name="home_np_pause">Пауза</string>
+    <string name="home_np_next">Далее</string>
+    <string name="home_np_hint">Разрешите доступ к уведомлениям, и Телик покажет, что играет в любом приложении.</string>
+    <string name="home_np_not_now">Не сейчас</string>
     <string name="home_crash_notice">Домашний экран Телика не запустился и выключен. Вернулся прежний экран.</string>
     <string name="home_cannot_open">Не удалось открыть приложение</string>
 </resources>

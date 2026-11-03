@@ -34,7 +34,11 @@ import io.github.henry753951.airplayremote.launcher.ui.HomeScreen
 import io.github.henry753951.airplayremote.launcher.ui.HomeState
 import io.github.henry753951.airplayremote.launcher.ui.InputEntry
 import io.github.henry753951.airplayremote.ui.TvHomeEntry
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import io.github.henry753951.airplayremote.headphones.LocalShell
+import io.github.henry753951.airplayremote.headphones.ShellResult
 
 /**
  * Telik Home. Small on purpose (FR-013): no Hilt, no view model, no image library.
@@ -49,6 +53,9 @@ class LauncherActivity : ComponentActivity() {
     private var state by mutableStateOf(HomeState())
     private var layout = HomeLayout()
     private var apps: List<AppTile> = emptyList()
+    private var favorites: List<String> = emptyList()
+    private var launches: List<Launch> = emptyList()
+    private lateinit var nowPlaying: NowPlayingWatcher
 
     private val roleRequest = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         refreshDefault()
@@ -73,12 +80,15 @@ class LauncherActivity : ComponentActivity() {
         // Home is the root: Back only closes edit mode or the menu.
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (state.editing != null || state.menuOpen) state = state.copy(editing = null, menuOpen = false)
+                if (state.editing != null || state.menuOpen || state.editingFavorite != null || state.appMenu != null) {
+                    state = state.copy(editing = null, menuOpen = false, editingFavorite = null, appMenu = null)
+                }
             }
         })
         store = LayoutStore(this)
         repo = AppRepository(this)
         telik = TelikWatcher(this, lifecycleScope)
+        nowPlaying = NowPlayingWatcher(this)
         state = state.copy(
             inputs = loadInputs(), isDefault = isDefaultHome(), glass = prefs().getBoolean(GLASS, true),
             localNetwork = hasLocalNetwork(),
@@ -98,6 +108,17 @@ class LauncherActivity : ComponentActivity() {
                 onTelik = { openTelikPage(MainActivity.PAGE_SETTINGS) },
                 onTelikEntry = ::openTelikEntry,
                 onAttention = ::fixAttention,
+                onToggleFavorite = ::toggleFavorite,
+                onNowPlaying = { state.nowPlaying?.let { openPackage(it.packageName) } },
+                onPlayPause = { nowPlaying.playPause() },
+                onNext = { nowPlaying.next() },
+                onAllowNowPlaying = { open(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")) },
+                onDismissNowPlaying = {
+                    prefs().edit().putBoolean(NP_DISMISSED, true).apply()
+                    state = state.copy(nowPlayingHint = false)
+                },
+                onEditFavorite = { state = state.copy(editingFavorite = it) },
+                onMoveFavorite = { key, d -> saveFavorites(Favorites.move(favorites, key, d)) },
                 onInput = ::openInput,
                 onSettings = { open(Intent(Settings.ACTION_SETTINGS)) },
                 onSearch = { open(Intent("android.search.action.GLOBAL_SEARCH")) },
@@ -109,6 +130,9 @@ class LauncherActivity : ComponentActivity() {
                 onMenu = { state = state.copy(menuOpen = it) },
                 onMove = { pkg, d -> update { it.copy(order = TileLayout.move(fullOrder(), pkg, d)) } },
                 onHide = { pkg, h -> update { TileLayout.setHidden(it.copy(order = fullOrder()), pkg, h) } },
+                onAppMenu = { state = state.copy(appMenu = it) },
+                onStopApp = ::stopApp,
+                onUninstall = { pkg -> open(Intent(Intent.ACTION_DELETE, Uri.fromParts("package", pkg, null))) },
                 onInfo = { pkg ->
                     open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", pkg, null)))
                 },
@@ -117,6 +141,12 @@ class LauncherActivity : ComponentActivity() {
 
         lifecycleScope.launch { store.layout.collect { layout = it; rebuild() } }
         lifecycleScope.launch { repo.apps.collect { apps = it; rebuild() } }
+        lifecycleScope.launch { store.favorites.collect { favorites = it; rebuild() } }
+        lifecycleScope.launch { nowPlaying.current.collect { state = state.copy(nowPlaying = it) } }
+        lifecycleScope.launch {
+            nowPlaying.granted.collect { state = state.copy(nowPlayingHint = !it && !prefs().getBoolean(NP_DISMISSED, false)) }
+        }
+        lifecycleScope.launch { store.launches.collect { launches = it; rebuild() } }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) { telik.status.collect { state = state.copy(telik = it) } }
         }
@@ -125,6 +155,7 @@ class LauncherActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         if (::telik.isInitialized) telik.bind()
+        if (::nowPlaying.isInitialized) nowPlaying.start()
         syncLocalNetwork()
     }
 
@@ -176,6 +207,7 @@ class LauncherActivity : ComponentActivity() {
 
     override fun onStop() {
         if (::telik.isInitialized) telik.unbind()
+        if (::nowPlaying.isInitialized) nowPlaying.stop()
         super.onStop()
     }
 
@@ -211,19 +243,61 @@ class LauncherActivity : ComponentActivity() {
     }
 
     private fun rebuild() {
+        val tiles = TileLayout.arrange(apps, layout)
+        val own = Favorites.present(
+            favorites, apps.mapTo(HashSet()) { it.packageName }, state.inputs.mapTo(HashSet()) { it.id },
+            TvHomeEntry.entries.mapTo(HashSet()) { it.name },
+        )
+        val shown = own.ifEmpty { Favorites.suggested(launches, tiles.mapTo(HashSet()) { it.packageName }) }
         state = state.copy(
-            tiles = TileLayout.arrange(apps, layout),
+            tiles = tiles,
             editTiles = TileLayout.arrange(apps, layout, includeHidden = true),
             hidden = layout.hidden,
+            favorites = shown,
+            favoritesSuggested = own.isEmpty(),
+            favoriteKeys = favorites.toSet(),
+            editingFavorite = state.editingFavorite?.takeIf { it in shown },
         )
     }
 
+    private fun toggleFavorite(key: String) {
+        val added = key !in favorites
+        saveFavorites(Favorites.toggle(favorites, key))
+        Toast.makeText(this, if (added) R.string.home_fav_added else R.string.home_fav_removed, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun saveFavorites(keys: List<String>) {
+        favorites = keys
+        rebuild()
+        lifecycleScope.launch { store.saveFavorites(keys) }
+    }
+
     private fun launchApp(tile: AppTile) {
+        lifecycleScope.launch { store.recordLaunch(tile.packageName, System.currentTimeMillis()) }
         val intent = Intent(Intent.ACTION_MAIN)
             .setComponent(ComponentName(tile.packageName, tile.activity))
             .addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
         open(intent)
+    }
+
+    /** Force stop through the adb port of the TV, as for the headphones. Without it, the app screen of the system. */
+    private fun stopApp(pkg: String) {
+        if (!PACKAGE_NAME.matches(pkg)) return
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) { LocalShell(this@LauncherActivity).run("am force-stop $pkg") }
+            if (result is ShellResult.Done && result.exitCode == 0) {
+                Toast.makeText(this@LauncherActivity, R.string.home_stopped, Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this@LauncherActivity, R.string.home_stop_failed, Toast.LENGTH_LONG).show()
+                open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", pkg, null)))
+            }
+        }
+    }
+
+    private fun openPackage(pkg: String) {
+        val intent = packageManager.getLeanbackLaunchIntentForPackage(pkg) ?: packageManager.getLaunchIntentForPackage(pkg)
+        if (intent != null) open(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
     private fun open(intent: Intent) {
@@ -283,5 +357,9 @@ class LauncherActivity : ComponentActivity() {
 
     private fun prefs() = getSharedPreferences("launcher_ui", MODE_PRIVATE)
 
-    private companion object { const val GLASS = "glass" }
+    private companion object {
+        val PACKAGE_NAME = Regex("[A-Za-z0-9_.]+")
+        const val GLASS = "glass"
+        const val NP_DISMISSED = "now_playing_hint_dismissed"
+    }
 }

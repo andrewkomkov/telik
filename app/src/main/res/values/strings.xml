@@ -353,6 +353,26 @@
     <string name="home_edit_show">Show</string>
     <string name="home_edit_info">App info</string>
     <string name="home_edit_done">Done</string>
+    <string name="home_fav_title">Favorites</string>
+    <string name="home_apps_title">Apps</string>
+    <string name="home_move_hint">Move with the arrows. Press OK when done.</string>
+    <string name="home_menu_open">Open</string>
+    <string name="home_menu_stop">Stop</string>
+    <string name="home_menu_move">Move</string>
+    <string name="home_menu_uninstall">Uninstall</string>
+    <string name="home_stopped">The app is stopped</string>
+    <string name="home_stop_failed">Telik cannot stop the app. Use Force stop on this screen.</string>
+    <string name="home_fav_suggested">Opened most</string>
+    <string name="home_fav_add">Add to Favorites</string>
+    <string name="home_fav_remove">Remove from Favorites</string>
+    <string name="home_fav_added">Added to Favorites</string>
+    <string name="home_fav_removed">Removed from Favorites</string>
+    <string name="home_np_title">Now Playing</string>
+    <string name="home_np_play">Play</string>
+    <string name="home_np_pause">Pause</string>
+    <string name="home_np_next">Next</string>
+    <string name="home_np_hint">Allow notification access, and Telik shows what plays in any app.</string>
+    <string name="home_np_not_now">Not Now</string>
     <string name="home_crash_notice">Telik Home failed to start and was turned off. The previous Home screen is back.</string>
     <string name="home_cannot_open">Cannot open this app</string>
 </resources>
