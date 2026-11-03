@@ -67,11 +67,11 @@ Test: turn on the setting, restart Telik, run `python3 app/src/main/cpp/airplay2
 
 ## Known limits
 
-- The iPhone still calls `fp-setup`. The video key does not use its result.
+- The iPhone still calls `fp-setup`. The video key does not use its result, but Telik must answer it. On 2026-11-03, a build without the `/fp-setup` route failed: the iPhone connected and disconnected after 0.2 seconds (`specs/002-drop-fp-setup`).
 - Nothing public describes how iOS at sender version 980 selects a protocol.
 - `combinedGetInfoWithControlSetup` has no public description.
 - PTP uses ports 319 and 320. On the test TV `ip_unprivileged_port_start` is 1024, so an app without root cannot bind them.
-- The stage 4 realtime audio works. Buffered audio (type 103) has code but no iPhone test, and removal of `fp-setup` is not tested.
+- The stage 4 realtime audio works. Buffered audio (type 103) has code, and it waits for an iPhone test.
 
 ## References
 

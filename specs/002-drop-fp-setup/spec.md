@@ -2,12 +2,12 @@
 
 **Feature Branch**: `002-drop-fp-setup`
 **Created**: 2026-11-03
-**Status**: Draft. The code is written, the iPhone test is not done.
+**Status**: Closed. The iPhone test failed on 2026-11-03, and the patch is removed.
 **Input**: The user said to remove `fp-setup` and buffered audio (type 103) from the open items of Telik 2.0.
 
 ## Findings
 
-- Type 103 and feature bit 40 are not in the code. `android_dnssd_shim.c` sets only bit 48 and clears bit 27.
+- Type 103 and bit 40 came later in PR #17, behind a setting. Before PR #17, `android_dnssd_shim.c` set only bit 48 and cleared bit 27.
   There is nothing to remove for type 103. `docs/AIRPLAY2.md` stage 4 stays as a note.
 - `POST /fp-setup` is still routed to `raop_handler_fpsetup` in `lib/raop.c`. The video key does not use its result.
 
