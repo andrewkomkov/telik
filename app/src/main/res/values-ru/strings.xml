@@ -355,6 +355,12 @@
     <string name="home_edit_done">Готово</string>
     <string name="home_fav_title">Избранное</string>
     <string name="home_apps_title">Приложения</string>
+    <string name="home_menu_open">Открыть</string>
+    <string name="home_menu_stop">Остановить</string>
+    <string name="home_menu_move">Переместить</string>
+    <string name="home_menu_uninstall">Удалить</string>
+    <string name="home_stopped">Приложение остановлено</string>
+    <string name="home_stop_failed">Телик не смог остановить приложение. Нажмите «Остановить» на этом экране.</string>
     <string name="home_fav_suggested">Часто открываете</string>
     <string name="home_fav_add">В избранное</string>
     <string name="home_fav_remove">Убрать из избранного</string>

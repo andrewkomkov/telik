@@ -128,6 +128,8 @@ data class HomeState(
     val nowPlaying: NowPlaying? = null,
     /** Notification access is missing and the user did not say "not now". */
     val nowPlayingHint: Boolean = false,
+    /** Package of the app menu that a long OK opened. */
+    val appMenu: String? = null,
 )
 
 
@@ -160,6 +162,9 @@ internal fun HomeScreen(
     onMove: (String, Int) -> Unit,
     onHide: (String, Boolean) -> Unit,
     onInfo: (String) -> Unit,
+    onAppMenu: (String?) -> Unit,
+    onStopApp: (String) -> Unit,
+    onUninstall: (String) -> Unit,
 ) = AirPlayTheme {
     // Frame watch (FR-012): slow frames while focus moves switch the effects to plain.
     var slow by remember { mutableStateOf(false) }
@@ -278,7 +283,7 @@ internal fun HomeScreen(
                                             app, dim = false, selected = selected, fancy = fancy, modifier = firstMod(),
                                             onFocused = focusOn,
                                             onClick = { if (state.editingFavorite != null) onEditFavorite(key) else onLaunch(app) },
-                                            onLongClick = onLong,
+                                            onLongClick = { onAppMenu(app.packageName) },
                                         )
                                     }
                                     key.startsWith(Favorites.INPUT) -> inputs[key.removePrefix(Favorites.INPUT)]?.let { i ->
@@ -309,7 +314,7 @@ internal fun HomeScreen(
                                     modifier = firstMod(),
                                     onFocused = focusOn,
                                     onClick = { if (editing != null) onEdit(app.packageName) else onLaunch(app) },
-                                    onLongClick = { onEdit(app.packageName) },
+                                    onLongClick = { if (editing == null) onAppMenu(app.packageName) },
                                 )
                             }
                         }
@@ -336,15 +341,10 @@ internal fun HomeScreen(
         val panelMod = Modifier.align(Alignment.BottomCenter).padding(horizontal = SafeH, vertical = SafeV)
         if (editing != null) {
             val isHidden = editing in state.hidden
-            val favKey = Favorites.APP + editing
             EditPanel(fancy, panelMod) {
                 ActionButton(stringResource(R.string.home_edit_left), fancy) { onMove(editing, -1) }
                 ActionButton(stringResource(R.string.home_edit_right), fancy) { onMove(editing, 1) }
-                ActionButton(stringResource(if (favKey in state.favoriteKeys) R.string.home_fav_remove else R.string.home_fav_add), fancy) {
-                    onToggleFavorite(favKey)
-                }
-                ActionButton(stringResource(if (isHidden) R.string.home_edit_show else R.string.home_edit_hide), fancy) { onHide(editing, !isHidden) }
-                ActionButton(stringResource(R.string.home_edit_info), fancy) { onInfo(editing) }
+                if (isHidden) ActionButton(stringResource(R.string.home_edit_show), fancy) { onHide(editing, false) }
                 ActionButton(stringResource(R.string.home_edit_done), fancy, onClick = onCloseEdit)
             }
         }
@@ -361,25 +361,44 @@ internal fun HomeScreen(
             }
         }
 
+        state.appMenu?.let { pkg ->
+            val app = state.editTiles.firstOrNull { it.packageName == pkg }
+            val favKey = Favorites.APP + pkg
+            val ownApp = pkg == LocalContext.current.packageName
+            ModalMenu(app?.label ?: pkg, fancy) { first ->
+                MenuButton(stringResource(R.string.home_menu_open), fancy, first) { onAppMenu(null); app?.let(onLaunch) }
+                if (!ownApp) MenuButton(stringResource(R.string.home_menu_stop), fancy) { onAppMenu(null); onStopApp(pkg) }
+                MenuButton(stringResource(if (favKey in state.favoriteKeys) R.string.home_fav_remove else R.string.home_fav_add), fancy) {
+                    onAppMenu(null); onToggleFavorite(favKey)
+                }
+                MenuButton(stringResource(R.string.home_menu_move), fancy) { onAppMenu(null); onEdit(pkg) }
+                MenuButton(stringResource(if (pkg in state.hidden) R.string.home_edit_show else R.string.home_edit_hide), fancy) {
+                    onAppMenu(null); onHide(pkg, pkg !in state.hidden)
+                }
+                MenuButton(stringResource(R.string.home_edit_info), fancy) { onAppMenu(null); onInfo(pkg) }
+                if (!ownApp) MenuButton(stringResource(R.string.home_menu_uninstall), fancy) { onAppMenu(null); onUninstall(pkg) }
+            }
+        }
+
         if (state.menuOpen) {
             Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)), contentAlignment = Alignment.Center) {
                 val first = remember { FocusRequester() }
                 LaunchedEffect(Unit) { first.requestFocusUntilLanded() }
                 Column(
-                    Modifier.glassPanel(RoundedCornerShape(28.dp), fancy).padding(32.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    Modifier.width(360.dp).glassPanel(RoundedCornerShape(24.dp), fancy).padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     if (!state.isDefault) {
-                        ActionButton(stringResource(R.string.home_make_default), fancy, Modifier.focusRequester(first), onMakeDefault)
+                        MenuButton(stringResource(R.string.home_make_default), fancy, Modifier.focusRequester(first), onClick = onMakeDefault)
                     }
-                    ActionButton(
+                    MenuButton(
                         stringResource(if (state.glass) R.string.home_glass_on else R.string.home_glass_off),
                         fancy,
                         if (state.isDefault) Modifier.focusRequester(first) else Modifier,
-                        onToggleGlass,
+                        onClick = onToggleGlass,
                     )
-                    ActionButton(stringResource(R.string.home_restore_old), fancy, onClick = onRestoreOld)
-                    ActionButton(stringResource(R.string.home_edit_done), fancy) { onMenu(false) }
+                    MenuButton(stringResource(R.string.home_restore_old), fancy, onClick = onRestoreOld)
+                    MenuButton(stringResource(R.string.home_edit_done), fancy) { onMenu(false) }
                 }
             }
         }
@@ -514,6 +533,30 @@ private fun Clock() {
     Text(text, color = Color.White, fontSize = TvType.Headline, fontWeight = FontWeight.Medium,
         maxLines = 1, softWrap = false,
     )
+}
+
+/** A menu row: all rows of a menu have one width. */
+@Composable
+private fun MenuButton(label: String, fancy: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) =
+    ActionButton(label, fancy, modifier.fillMaxWidth(), wide = true, onClick = onClick)
+
+/** Centered glass menu over a dim screen, with the title of the app. Back closes it (in the activity). */
+@Composable
+private fun ModalMenu(title: String, fancy: Boolean, content: @Composable (Modifier) -> Unit) {
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)), contentAlignment = Alignment.Center) {
+        val first = remember { FocusRequester() }
+        LaunchedEffect(Unit) { first.requestFocusUntilLanded() }
+        Column(
+            Modifier.width(320.dp).glassPanel(RoundedCornerShape(24.dp), fancy).padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                title, Modifier.padding(bottom = 6.dp), color = Color.White, fontSize = TvType.Title3,
+                fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            content(Modifier.focusRequester(first))
+        }
+    }
 }
 
 @Composable
@@ -791,12 +834,14 @@ private fun Pill(
 }
 
 @Composable
-private fun ActionButton(label: String, fancy: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    FocusTile(fancy, modifier, false, {}, onClick, null, grow = 1.06f, shadow = false) {
+private fun ActionButton(
+    label: String, fancy: Boolean, modifier: Modifier = Modifier, wide: Boolean = false, onClick: () -> Unit,
+) {
+    FocusTile(fancy, modifier, false, {}, onClick, null, grow = 1.04f, shadow = false) {
         Box(
-            Modifier.glassPanel(TileShape, fancy).padding(horizontal = 18.dp).height(52.dp),
-            contentAlignment = Alignment.Center,
-        ) { Text(label, color = Color.White, fontSize = 18.sp, maxLines = 1) }
+            (if (wide) Modifier.fillMaxWidth() else Modifier).glassPanel(TileShape, fancy).padding(horizontal = 16.dp).height(40.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) { Text(label, color = Color.White, fontSize = TvType.Body, fontWeight = FontWeight.Medium, maxLines = 1) }
     }
 }
 

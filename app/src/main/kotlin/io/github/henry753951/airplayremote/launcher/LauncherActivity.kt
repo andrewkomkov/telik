@@ -34,7 +34,11 @@ import io.github.henry753951.airplayremote.launcher.ui.HomeScreen
 import io.github.henry753951.airplayremote.launcher.ui.HomeState
 import io.github.henry753951.airplayremote.launcher.ui.InputEntry
 import io.github.henry753951.airplayremote.ui.TvHomeEntry
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import io.github.henry753951.airplayremote.headphones.LocalShell
+import io.github.henry753951.airplayremote.headphones.ShellResult
 
 /**
  * Telik Home. Small on purpose (FR-013): no Hilt, no view model, no image library.
@@ -76,8 +80,8 @@ class LauncherActivity : ComponentActivity() {
         // Home is the root: Back only closes edit mode or the menu.
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (state.editing != null || state.menuOpen || state.editingFavorite != null) {
-                    state = state.copy(editing = null, menuOpen = false, editingFavorite = null)
+                if (state.editing != null || state.menuOpen || state.editingFavorite != null || state.appMenu != null) {
+                    state = state.copy(editing = null, menuOpen = false, editingFavorite = null, appMenu = null)
                 }
             }
         })
@@ -126,6 +130,9 @@ class LauncherActivity : ComponentActivity() {
                 onMenu = { state = state.copy(menuOpen = it) },
                 onMove = { pkg, d -> update { it.copy(order = TileLayout.move(fullOrder(), pkg, d)) } },
                 onHide = { pkg, h -> update { TileLayout.setHidden(it.copy(order = fullOrder()), pkg, h) } },
+                onAppMenu = { state = state.copy(appMenu = it) },
+                onStopApp = ::stopApp,
+                onUninstall = { pkg -> open(Intent(Intent.ACTION_DELETE, Uri.fromParts("package", pkg, null))) },
                 onInfo = { pkg ->
                     open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", pkg, null)))
                 },
@@ -274,6 +281,20 @@ class LauncherActivity : ComponentActivity() {
         open(intent)
     }
 
+    /** Force stop through the adb port of the TV, as for the headphones. Without it, the app screen of the system. */
+    private fun stopApp(pkg: String) {
+        if (!PACKAGE_NAME.matches(pkg)) return
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) { LocalShell(this@LauncherActivity).run("am force-stop $pkg") }
+            if (result is ShellResult.Done && result.exitCode == 0) {
+                Toast.makeText(this@LauncherActivity, R.string.home_stopped, Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this@LauncherActivity, R.string.home_stop_failed, Toast.LENGTH_LONG).show()
+                open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", pkg, null)))
+            }
+        }
+    }
+
     private fun openPackage(pkg: String) {
         val intent = packageManager.getLeanbackLaunchIntentForPackage(pkg) ?: packageManager.getLaunchIntentForPackage(pkg)
         if (intent != null) open(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -337,6 +358,7 @@ class LauncherActivity : ComponentActivity() {
     private fun prefs() = getSharedPreferences("launcher_ui", MODE_PRIVATE)
 
     private companion object {
+        val PACKAGE_NAME = Regex("[A-Za-z0-9_.]+")
         const val GLASS = "glass"
         const val NP_DISMISSED = "now_playing_hint_dismissed"
     }

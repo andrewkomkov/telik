@@ -138,6 +138,7 @@ The user asked for a Home screen that looks like Apple TV and follows the Apple 
 - **FR-008**: Telik MUST group apps by their declared category, and the user MUST be able to set the group of an app.
 - **FR-009**: Telik MUST read preview programs and Watch Next only with `READ_TV_LISTINGS`, and MUST hide the rows when the read gives nothing.
 - **FR-010**: The edit menu MUST offer uninstall and app info through the system screens, and the shortcuts of the app when it has them.
+- **FR-017**: A long OK on an app MUST open its menu with a stop action. The user asked for this on 2026-11-03.
 - **FR-011**: All text MUST exist in English, Russian and Traditional Chinese.
 - **FR-012**: Telik MUST NOT send the launch record, the usage data or the media titles off the TV, and MUST NOT write titles to the log.
 - **FR-013**: The layout MUST use the tvOS guidelines at 0.5 dp per point: a safe area of 80 pt at the sides and 60 pt at the top and bottom.

@@ -355,6 +355,12 @@
     <string name="home_edit_done">Done</string>
     <string name="home_fav_title">Favorites</string>
     <string name="home_apps_title">Apps</string>
+    <string name="home_menu_open">Open</string>
+    <string name="home_menu_stop">Stop</string>
+    <string name="home_menu_move">Move</string>
+    <string name="home_menu_uninstall">Uninstall</string>
+    <string name="home_stopped">The app is stopped</string>
+    <string name="home_stop_failed">Telik cannot stop the app. Use Force stop on this screen.</string>
     <string name="home_fav_suggested">Opened most</string>
     <string name="home_fav_add">Add to Favorites</string>
     <string name="home_fav_remove">Remove from Favorites</string>

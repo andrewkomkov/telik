@@ -323,6 +323,12 @@
     <string name="home_edit_done">完成</string>
     <string name="home_fav_title">我的最愛</string>
     <string name="home_apps_title">應用程式</string>
+    <string name="home_menu_open">開啟</string>
+    <string name="home_menu_stop">停止</string>
+    <string name="home_menu_move">移動</string>
+    <string name="home_menu_uninstall">解除安裝</string>
+    <string name="home_stopped">已停止應用程式</string>
+    <string name="home_stop_failed">Telik 無法停止應用程式。請在此畫面使用「強制停止」。</string>
     <string name="home_fav_suggested">最常開啟</string>
     <string name="home_fav_add">加入我的最愛</string>
     <string name="home_fav_remove">從我的最愛移除</string>

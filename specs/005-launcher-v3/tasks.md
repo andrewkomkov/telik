@@ -41,6 +41,7 @@
 
 - [ ] T050 [US5] Only if T001 finds rows: add the shelf and the "Continue watching" row from `TvContract`.
 - [ ] T051 [US6] Add uninstall, the system screen of the app and the app shortcuts to the edit menu.
+- [x] T053 [US6] Add the app menu for a long OK. It has these items: open, stop, favorites, move, hide, the system screen, uninstall. Stop runs `am force-stop` through the adb port of the TV. Without the adb port, the system screen opens.
 - [ ] T052 Check on the TV: the Home screen opens in 1 second or less with all rows (SC-003).
 
 ## Release
