@@ -1,0 +1,6 @@
+diff --git a/lib/raop.c b/lib/raop.c
+--- a/lib/raop.c
++++ b/lib/raop.c
+@@ -449,2 +448,0 @@
+-            } else if (!strcmp(url, "/fp-setup")) {
+-                handler = &raop_handler_fpsetup;
