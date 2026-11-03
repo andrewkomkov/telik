@@ -870,6 +870,9 @@ private fun FocusTile(
 ) {
     var focused by remember { mutableStateOf(false) }
     var longDone by remember { mutableStateOf(false) }
+    // A key up counts only after a key down on this tile. After a long OK opens a menu, the key up
+    // goes to the first menu item, and it must not press that item.
+    var downSeen by remember { mutableStateOf(false) }
     val t by animateFloatAsState(if (focused) 1f else 0f, tween(if (fancy) 160 else 60), label = "focus")
     Box(
         modifier
@@ -891,6 +894,7 @@ private fun FocusTile(
                 if (!ok) return@onKeyEvent false
                 when (e.type) {
                     KeyEventType.KeyDown -> {
+                        if (e.nativeKeyEvent.repeatCount == 0) downSeen = true
                         if (e.nativeKeyEvent.isLongPress && onLongClick != null && !longDone) {
                             longDone = true
                             onLongClick()
@@ -898,7 +902,8 @@ private fun FocusTile(
                         true
                     }
                     KeyEventType.KeyUp -> {
-                        if (!longDone) onClick()
+                        if (downSeen && !longDone) onClick()
+                        downSeen = false
                         longDone = false
                         true
                     }
