@@ -353,6 +353,12 @@
     <string name="home_edit_show">Show</string>
     <string name="home_edit_info">App info</string>
     <string name="home_edit_done">Done</string>
+    <string name="home_fav_title">Favorites</string>
+    <string name="home_fav_suggested">Opened most</string>
+    <string name="home_fav_add">Add to Favorites</string>
+    <string name="home_fav_remove">Remove from Favorites</string>
+    <string name="home_fav_added">Added to Favorites</string>
+    <string name="home_fav_removed">Removed from Favorites</string>
     <string name="home_crash_notice">Telik Home failed to start and was turned off. The previous Home screen is back.</string>
     <string name="home_cannot_open">Cannot open this app</string>
 </resources>

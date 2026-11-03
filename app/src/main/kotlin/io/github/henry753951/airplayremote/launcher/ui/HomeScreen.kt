@@ -21,6 +21,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Input
@@ -68,6 +70,7 @@ import io.github.henry753951.airplayremote.R
 import io.github.henry753951.airplayremote.launcher.AppTile
 import io.github.henry753951.airplayremote.launcher.Attention
 import io.github.henry753951.airplayremote.launcher.Attentions
+import io.github.henry753951.airplayremote.launcher.Favorites
 import io.github.henry753951.airplayremote.launcher.TelikStatus
 import io.github.henry753951.airplayremote.audiooutput.SpeakerOutputState
 import io.github.henry753951.airplayremote.headphones.HeadphonesStatus
@@ -95,6 +98,13 @@ data class HomeState(
     val telik: TelikStatus = TelikStatus(),
     /** ACCESS_LOCAL_NETWORK is granted. */
     val localNetwork: Boolean = true,
+    /** Keys of the Favorites row, in order: the user's favorites, or suggestions while there are none. */
+    val favorites: List<String> = emptyList(),
+    val favoritesSuggested: Boolean = false,
+    /** The user's own favorites, for the add and remove labels. */
+    val favoriteKeys: Set<String> = emptySet(),
+    /** Favorite in edit mode: move or remove. */
+    val editingFavorite: String? = null,
 )
 
 private val TileShape = RoundedCornerShape(16.dp)
@@ -109,6 +119,9 @@ internal fun HomeScreen(
     onTelik: () -> Unit,
     onTelikEntry: (TvHomeEntry) -> Unit,
     onAttention: (Attention) -> Unit,
+    onToggleFavorite: (String) -> Unit,
+    onEditFavorite: (String?) -> Unit,
+    onMoveFavorite: (String, Int) -> Unit,
     onInput: (String) -> Unit,
     onSettings: () -> Unit,
     onSearch: () -> Unit,
@@ -164,18 +177,21 @@ internal fun HomeScreen(
     ) {
         // Rows run to the screen edges and keep the margin as content padding, so a cut tile
         // at the edge shows that the row scrolls.
-        Column(Modifier.fillMaxSize().padding(vertical = 28.dp)) {
+        // Rows scroll up and down; a focused tile brings its row into view.
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 28.dp)) {
             // shortcuts: Telik, HDMI inputs, search, settings, Home screen menu
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(horizontal = EdgeMargin),
             ) {
-                item { Pill(Icons.Default.Settings, stringResource(R.string.home_entry_telik), fancy, { focusStamp++ }, onTelik) }
+                item { Pill(Icons.Default.Settings, stringResource(R.string.home_entry_telik), fancy, { focusStamp++ }, onClick = onTelik) }
                 items(state.inputs, key = { it.id }) { i ->
-                    Pill(Icons.AutoMirrored.Filled.Input, i.label, fancy, { focusStamp++ }) { onInput(i.id) }
+                    Pill(Icons.AutoMirrored.Filled.Input, i.label, fancy, { focusStamp++ }, { onToggleFavorite(Favorites.INPUT + i.id) }) {
+                        onInput(i.id)
+                    }
                 }
-                item { Pill(Icons.Default.Search, stringResource(R.string.home_entry_search), fancy, { focusStamp++ }, onSearch) }
-                item { Pill(Icons.Default.Settings, stringResource(R.string.home_entry_settings), fancy, { focusStamp++ }, onSettings) }
+                item { Pill(Icons.Default.Search, stringResource(R.string.home_entry_search), fancy, { focusStamp++ }, onClick = onSearch) }
+                item { Pill(Icons.Default.Settings, stringResource(R.string.home_entry_settings), fancy, { focusStamp++ }, onClick = onSettings) }
                 item { Pill(Icons.Default.Home, stringResource(R.string.home_entry_home), fancy, { focusStamp++ }) { onMenu(true) } }
             }
             // FR-019: the problems of the old Telik start page. States settle for a moment after a
@@ -197,6 +213,62 @@ internal fun HomeScreen(
                 )
             }
 
+            // Favorites (005 US1): apps, inputs and Telik cards that the user pinned. Hold OK to move
+            // or remove. With no favorites yet, the row suggests the apps opened most from Telik.
+            if (editing == null && state.favorites.isNotEmpty()) {
+                Text(
+                    stringResource(if (state.favoritesSuggested) R.string.home_fav_suggested else R.string.home_fav_title),
+                    Modifier.padding(start = EdgeMargin, top = 16.dp),
+                    color = Color.White.copy(alpha = 0.7f), fontSize = 16.sp,
+                )
+                val byPackage = state.editTiles.associateBy { it.packageName }
+                val inputs = state.inputs.associateBy { it.id }
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    contentPadding = PaddingValues(vertical = 12.dp, horizontal = EdgeMargin),
+                ) {
+                    items(state.favorites, key = { it }) { key ->
+                        val selected = state.editingFavorite == key
+                        val onLong = { onEditFavorite(key) }
+                        when {
+                            key.startsWith(Favorites.APP) -> byPackage[key.removePrefix(Favorites.APP)]?.let { app ->
+                                AppCard(
+                                    app = app, dim = false, selected = selected, fancy = fancy, modifier = Modifier,
+                                    onFocused = { focusStamp++ },
+                                    onClick = { if (state.editingFavorite != null) onEditFavorite(key) else onLaunch(app) },
+                                    onLongClick = onLong, compact = true,
+                                )
+                            }
+                            key.startsWith(Favorites.INPUT) -> inputs[key.removePrefix(Favorites.INPUT)]?.let { i ->
+                                Pill(Icons.AutoMirrored.Filled.Input, i.label, fancy, { focusStamp++ }, onLong) { onInput(i.id) }
+                            }
+                            key.startsWith(Favorites.TELIK) ->
+                                TvHomeEntry.entries.firstOrNull { it.name == key.removePrefix(Favorites.TELIK) }?.let { entry ->
+                                    val (title, subtitle, active) = telikCardText(entry, state.telik)
+                                    TelikCard(entry, title, subtitle, active, fancy, { focusStamp++ }, onLong) { onTelikEntry(entry) }
+                                }
+                        }
+                    }
+                }
+                state.editingFavorite?.let { key ->
+                    Row(
+                        Modifier.padding(horizontal = EdgeMargin).fillMaxWidth()
+                            .glassPanel(RoundedCornerShape(20.dp), fancy)
+                            .horizontalScroll(rememberScrollState()).padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        if (!state.favoritesSuggested) {
+                            ActionButton(stringResource(R.string.home_edit_left), fancy) { onMoveFavorite(key, -1) }
+                            ActionButton(stringResource(R.string.home_edit_right), fancy) { onMoveFavorite(key, 1) }
+                        }
+                        ActionButton(
+                            stringResource(if (key in state.favoriteKeys) R.string.home_fav_remove else R.string.home_fav_add), fancy,
+                        ) { onToggleFavorite(key) }
+                        ActionButton(stringResource(R.string.home_edit_done), fancy) { onEditFavorite(null) }
+                    }
+                }
+            }
+
             // Telik row: AirPlay and its accessories as part of the Home screen, each with its state.
             // Edit mode is about the app row, so this row steps aside to make room for the panel.
             if (editing == null) {
@@ -207,12 +279,14 @@ internal fun HomeScreen(
                 ) {
                     items(TvHomeEntry.entries) { entry ->
                         val (title, subtitle, active) = telikCardText(entry, state.telik)
-                        TelikCard(entry, title, subtitle, active, fancy, { focusStamp++ }) { onTelikEntry(entry) }
+                        TelikCard(entry, title, subtitle, active, fancy, { focusStamp++ }, { onToggleFavorite(Favorites.TELIK + entry.name) }) {
+                            onTelikEntry(entry)
+                        }
                     }
                 }
             }
 
-            Box(Modifier.weight(1f))
+            Spacer(Modifier.height(8.dp))
 
             LazyRow(
                 state = listState,
@@ -247,6 +321,10 @@ internal fun HomeScreen(
                     ActionButton(
                         stringResource(if (isHidden) R.string.home_edit_show else R.string.home_edit_hide), fancy,
                     ) { onHide(editing, !isHidden) }
+                    val favKey = Favorites.APP + editing
+                    ActionButton(
+                        stringResource(if (favKey in state.favoriteKeys) R.string.home_fav_remove else R.string.home_fav_add), fancy,
+                    ) { onToggleFavorite(favKey) }
                     ActionButton(stringResource(R.string.home_edit_info), fancy) { onInfo(editing) }
                     ActionButton(stringResource(R.string.home_edit_done), fancy, onClick = onCloseEdit)
                 }
@@ -290,12 +368,15 @@ private fun AppCard(
     onFocused: () -> Unit,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    compact: Boolean = false,
 ) {
     val art by rememberArt(app.packageName, app.activity)
+    val w = if (compact) 192.dp else 264.dp
+    val h = if (compact) 108.dp else 148.dp
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         FocusTile(
             fancy = fancy,
-            modifier = Modifier.size(264.dp, 148.dp),
+            modifier = Modifier.size(w, h),
             selected = selected,
             onFocused = onFocused,
             onClick = onClick,
@@ -316,7 +397,7 @@ private fun AppCard(
             }
         }
         Text(
-            app.label, Modifier.padding(top = 18.dp).size(264.dp, 28.dp),
+            app.label, Modifier.padding(top = if (compact) 10.dp else 18.dp).size(w, 28.dp),
             color = Color.White.copy(alpha = 0.85f), fontSize = 18.sp,
             maxLines = 1, overflow = TextOverflow.Ellipsis,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -424,9 +505,10 @@ private fun TelikCard(
     active: Boolean,
     fancy: Boolean,
     onFocused: () -> Unit,
+    onLongClick: (() -> Unit)?,
     onClick: () -> Unit,
 ) {
-    FocusTile(fancy, Modifier.size(272.dp, 96.dp), false, onFocused, onClick, null, grow = 1.08f, shadow = false) {
+    FocusTile(fancy, Modifier.size(272.dp, 96.dp), false, onFocused, onClick, onLongClick, grow = 1.08f, shadow = false) {
         Row(
             Modifier.fillMaxSize().glassPanel(TileShape, fancy).padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -451,8 +533,11 @@ private fun TelikCard(
 }
 
 @Composable
-private fun Pill(icon: ImageVector, label: String, fancy: Boolean, onFocused: () -> Unit, onClick: () -> Unit) {
-    FocusTile(fancy, Modifier.height(56.dp), false, onFocused, onClick, null, grow = 1.08f, shadow = false) {
+private fun Pill(
+    icon: ImageVector, label: String, fancy: Boolean, onFocused: () -> Unit,
+    onLongClick: (() -> Unit)? = null, onClick: () -> Unit,
+) {
+    FocusTile(fancy, Modifier.height(56.dp), false, onFocused, onClick, onLongClick, grow = 1.08f, shadow = false) {
         Row(
             Modifier.glassPanel(TileShape, fancy).padding(horizontal = 20.dp).height(56.dp),
             verticalAlignment = Alignment.CenterVertically,

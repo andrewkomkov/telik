@@ -353,6 +353,12 @@
     <string name="home_edit_show">Показать</string>
     <string name="home_edit_info">О приложении</string>
     <string name="home_edit_done">Готово</string>
+    <string name="home_fav_title">Избранное</string>
+    <string name="home_fav_suggested">Часто открываете</string>
+    <string name="home_fav_add">В избранное</string>
+    <string name="home_fav_remove">Убрать из избранного</string>
+    <string name="home_fav_added">Добавлено в избранное</string>
+    <string name="home_fav_removed">Убрано из избранного</string>
     <string name="home_crash_notice">Домашний экран Телика не запустился и выключен. Вернулся прежний экран.</string>
     <string name="home_cannot_open">Не удалось открыть приложение</string>
 </resources>

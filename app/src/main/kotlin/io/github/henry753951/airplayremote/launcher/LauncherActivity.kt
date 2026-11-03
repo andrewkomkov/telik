@@ -49,6 +49,8 @@ class LauncherActivity : ComponentActivity() {
     private var state by mutableStateOf(HomeState())
     private var layout = HomeLayout()
     private var apps: List<AppTile> = emptyList()
+    private var favorites: List<String> = emptyList()
+    private var launches: List<Launch> = emptyList()
 
     private val roleRequest = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         refreshDefault()
@@ -73,7 +75,9 @@ class LauncherActivity : ComponentActivity() {
         // Home is the root: Back only closes edit mode or the menu.
         onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (state.editing != null || state.menuOpen) state = state.copy(editing = null, menuOpen = false)
+                if (state.editing != null || state.menuOpen || state.editingFavorite != null) {
+                    state = state.copy(editing = null, menuOpen = false, editingFavorite = null)
+                }
             }
         })
         store = LayoutStore(this)
@@ -98,6 +102,9 @@ class LauncherActivity : ComponentActivity() {
                 onTelik = { openTelikPage(MainActivity.PAGE_SETTINGS) },
                 onTelikEntry = ::openTelikEntry,
                 onAttention = ::fixAttention,
+                onToggleFavorite = ::toggleFavorite,
+                onEditFavorite = { state = state.copy(editingFavorite = it) },
+                onMoveFavorite = { key, d -> saveFavorites(Favorites.move(favorites, key, d)) },
                 onInput = ::openInput,
                 onSettings = { open(Intent(Settings.ACTION_SETTINGS)) },
                 onSearch = { open(Intent("android.search.action.GLOBAL_SEARCH")) },
@@ -117,6 +124,8 @@ class LauncherActivity : ComponentActivity() {
 
         lifecycleScope.launch { store.layout.collect { layout = it; rebuild() } }
         lifecycleScope.launch { repo.apps.collect { apps = it; rebuild() } }
+        lifecycleScope.launch { store.favorites.collect { favorites = it; rebuild() } }
+        lifecycleScope.launch { store.launches.collect { launches = it; rebuild() } }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) { telik.status.collect { state = state.copy(telik = it) } }
         }
@@ -211,14 +220,37 @@ class LauncherActivity : ComponentActivity() {
     }
 
     private fun rebuild() {
+        val tiles = TileLayout.arrange(apps, layout)
+        val own = Favorites.present(
+            favorites, apps.mapTo(HashSet()) { it.packageName }, state.inputs.mapTo(HashSet()) { it.id },
+            TvHomeEntry.entries.mapTo(HashSet()) { it.name },
+        )
+        val shown = own.ifEmpty { Favorites.suggested(launches, tiles.mapTo(HashSet()) { it.packageName }) }
         state = state.copy(
-            tiles = TileLayout.arrange(apps, layout),
+            tiles = tiles,
             editTiles = TileLayout.arrange(apps, layout, includeHidden = true),
             hidden = layout.hidden,
+            favorites = shown,
+            favoritesSuggested = own.isEmpty(),
+            favoriteKeys = favorites.toSet(),
+            editingFavorite = state.editingFavorite?.takeIf { it in shown },
         )
     }
 
+    private fun toggleFavorite(key: String) {
+        val added = key !in favorites
+        saveFavorites(Favorites.toggle(favorites, key))
+        Toast.makeText(this, if (added) R.string.home_fav_added else R.string.home_fav_removed, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun saveFavorites(keys: List<String>) {
+        favorites = keys
+        rebuild()
+        lifecycleScope.launch { store.saveFavorites(keys) }
+    }
+
     private fun launchApp(tile: AppTile) {
+        lifecycleScope.launch { store.recordLaunch(tile.packageName, System.currentTimeMillis()) }
         val intent = Intent(Intent.ACTION_MAIN)
             .setComponent(ComponentName(tile.packageName, tile.activity))
             .addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)

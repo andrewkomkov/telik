@@ -8,9 +8,9 @@
 
 ## Phase 1: Favorites (US1, P1)
 
-- [ ] T010 [US1] Add `FavoritesStore` with apps, inputs and Telik cards. Add unit tests for add, remove, move and the removal of uninstalled apps.
-- [ ] T011 [US1] Add `LaunchLog` and write a record on each launch from the Home screen. Add unit tests for the default favorites.
-- [ ] T012 [US1] Add the Favorites row and "Add to favorites" and "Remove from favorites" in the edit menu.
+- [x] T010 [US1] Add `FavoritesStore` with apps, inputs and Telik cards. Add unit tests for add, remove, move and the removal of uninstalled apps.
+- [x] T011 [US1] Add `LaunchLog` and write a record on each launch from the Home screen. Add unit tests for the default favorites.
+- [x] T012 [US1] Add the Favorites row and "Add to favorites" and "Remove from favorites" in the edit menu.
 - [ ] T013 [US1] Check on the TV: add, move, remove, reboot.
 
 ## Phase 2: Now playing (US2, P1)
