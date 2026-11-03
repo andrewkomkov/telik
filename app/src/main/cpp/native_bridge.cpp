@@ -35,14 +35,15 @@ typedef struct {
     std::shared_ptr<LogSink> log;
 } server_ctx_t;
 
-/* debug.telik.loglevel: 0..8 from logger.h, empty or invalid means LOGGER_ERR.
- * Set it with adb only; levels above LOGGER_INFO can log URLs. */
+/* debug.telik.loglevel: a level from 0 to 6 of logger.h. Set it with adb only.
+ * An empty or incorrect value gives LOGGER_ERR. The highest level is LOGGER_INFO, because at
+ * LOGGER_DEBUG UxPlay prints the binary body of /pair-setup as a plist and crashes. */
 static int _native_log_level() {
     char value[PROP_VALUE_MAX] = {0};
     if (__system_property_get("debug.telik.loglevel", value) <= 0) return LOGGER_ERR;
     char *end = NULL;
     long level = strtol(value, &end, 10);
-    if (end == value || *end != '\0' || level < 0 || level > LOGGER_DEBUG_DATA) return LOGGER_ERR;
+    if (end == value || *end != '\0' || level < 0 || level > LOGGER_INFO) return LOGGER_ERR;
     return (int)level;
 }
 
