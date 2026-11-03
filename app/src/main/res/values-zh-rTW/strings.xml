@@ -193,6 +193,8 @@
     <string name="setting_advertise_mirroring">允許螢幕鏡像輸出</string>
     <string name="setting_advertise_mirroring_desc">關閉後，電視不會出現在螢幕鏡像輸出清單</string>
     <string name="setting_advertise_audio">允許 AirPlay 音訊</string>
+    <string name="setting_buffered_audio">AirPlay 緩衝音訊（實驗性）</string>
+    <string name="setting_buffered_audio_desc">讓 iPhone 提前傳送音訊，如同 AirPlay 2。沒有 PTP，同步可能漂移。需重新啟動</string>
     <string name="setting_advertise_audio_desc">關閉後，僅可使用螢幕鏡像輸出，音樂播放器無法找到電視</string>
     <string name="setting_alac">支援 ALAC 音訊</string>
     <string name="setting_alac_desc">向傳送裝置宣告 ALAC 支援，用於音樂串流</string>
