@@ -42,8 +42,13 @@ are welcome.
 
 ## Install
 
-1. Install `telik-*-armv7.apk` from [Releases](https://github.com/andrewkomkov/telik/releases/latest)
-   on an Android TV 13+ device.
+1. Install Telik on an Android TV 13+ device. Use one of these ways:
+   - Open the direct link on the TV, for example in the Downloader app:
+     `https://github.com/andrewkomkov/telik/releases/latest/download/telik-armv7.apk`
+   - Download `telik-*-armv7.apk` from [Releases](https://github.com/andrewkomkov/telik/releases/latest).
+   - Add Telik to [Obtainium](https://github.com/ImranR98/Obtainium). It installs the updates from Releases.
+
+     [<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="54">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/andrewkomkov/telik)
 2. Open Telik and allow accessibility access. It presses remote buttons and receives keyboard text.
 3. On iPhone, open Control Center, tap the remote icon, choose Telik and enter the code from the TV.
 4. For Apple Home, open **Home app** in Telik and scan the QR code.

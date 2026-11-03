@@ -55,6 +55,8 @@ jobs:
         run: |
           mkdir dist
           cp app/build/outputs/apk/release/app-release.apk "dist/telik-${TAG#v}-armv7.apk"
+          # A fixed name keeps releases/latest/download/telik-armv7.apk valid for Downloader codes and links.
+          cp app/build/outputs/apk/release/app-release.apk dist/telik-armv7.apk
           (cd dist && sha256sum ./*.apk > SHA256SUMS)
       - name: Publish
         env:
