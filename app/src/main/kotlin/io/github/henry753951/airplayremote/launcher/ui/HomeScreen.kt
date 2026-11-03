@@ -94,7 +94,7 @@ import io.github.henry753951.airplayremote.launcher.TelikStatus
 import io.github.henry753951.airplayremote.audiooutput.SpeakerOutputState
 import io.github.henry753951.airplayremote.headphones.HeadphonesStatus
 import io.github.henry753951.airplayremote.runtime.AirPlayService.ServerState
-import io.github.henry753951.airplayremote.ui.TelikRowIcon
+import io.github.henry753951.airplayremote.ui.TelikGlyph
 import io.github.henry753951.airplayremote.ui.TvHomeEntry
 import io.github.henry753951.airplayremote.ui.requestFocusUntilLanded
 import io.github.henry753951.airplayremote.ui.theme.AirPlayTheme
@@ -197,7 +197,7 @@ internal fun HomeScreen(
     // lower row moves up to a fixed place under the safe area.
     val rowTops = remember { mutableStateMapOf<Int, Int>() }
     val onRowFocus = { row: Int ->
-        val target = if (row <= 0) 0 else ((rowTops[row] ?: 0) - with(density) { RowPivot.roundToPx() }).coerceAtLeast(0)
+        val target = if (row <= 1) 0 else ((rowTops[row] ?: 0) - with(density) { RowPivot.roundToPx() }).coerceAtLeast(0)
         scope.launch { scroll.animateScrollTo(target, tween(320, easing = FastOutSlowInEasing)) }
         Unit
     }
@@ -209,6 +209,9 @@ internal fun HomeScreen(
         }
     }
     LaunchedEffect(Unit) { firstTile.requestFocusUntilLanded() }
+    // Favorites load a moment after the first frame; the start focus moves to them if the user has not moved yet.
+    val hasFavorites = state.favorites.isNotEmpty()
+    LaunchedEffect(hasFavorites) { if (hasFavorites && focusStamp <= 1) firstTile.requestFocusUntilLanded() }
 
     val pending = Attentions.pick(state.localNetwork, state.telik.server, state.telik.remoteEnabled, state.telik.remote)
     var attention by remember { mutableStateOf<Attention?>(null) }
@@ -387,7 +390,7 @@ private val TileH = 90.dp
 private val Gap = 20.dp
 /** A focused tile grows into the gap and no further: 160 dp * 1.12 leaves 0.4 dp of each 10 dp. */
 private const val FocusGrow = 1.12f
-private val ShelfHeight = 170.dp
+private val ShelfHeight = 124.dp
 /** Where a focused lower row stops: its title stays just under the safe area. */
 private val RowPivot = 40.dp
 private val TileShape = RoundedCornerShape(10.dp)
@@ -434,11 +437,11 @@ private fun TileRow(
     val arrangement = Arrangement.spacedBy(Gap)
     if (scrollable) {
         Row(
-            mod.horizontalScroll(rememberScrollState()).padding(horizontal = SafeH).padding(top = 14.dp, bottom = 34.dp),
+            mod.horizontalScroll(rememberScrollState()).padding(horizontal = SafeH).padding(top = 12.dp, bottom = 26.dp),
             horizontalArrangement = arrangement,
         ) { content() }
     } else {
-        Row(mod.padding(horizontal = SafeH).padding(top = 14.dp, bottom = 34.dp), horizontalArrangement = arrangement) { content() }
+        Row(mod.padding(horizontal = SafeH).padding(top = 12.dp, bottom = 26.dp), horizontalArrangement = arrangement) { content() }
     }
 }
 
@@ -457,7 +460,7 @@ private fun Backdrop(info: FocusInfo?, np: NowPlaying?, fancy: Boolean) {
                 key is String && info?.activity != null -> {
                     val art by rememberArt(key, info.activity)
                     art?.let {
-                        Image(it.image, null, Modifier.fillMaxSize().then(blur).graphicsLayer { alpha = 0.45f }, contentScale = ContentScale.Crop)
+                        Image(it.image, null, Modifier.fillMaxSize().then(blur).graphicsLayer { alpha = 0.4f }, contentScale = ContentScale.Crop)
                     }
                 }
                 key is TvHomeEntry -> Box(
@@ -469,7 +472,7 @@ private fun Backdrop(info: FocusInfo?, np: NowPlaying?, fancy: Boolean) {
         // Scrim: the text stays readable on any art.
         Box(
             Modifier.fillMaxSize().background(
-                Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.25f), Color.Black.copy(alpha = 0.55f), Color.Black.copy(alpha = 0.85f))),
+                Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.35f), Color.Black.copy(alpha = 0.7f), Color.Black.copy(alpha = 0.9f))),
             ),
         )
     }
@@ -614,7 +617,7 @@ private fun TelikTile(
     Column(Modifier.onFocusChanged { focused = it.hasFocus }, horizontalAlignment = Alignment.CenterHorizontally) {
         FocusTile(fancy, modifier.size(TileW, TileH), false, { onFocused(FocusInfo(title, subtitle, entry = entry)) }, onClick, onLongClick, grow = FocusGrow) {
             Box(Modifier.fillMaxSize().background(Brush.linearGradient(entry.accent())), contentAlignment = Alignment.Center) {
-                Box(Modifier.graphicsLayer { scaleX = 1.25f; scaleY = 1.25f }) { TelikRowIcon(entry) }
+                Box(Modifier.graphicsLayer { scaleX = 1.2f; scaleY = 1.2f }) { TelikGlyph(entry) }
                 if (active) {
                     Box(Modifier.align(Alignment.TopEnd).padding(10.dp).size(10.dp).clip(CircleShape).background(ActiveDot))
                 }

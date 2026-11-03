@@ -31,3 +31,15 @@ Checks on the test TV on 2026-11-03, with adb as shell. Telik 2.1.0 is the defau
 - Under Google TV, do the apps on the test TV publish to `TvContract`? Examples are YouTube and Netflix.
   Task T001 answers this with `READ_TV_LISTINGS`.
 - Does the TV show the "Usage access" screen? If not, the user grants `GET_USAGE_STATS` with `adb shell appops set dev.telik.tv GET_USAGE_STATS allow`.
+
+## tvOS Human Interface Guidelines
+
+Read on 2026-11-03 from the JSON of `developer.apple.com/design/human-interface-guidelines` (layout, typography, focus and selection).
+
+- Safe area: inset primary content 60 pt from the top and bottom, and 80 pt from the sides.
+- Grid: five columns of 320 pt, 40 pt horizontal spacing, 100 pt minimum vertical spacing. Titled rows need more vertical space.
+- Partially hidden content at the screen edges must be symmetrical.
+- Text styles (Medium weight): Title 1 76 pt, Title 2 57 pt, Title 3 48 pt, Headline 38 pt, Callout 31 pt, Body 29 pt, Caption 1 25 pt, Caption 2 23 pt.
+- Focus: a focused item stands out by elevation, light and animation. Unfocused items are less prominent.
+- The test TV has a density of 320 at 1920x1080, so the screen is 960x540 dp, and 1 pt is 0.5 dp.
+

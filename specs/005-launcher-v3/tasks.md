@@ -19,6 +19,11 @@
 - [x] T021 [US2] Add the now playing card with play, pause and next. OK opens the app.
 - [ ] T022 [US2] Check on the TV with Apple TV, YouTube and Telik audio.
 
+## Phase 2b: Layout by the tvOS guidelines (US7, P1)
+
+- [x] T025 [US7] Rework `HomeScreen.kt` with the HIG safe area, the five-column grid, the tvOS text styles, labels on focus only, the focus backdrop and whole-row scroll.
+- [ ] T026 [US7] Check on the TV with screenshots: no cut rows, five columns, labels on focus only.
+
 ## Phase 3: Recent, new and installs (US3, P2)
 
 - [ ] T030 [US3] Add the Recent row from `LaunchLog`, and from `UsageStatsManager` when usage access is granted.

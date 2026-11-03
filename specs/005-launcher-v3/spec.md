@@ -101,6 +101,22 @@ The edit menu of an app has: add to favorites, move, hide, app info, uninstall, 
 1. **Given** an app, **When** the user selects "Uninstall", **Then** the system uninstall dialog opens.
 2. **Given** an app with shortcuts, **When** the user opens its menu, **Then** the shortcuts show, and OK opens one.
 
+### User Story 7 - Layout by the tvOS guidelines (Priority: P1)
+
+The user asked for a Home screen that looks like Apple TV and follows the Apple guidelines. The layout uses the numbers of the tvOS Human Interface Guidelines.
+
+**Why this priority**: The user found the screen of 2.1.0 ugly: rows cut in half, large tiles, a label under each tile.
+
+**Independent Test**: Open the Home screen and move through all rows. No row shows cut in half. Only the tile in focus has a label.
+
+**Acceptance Scenarios**:
+
+1. **Given** any focus, **When** the user moves down, **Then** the focused row moves up as a whole, and no row shows cut in half.
+2. **Given** a tile in focus, **When** the focus stays, **Then** the backdrop shows its blurred art, and the title area shows its name and state.
+3. **Given** the app grid, **When** the screen shows it, **Then** it has five columns of 16:9 tiles inside the safe area.
+
+---
+
 ### Edge Cases
 
 - A favorite is an HDMI input that the TV no longer reports. The entry stays hidden until the input comes back.
@@ -124,6 +140,9 @@ The edit menu of an app has: add to favorites, move, hide, app info, uninstall, 
 - **FR-010**: The edit menu MUST offer uninstall and app info through the system screens, and the shortcuts of the app when it has them.
 - **FR-011**: All text MUST exist in English, Russian and Traditional Chinese.
 - **FR-012**: Telik MUST NOT send the launch record, the usage data or the media titles off the TV, and MUST NOT write titles to the log.
+- **FR-013**: The layout MUST use the tvOS guidelines at 0.5 dp per point: a safe area of 80 pt at the sides and 60 pt at the top and bottom.
+  The app grid MUST have five columns of 320 pt with 40 pt gaps. The text MUST use the tvOS styles (Title 1 76 pt, Headline 38 pt, Body 29 pt, Caption 25 pt).
+- **FR-014**: Only the tile in focus MUST show its label. A focused tile MUST grow only into the gap.
 
 ### Key Entities
 
