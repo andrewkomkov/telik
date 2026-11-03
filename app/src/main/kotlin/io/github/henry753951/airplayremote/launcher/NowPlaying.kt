@@ -9,10 +9,8 @@ import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import android.os.Handler
 import android.os.Looper
-import android.provider.Settings
+import android.app.NotificationManager
 import android.service.notification.NotificationListenerService
-import android.util.Log
-import io.github.henry753951.airplayremote.remote.input.AccessibilityRestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -39,6 +37,9 @@ class NowPlayingWatcher(private val context: Context) {
     private var controllers: List<MediaController> = emptyList()
     private val _current = MutableStateFlow<NowPlaying?>(null)
     val current: StateFlow<NowPlaying?> = _current
+    /** The system gives the sessions only to a listener that the user allowed. */
+    private val _granted = MutableStateFlow(true)
+    val granted: StateFlow<Boolean> = _granted
 
     private val callback = object : MediaController.Callback() {
         override fun onPlaybackStateChanged(state: PlaybackState?) = refresh()
@@ -48,12 +49,13 @@ class NowPlayingWatcher(private val context: Context) {
     private val sessionsChanged = MediaSessionManager.OnActiveSessionsChangedListener { list -> watch(list.orEmpty()) }
 
     fun start() {
-        restoreListener(context)
+        _granted.value = context.getSystemService(NotificationManager::class.java).isNotificationListenerAccessGranted(listener)
+        if (!_granted.value) return
         try {
             manager.addOnActiveSessionsChangedListener(sessionsChanged, listener, main)
             watch(manager.getActiveSessions(listener))
         } catch (e: SecurityException) {
-            Log.w(TAG, "notification listener is off, no now playing card")
+            _granted.value = false
         }
     }
 
@@ -101,24 +103,4 @@ class NowPlayingWatcher(private val context: Context) {
         )
     }
 
-    companion object {
-        private const val TAG = "NowPlaying"
-
-        /** As for the remote service: Telik holds WRITE_SECURE_SETTINGS and adds its listener back. */
-        fun restoreListener(context: Context) {
-            val ours = ComponentName(context, NowPlayingListener::class.java).flattenToString()
-            val resolver = context.contentResolver
-            val next = AccessibilityRestore.merged(
-                Settings.Secure.getString(resolver, ENABLED_LISTENERS), ours,
-            ) ?: return
-            try {
-                Settings.Secure.putString(resolver, ENABLED_LISTENERS, next)
-                Log.i(TAG, "notification listener restored")
-            } catch (e: SecurityException) {
-                Log.w(TAG, "no WRITE_SECURE_SETTINGS, the user must allow notification access")
-            }
-        }
-
-        private const val ENABLED_LISTENERS = "enabled_notification_listeners"
-    }
 }

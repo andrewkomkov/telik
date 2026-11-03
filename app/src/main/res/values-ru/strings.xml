@@ -363,6 +363,8 @@
     <string name="home_np_play">Играть</string>
     <string name="home_np_pause">Пауза</string>
     <string name="home_np_next">Далее</string>
+    <string name="home_np_hint">Разрешите доступ к уведомлениям, и Телик покажет, что играет в любом приложении.</string>
+    <string name="home_np_not_now">Не сейчас</string>
     <string name="home_crash_notice">Домашний экран Телика не запустился и выключен. Вернулся прежний экран.</string>
     <string name="home_cannot_open">Не удалось открыть приложение</string>
 </resources>

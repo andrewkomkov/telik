@@ -12,7 +12,7 @@ Checks on the test TV on 2026-11-03, with adb as shell. Telik 2.1.0 is the defau
 | Install progress | `PackageInstaller.getAllSessions()` and `SessionCallback` | Free | Tile with progress while an app installs |
 | Launches from Telik | Own record in DataStore | Free | Recent apps and default favorites |
 | Use of all apps | `UsageStatsManager` | App op `GET_USAGE_STATS` is "default", not granted. The user grants it in the settings or with adb | Better recent apps, optional |
-| Now playing in any app | `MediaSessionManager.getActiveSessions` with a notification listener | Telik holds `WRITE_SECURE_SETTINGS` and can add itself to `enabled_notification_listeners` | Now playing card with controls |
+| Now playing in any app | `MediaSessionManager.getActiveSessions` with a notification listener | The system ignores writes to `enabled_notification_listeners` (checked on 2026-11-03). The user allows access on the TV screen, or with `adb shell cmd notification allow_listener` | Now playing card with controls |
 | App shortcuts | `LauncherApps.getShortcuts` | Telik is the default Home app, so the call is allowed. Only `com.google.android.gms` has shortcuts on the TV | Low value. Show them when an app has them |
 | Preview channels and programs | `TvContract` | `READ_TV_LISTINGS` is dangerous, so the user grants it on the TV. `ACCESS_ALL_EPG_DATA` is `signature|privileged`, and only the maker launcher holds it | Unknown. Shell sees no rows, so a probe in Telik must decide |
 | Watch Next | `TvContract.WatchNextPrograms` | As above. A third-party launcher cannot change entries of other apps | Read only, if the probe finds rows |

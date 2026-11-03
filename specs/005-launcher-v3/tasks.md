@@ -15,7 +15,7 @@
 
 ## Phase 2: Now playing (US2, P1)
 
-- [x] T020 [US2] Add the notification listener service and its restore. The restore uses `AccessibilityRestore.merged`, which has unit tests.
+- [x] T020 [US2] Add the notification listener service and the hint for notification access.
 - [x] T021 [US2] Add the now playing card with play, pause and next. OK opens the app.
 - [ ] T022 [US2] Check on the TV with Apple TV, YouTube and Telik audio.
 

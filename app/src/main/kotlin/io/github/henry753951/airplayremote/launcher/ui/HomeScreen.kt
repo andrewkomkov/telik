@@ -109,6 +109,8 @@ data class HomeState(
     val editingFavorite: String? = null,
     /** 005 US2: the media session of any app that plays now. */
     val nowPlaying: NowPlaying? = null,
+    /** Notification access is missing and the user did not say "not now". */
+    val nowPlayingHint: Boolean = false,
 )
 
 private val TileShape = RoundedCornerShape(16.dp)
@@ -127,6 +129,8 @@ internal fun HomeScreen(
     onNowPlaying: () -> Unit,
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
+    onAllowNowPlaying: () -> Unit,
+    onDismissNowPlaying: () -> Unit,
     onEditFavorite: (String?) -> Unit,
     onMoveFavorite: (String, Int) -> Unit,
     onInput: (String) -> Unit,
@@ -221,6 +225,21 @@ internal fun HomeScreen(
             }
 
             if (editing == null) state.nowPlaying?.let { NowPlayingCard(it, fancy, { focusStamp++ }, onNowPlaying, onPlayPause, onNext) }
+            if (editing == null && state.nowPlayingHint) {
+                Row(
+                    Modifier.padding(start = EdgeMargin, end = EdgeMargin, top = 16.dp).fillMaxWidth()
+                        .glassPanel(TileShape, fancy).padding(horizontal = 20.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.home_np_hint), Modifier.weight(1f), color = Color.White, fontSize = 16.sp,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    )
+                    ActionButton(stringResource(R.string.btn_allow), fancy, onClick = onAllowNowPlaying)
+                    ActionButton(stringResource(R.string.home_np_not_now), fancy, onClick = onDismissNowPlaying)
+                }
+            }
 
             // Favorites (005 US1): apps, inputs and Telik cards that the user pinned. Hold OK to move
             // or remove. With no favorites yet, the row suggests the apps opened most from Telik.

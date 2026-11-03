@@ -12,7 +12,7 @@
 - `launcher/FavoritesStore.kt`: DataStore with the favorites list. It extends `LayoutStore` and keeps the format of 001.
 - `launcher/LaunchLog.kt`: DataStore with the launch record. `LauncherActivity.launchApp` writes to it.
 - `launcher/NowPlaying.kt`: a `NotificationListenerService` that has no notification UI. It gives the active sessions through `MediaSessionManager`.
-  `ListenerRestore` adds it to `enabled_notification_listeners`, as `AccessibilityRestore` does for the remote.
+  When access is off, the Home screen shows a hint that opens the system screen.
 - `launcher/Installs.kt`: `PackageInstaller.SessionCallback` for the progress tile.
 - `launcher/Groups.kt`: category to group, with user overrides in DataStore.
 - `launcher/TvContent.kt`: `TvContract` reads behind `READ_TV_LISTINGS`.

@@ -40,7 +40,7 @@ When any app plays video or music, the Home screen shows a card with the app, th
 1. **Given** an app with an active media session, **When** the Home screen opens, **Then** the card shows the app name, the title and the artwork that the session gives.
 2. **Given** the card, **When** the user selects play or pause, **Then** the session gets the command.
 3. **Given** no active session, **When** the Home screen opens, **Then** no card shows.
-4. **Given** the notification listener was turned off, **When** Telik starts, **Then** Telik turns it on again, as it does for the remote service.
+4. **Given** notification access is off, **When** the Home screen opens, **Then** a hint shows two buttons: `Allow` and `Not now`. `Allow` opens the system screen.
 
 ---
 
@@ -115,7 +115,7 @@ The edit menu of an app has: add to favorites, move, hide, app info, uninstall, 
 - **FR-001**: Telik MUST keep a Favorites row with apps, HDMI inputs and Telik cards, in an order that the user sets and that persists.
 - **FR-002**: Telik MUST record the launches that start from its Home screen and MUST use them for the Recent row and the default favorites. The record stays on the TV.
 - **FR-003**: Telik MUST show the active media session of any app with title, artwork, progress and play, pause and next.
-- **FR-004**: Telik MUST add its notification listener to the enabled list when it is missing, and MUST keep other listeners.
+- **FR-004**: When notification access is off, Telik MUST show a hint that opens the system screen for it. After `Not now`, the hint MUST stay away.
 - **FR-005**: Telik MUST use usage access only when the user grants it, and MUST work without it.
 - **FR-006**: Telik MUST mark apps that were installed or updated in the last 7 days until their first launch.
 - **FR-007**: Telik MUST show the progress of an app install.
@@ -142,7 +142,7 @@ The edit menu of an app has: add to favorites, move, hide, app info, uninstall, 
 ## Assumptions
 
 - Telik is the default Home app, so the shortcut API is allowed.
-- Telik holds `WRITE_SECURE_SETTINGS`, as for the remote service.
+- The TV has the system screen for notification access (`NotificationAccessActivity`).
 - The apps on the TV publish media sessions while they play. Apple TV and Telik do so on the test TV.
 
 ## Open Questions

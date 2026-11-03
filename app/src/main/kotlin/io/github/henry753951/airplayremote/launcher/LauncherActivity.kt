@@ -108,6 +108,11 @@ class LauncherActivity : ComponentActivity() {
                 onNowPlaying = { state.nowPlaying?.let { openPackage(it.packageName) } },
                 onPlayPause = { nowPlaying.playPause() },
                 onNext = { nowPlaying.next() },
+                onAllowNowPlaying = { open(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")) },
+                onDismissNowPlaying = {
+                    prefs().edit().putBoolean(NP_DISMISSED, true).apply()
+                    state = state.copy(nowPlayingHint = false)
+                },
                 onEditFavorite = { state = state.copy(editingFavorite = it) },
                 onMoveFavorite = { key, d -> saveFavorites(Favorites.move(favorites, key, d)) },
                 onInput = ::openInput,
@@ -131,6 +136,9 @@ class LauncherActivity : ComponentActivity() {
         lifecycleScope.launch { repo.apps.collect { apps = it; rebuild() } }
         lifecycleScope.launch { store.favorites.collect { favorites = it; rebuild() } }
         lifecycleScope.launch { nowPlaying.current.collect { state = state.copy(nowPlaying = it) } }
+        lifecycleScope.launch {
+            nowPlaying.granted.collect { state = state.copy(nowPlayingHint = !it && !prefs().getBoolean(NP_DISMISSED, false)) }
+        }
         lifecycleScope.launch { store.launches.collect { launches = it; rebuild() } }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) { telik.status.collect { state = state.copy(telik = it) } }
@@ -328,5 +336,8 @@ class LauncherActivity : ComponentActivity() {
 
     private fun prefs() = getSharedPreferences("launcher_ui", MODE_PRIVATE)
 
-    private companion object { const val GLASS = "glass" }
+    private companion object {
+        const val GLASS = "glass"
+        const val NP_DISMISSED = "now_playing_hint_dismissed"
+    }
 }
