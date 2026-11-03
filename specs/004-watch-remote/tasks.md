@@ -7,3 +7,4 @@
 - [ ] T005 Add `AccessibilityRestore` and call it when the remote starts and when a client connects.
 - [ ] T006 Add unit tests for the merge of the enabled list.
 - [ ] T007 Check on the TV: turn the service off with adb, connect the remote, and check that the keys work.
+- [ ] T008 Abort only stale connections (older than 2 seconds) in `ActiveConnectionTracker::register`. Add a unit test for two parallel connections.

@@ -14,13 +14,16 @@
   Commit `c92a772` set 1 second again, and the watch failed again.
 - 2026-11-03 14:14: the remote connected, but no key worked. `KeyDispatcher` had no channel. The accessibility service was off (`enabled_accessibility_services=null`).
   The hardware channel is blocked by SELinux, and the adb channel is a stub. The cause of the switch-off is not known.
-- `_systemInfo` has the device model in its content. The event log shows only message names, so the model of the watch is not known yet.
+- `_systemInfo` has the device model in its content. On 2026-11-03 the log showed `Watch7,12` for the watch and `iPhone18,4` for the iPhone.
+- 2026-11-03 14:16:37: the watch opened two connections 150 ms apart. A new connection from the same IP aborted the first one (`superseded`).
+  The watch closed the second one after 0.1 seconds, so the reconnect failed.
 
 ## Requirements
 
 - **FR-001**: A connection from an Apple Watch (model starts with `Watch`) gets 30 seconds to start its session.
 - **FR-002**: A background probe from another device keeps the time of 1 second, so the iPhone remote stays fast.
 - **FR-003**: The event log shows the device model of `_systemInfo`. A model is a name, so the log holds no private data.
+- **FR-005**: A new connection aborts an unestablished connection from the same IP only when that connection is older than 2 seconds.
 - **FR-004**: When the remote starts or a client connects, Telik adds its accessibility service to the enabled list. Other services stay in the list.
 
 ## Success Criteria

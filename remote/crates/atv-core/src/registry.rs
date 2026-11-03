@@ -129,7 +129,12 @@ pub struct ActiveConnection {
     pub device_id: Option<String>,
     pub session_established: Arc<AtomicBool>,
     pub abort_tx: watch::Sender<bool>,
+    pub opened: Instant,
 }
+
+/// An unestablished connection older than this is stale, and a new one from the same IP aborts it.
+/// The Apple Watch opens two connections within a few hundred ms and uses the first one.
+const STALE_AFTER: Duration = Duration::from_secs(2);
 
 /// Tracks all live companion connections to enforce single active session
 /// and instant preemption.
@@ -144,16 +149,26 @@ impl ActiveConnectionTracker {
         Self::default()
     }
 
-    /// Registers a new connection. Automatically aborts any prior unestablished
-    /// connections from the same IP.
+    /// Registers a new connection. Aborts stale unestablished connections from the same IP.
     pub fn register(
         &mut self,
         peer_ip: IpAddr,
         session_established: Arc<AtomicBool>,
     ) -> (u64, watch::Receiver<bool>) {
-        // Abort unestablished connections from the same IP
+        self.register_at(peer_ip, session_established, Instant::now())
+    }
+
+    fn register_at(
+        &mut self,
+        peer_ip: IpAddr,
+        session_established: Arc<AtomicBool>,
+        now: Instant,
+    ) -> (u64, watch::Receiver<bool>) {
         for conn in &self.connections {
-            if conn.peer_ip == peer_ip && !conn.session_established.load(Ordering::SeqCst) {
+            if conn.peer_ip == peer_ip
+                && !conn.session_established.load(Ordering::SeqCst)
+                && now.saturating_duration_since(conn.opened) >= STALE_AFTER
+            {
                 info!(
                     "aborting unestablished previous connection from {peer_ip} for new incoming connection"
                 );
@@ -170,6 +185,7 @@ impl ActiveConnectionTracker {
             device_id: None,
             session_established,
             abort_tx,
+            opened: now,
         });
 
         (id, abort_rx)
@@ -235,13 +251,14 @@ mod tests {
         let mut tracker = ActiveConnectionTracker::new();
         let ip = IpAddr::V4(Ipv4Addr::new(192, 168, 101, 206));
 
+        let start = Instant::now();
         let established1 = Arc::new(AtomicBool::new(false));
-        let (id1, abort_rx1) = tracker.register(ip, established1.clone());
+        let (id1, abort_rx1) = tracker.register_at(ip, established1.clone(), start);
         assert!(!*abort_rx1.borrow());
 
-        // A second connection from the same IP arrives before session 1 established
+        // A second connection from the same IP arrives after session 1 went stale
         let established2 = Arc::new(AtomicBool::new(false));
-        let (id2, abort_rx2) = tracker.register(ip, established2.clone());
+        let (id2, abort_rx2) = tracker.register_at(ip, established2.clone(), start + STALE_AFTER);
 
         // Session 1 must be aborted
         assert!(*abort_rx1.borrow(), "Prior unestablished connection must be aborted");
@@ -265,5 +282,16 @@ mod tests {
         tracker.unregister(id2);
         tracker.unregister(id3);
         assert_eq!(tracker.connections.len(), 0);
+    }
+
+    #[test]
+    fn parallel_fresh_connections_stay_open() {
+        let mut tracker = ActiveConnectionTracker::new();
+        let ip = IpAddr::V4(Ipv4Addr::new(192, 168, 0, 20));
+        let start = Instant::now();
+        let (_, first) = tracker.register_at(ip, Arc::new(AtomicBool::new(false)), start);
+        let (_, second) = tracker.register_at(ip, Arc::new(AtomicBool::new(false)), start + Duration::from_millis(150));
+        assert!(!*first.borrow(), "The watch uses the first of two parallel connections");
+        assert!(!*second.borrow());
     }
 }
