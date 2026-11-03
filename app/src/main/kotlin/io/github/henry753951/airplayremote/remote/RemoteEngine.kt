@@ -5,6 +5,7 @@ import io.github.henry753951.airplayremote.remote.identity.RemoteIdentityStore
 import io.github.henry753951.airplayremote.platform.LocalNetworkAddress
 import io.github.henry753951.airplayremote.remote.input.KeyDispatcher
 import io.github.henry753951.airplayremote.remote.input.LocalAdbDriver
+import io.github.henry753951.airplayremote.remote.input.AccessibilityRestore
 import io.github.henry753951.airplayremote.remote.input.RemoteAccessibilityService
 import io.github.henry753951.airplayremote.remote.protocol.RemoteNative
 
@@ -84,6 +85,7 @@ class RemoteEngine(
             advertised = identity
             attempts = 0
             KeyDispatcher.init(this)
+            AccessibilityRestore.ensure(this)
             RemoteState.mutableStatus.value = "running"
         } catch (e: Exception) {
             Log.e("RemoteEngine", "Unable to start remote receiver", e)
@@ -145,7 +147,10 @@ class RemoteEngine(
             "ClientConnected", "ClientDisconnected" -> worker.post {
                 clients = (clients + if (kind == "ClientConnected") 1 else -1).coerceAtLeast(0)
                 RemoteState.mutableConnected.value = clients > 0
-                if (kind == "ClientConnected") KeyDispatcher.init(this)
+                if (kind == "ClientConnected") {
+                    KeyDispatcher.init(this)
+                    AccessibilityRestore.ensure(this)
+                }
                 main.post { onActivity(clients > 0) }
             }
             "PairingRequested" -> {
@@ -180,7 +185,13 @@ class RemoteEngine(
     private fun logEvent(kind: String, detail: String) {
         val name = when (kind) {
             "ControlMessage" -> CONTROL_NAME.find(detail)?.groupValues?.get(1)?.let { name ->
-                if (name == "_hidC") "$name ${HID_CODE.find(detail)?.groupValues?.get(1)}/${HID_STATE.find(detail)?.groupValues?.get(1)}" else name
+                when (name) {
+                    "_hidC" -> "$name ${HID_CODE.find(detail)?.groupValues?.get(1)}/${HID_STATE.find(detail)?.groupValues?.get(1)}"
+                    // the device model tells a watch from a phone; message names start with "_"
+                    "_systemInfo" -> "$name " + MODEL.findAll(detail).map { it.groupValues[1] }
+                        .filterNot { it.startsWith("_") }.distinct().joinToString(",")
+                    else -> name
+                }
             }
             "ClientDisconnected" -> detail.substringAfter("reason=", "")
             else -> null
@@ -199,6 +210,7 @@ class RemoteEngine(
         const val TOUCH_BEGAN = 1
         val VOLUME_BUTTONS = setOf("volume_up", "volume_down", "mute")
         val CONTROL_NAME = Regex("\"(?:_i|model)\": \"([^\"]+)\"")
+        val MODEL = Regex("\"model\": \"([^\"]+)\"")
         val HID_CODE = Regex("\"_hidC\": (\\d+)")
         val HID_STATE = Regex("\"_hBtS\": (\\d+)")
     }
