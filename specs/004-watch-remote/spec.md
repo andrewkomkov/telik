@@ -12,6 +12,8 @@
 - Background probes of the iPhone use the same high bit. The iPhone opens its real remote connection only after the TV closes the probe.
 - Commit `7fa2aa8` set the time to 30 seconds for the watch. Then the iPhone remote reconnected slowly.
   Commit `c92a772` set 1 second again, and the watch failed again.
+- 2026-11-03 14:14: the remote connected, but no key worked. `KeyDispatcher` had no channel. The accessibility service was off (`enabled_accessibility_services=null`).
+  The hardware channel is blocked by SELinux, and the adb channel is a stub. The cause of the switch-off is not known.
 - `_systemInfo` has the device model in its content. The event log shows only message names, so the model of the watch is not known yet.
 
 ## Requirements
@@ -19,8 +21,10 @@
 - **FR-001**: A connection from an Apple Watch (model starts with `Watch`) gets 30 seconds to start its session.
 - **FR-002**: A background probe from another device keeps the time of 1 second, so the iPhone remote stays fast.
 - **FR-003**: The event log shows the device model of `_systemInfo`. A model is a name, so the log holds no private data.
+- **FR-004**: When the remote starts or a client connects, Telik adds its accessibility service to the enabled list. Other services stay in the list.
 
 ## Success Criteria
 
 - **SC-001**: The watch remote connects on the first try.
 - **SC-002**: The iPhone remote reconnects as fast as before.
+- **SC-003**: The remote controls the TV after an update of Telik.

@@ -5,6 +5,7 @@ import io.github.henry753951.airplayremote.remote.identity.RemoteIdentityStore
 import io.github.henry753951.airplayremote.platform.LocalNetworkAddress
 import io.github.henry753951.airplayremote.remote.input.KeyDispatcher
 import io.github.henry753951.airplayremote.remote.input.LocalAdbDriver
+import io.github.henry753951.airplayremote.remote.input.AccessibilityRestore
 import io.github.henry753951.airplayremote.remote.input.RemoteAccessibilityService
 import io.github.henry753951.airplayremote.remote.protocol.RemoteNative
 
@@ -84,6 +85,7 @@ class RemoteEngine(
             advertised = identity
             attempts = 0
             KeyDispatcher.init(this)
+            AccessibilityRestore.ensure(this)
             RemoteState.mutableStatus.value = "running"
         } catch (e: Exception) {
             Log.e("RemoteEngine", "Unable to start remote receiver", e)
@@ -145,7 +147,10 @@ class RemoteEngine(
             "ClientConnected", "ClientDisconnected" -> worker.post {
                 clients = (clients + if (kind == "ClientConnected") 1 else -1).coerceAtLeast(0)
                 RemoteState.mutableConnected.value = clients > 0
-                if (kind == "ClientConnected") KeyDispatcher.init(this)
+                if (kind == "ClientConnected") {
+                    KeyDispatcher.init(this)
+                    AccessibilityRestore.ensure(this)
+                }
                 main.post { onActivity(clients > 0) }
             }
             "PairingRequested" -> {
