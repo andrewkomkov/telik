@@ -1,0 +1,17 @@
+diff --git a/lib/raop.c b/lib/raop.c
+index e0234bd..5a20787 100644
+--- a/lib/raop.c
++++ b/lib/raop.c
+@@ -450,6 +450,12 @@ conn_request(void *ptr, http_request_t *request, http_response_t **response) {
+                 handler = &raop_handler_fpsetup;
+             } else if (!strcmp(url, "/audioMode")) {
+                 handler = &raop_handler_audiomode;
++            } else if (!strcmp(url, "/pair-setup")) {
++                /* Telik: the AirPlay video connection (YouTube and other apps) pairs without
++                 * X-Apple-HKP. No code: the PIN routes stay removed. */
++                handler = &raop_handler_pairsetup;
++            } else if (!strcmp(url, "/pair-verify")) {
++                handler = &raop_handler_pairverify;
+             }
+         } else if (!strcmp(method, "GET")) {
+             if (strstr(url, "/info")) {
