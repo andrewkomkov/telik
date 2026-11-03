@@ -14,9 +14,9 @@ RepoType: git
 Repo: https://github.com/andrewkomkov/telik.git
 
 Builds:
-  - versionName: 2.0.3
-    versionCode: 19
-    commit: v2.0.3
+  - versionName: 2.1.0
+    versionCode: 20
+    commit: v2.1.0
     subdir: app
     submodules: true
     sudo:
@@ -39,5 +39,5 @@ AutoUpdateMode: Version
 UpdateCheckMode: Tags
 UpdateCheckData: app/build.gradle.kts|getOrElse\((\d+)\)|app/build.gradle.kts|versionName
   = "(.*)"
-CurrentVersion: 2.0.3
-CurrentVersionCode: 19
+CurrentVersion: 2.1.0
+CurrentVersionCode: 20
