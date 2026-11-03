@@ -311,7 +311,7 @@ private fun openSystemSettings(ctx: android.content.Context, action: String) {
 
 // ---- home ----
 
-private enum class TvHomeEntry { CAST, REMOTE, HEADPHONES, HOMEKIT, SPEAKERS }
+internal enum class TvHomeEntry { CAST, REMOTE, HEADPHONES, HOMEKIT, SPEAKERS }
 
 private const val ATTENTION_DELAY_MS = 1_500L
 
@@ -560,7 +560,7 @@ private fun Modifier.telikBackdrop(): Modifier = drawBehind {
     )
 }
 
-private fun TvHomeEntry.accent(): List<Color> = when (this) {
+internal fun TvHomeEntry.accent(): List<Color> = when (this) {
     TvHomeEntry.CAST -> listOf(Color(0xFF4FC3FF), Color(0xFF3A6BFF))
     TvHomeEntry.REMOTE -> listOf(Color(0xFFB98CFF), Color(0xFF6A4DFF))
     TvHomeEntry.HEADPHONES -> listOf(Color(0xFFFF8FD0), Color(0xFFB04DFF))
@@ -592,7 +592,7 @@ private fun TelikMascot(entry: TvHomeEntry) {
 }
 
 @Composable
-private fun TelikRowIcon(entry: TvHomeEntry) {
+internal fun TelikRowIcon(entry: TvHomeEntry) {
     Box(
         Modifier
             .size(52.dp)

@@ -39,6 +39,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
@@ -64,6 +66,12 @@ import androidx.compose.ui.zIndex
 import androidx.compose.foundation.Image
 import io.github.henry753951.airplayremote.R
 import io.github.henry753951.airplayremote.launcher.AppTile
+import io.github.henry753951.airplayremote.launcher.TelikStatus
+import io.github.henry753951.airplayremote.audiooutput.SpeakerOutputState
+import io.github.henry753951.airplayremote.headphones.HeadphonesStatus
+import io.github.henry753951.airplayremote.runtime.AirPlayService.ServerState
+import io.github.henry753951.airplayremote.ui.TelikRowIcon
+import io.github.henry753951.airplayremote.ui.TvHomeEntry
 import io.github.henry753951.airplayremote.ui.requestFocusUntilLanded
 import io.github.henry753951.airplayremote.ui.theme.AirPlayTheme
 import kotlinx.coroutines.withTimeoutOrNull
@@ -81,17 +89,20 @@ data class HomeState(
     val menuOpen: Boolean = false,
     /** Changes when Home is pressed while Home is already open. */
     val homeTick: Int = 0,
+    val telik: TelikStatus = TelikStatus(),
 )
 
 private val TileShape = RoundedCornerShape(16.dp)
 private val EdgeMargin = 56.dp
+private val ActiveDot = Color(0xFF34C759)
 
 @Composable
-fun HomeScreen(
+internal fun HomeScreen(
     state: HomeState,
     onFirstFrame: () -> Unit,
     onLaunch: (AppTile) -> Unit,
     onTelik: () -> Unit,
+    onTelikEntry: (TvHomeEntry) -> Unit,
     onInput: (String) -> Unit,
     onSettings: () -> Unit,
     onSearch: () -> Unit,
@@ -147,7 +158,7 @@ fun HomeScreen(
     ) {
         // Rows run to the screen edges and keep the margin as content padding, so a cut tile
         // at the edge shows that the row scrolls.
-        Column(Modifier.fillMaxSize().padding(vertical = 32.dp)) {
+        Column(Modifier.fillMaxSize().padding(vertical = 28.dp)) {
             // shortcuts: Telik, HDMI inputs, search, settings, Home screen menu
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -170,12 +181,27 @@ fun HomeScreen(
                 )
             }
 
+            // Telik row: AirPlay and its accessories as part of the Home screen, each with its state.
+            // Edit mode is about the app row, so this row steps aside to make room for the panel.
+            if (editing == null) {
+                LazyRow(
+                    Modifier.padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    contentPadding = PaddingValues(vertical = 16.dp, horizontal = EdgeMargin),
+                ) {
+                    items(TvHomeEntry.entries) { entry ->
+                        val (title, subtitle, active) = telikCardText(entry, state.telik)
+                        TelikCard(entry, title, subtitle, active, fancy, { focusStamp++ }) { onTelikEntry(entry) }
+                    }
+                }
+            }
+
             Box(Modifier.weight(1f))
 
             LazyRow(
                 state = listState,
                 horizontalArrangement = Arrangement.spacedBy(28.dp),
-                contentPadding = PaddingValues(vertical = 40.dp, horizontal = EdgeMargin),
+                contentPadding = PaddingValues(vertical = 24.dp, horizontal = EdgeMargin),
             ) {
                 items(rowTiles, key = { it.packageName }) { app ->
                     val isFirst = app === rowTiles.first()
@@ -279,6 +305,103 @@ private fun AppCard(
             maxLines = 1, overflow = TextOverflow.Ellipsis,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
+    }
+}
+
+/** Title, state line and whether the entry is in use right now (a green dot). */
+@Composable
+private fun telikCardText(entry: TvHomeEntry, t: TelikStatus): Triple<String, String, Boolean> = when (entry) {
+    TvHomeEntry.CAST -> Triple(
+        stringResource(R.string.tv_home_cast),
+        when {
+            t.server == ServerState.ERROR -> stringResource(R.string.tv_state_error)
+            t.server != ServerState.RUNNING -> stringResource(R.string.tv_state_stopped)
+            t.mirroring -> stringResource(R.string.home_cast_mirroring)
+            t.audioOnly && t.connections > 0 && t.track.isNotBlank() -> stringResource(R.string.home_cast_playing, t.track)
+            t.connections > 0 -> stringResource(R.string.waiting_for_playback)
+            else -> stringResource(R.string.home_cast_visible, t.serverName)
+        },
+        t.server == ServerState.RUNNING && t.connections > 0,
+    )
+    TvHomeEntry.REMOTE -> Triple(
+        stringResource(R.string.tv_home_remote),
+        stringResource(
+            when {
+                !t.remoteEnabled -> R.string.tv_state_off
+                t.remote == "running" && t.remoteConnected -> R.string.tv_state_connected
+                t.remote == "running" -> R.string.tv_state_ready
+                t.remote == "starting" -> R.string.tv_state_starting
+                t.remote == "waiting" -> R.string.tv_state_waiting_network
+                t.remote == "error" -> R.string.tv_state_error
+                else -> R.string.tv_state_stopped
+            },
+        ),
+        t.remoteEnabled && t.remote == "running" && t.remoteConnected,
+    )
+    TvHomeEntry.HEADPHONES -> Triple(
+        stringResource(R.string.tv_headphones_title),
+        stringResource(
+            when (t.headphones) {
+                HeadphonesStatus.IDLE -> R.string.tv_headphones_idle
+                HeadphonesStatus.NEEDS_APPROVAL -> R.string.tv_headphones_needs_approval
+                HeadphonesStatus.NO_DEBUGGING -> R.string.tv_headphones_no_debugging
+                HeadphonesStatus.NOT_PAIRED -> R.string.tv_headphones_not_paired
+                HeadphonesStatus.CONNECTING -> R.string.tv_headphones_connecting
+                HeadphonesStatus.CONNECTED -> R.string.tv_headphones_connected
+                HeadphonesStatus.NOT_REACHED -> R.string.tv_headphones_not_reached
+            },
+        ),
+        t.headphones == HeadphonesStatus.CONNECTED,
+    )
+    TvHomeEntry.HOMEKIT -> Triple(
+        stringResource(R.string.tv_home_homekit), stringResource(R.string.tv_home_homekit_sub), false,
+    )
+    TvHomeEntry.SPEAKERS -> Triple(
+        stringResource(R.string.speaker_title),
+        speakerLine(t.speaker),
+        t.speaker.active && !t.speaker.error,
+    )
+}
+
+@Composable
+private fun speakerLine(s: SpeakerOutputState): String = when {
+    s.error -> stringResource(R.string.tv_state_error)
+    s.active && s.target.isNotBlank() -> stringResource(R.string.home_speaker_on, s.target)
+    else -> stringResource(R.string.speaker_home_sub)
+}
+
+/** A large glass card in the Telik row: the entry's icon, its name and its state. */
+@Composable
+private fun TelikCard(
+    entry: TvHomeEntry,
+    title: String,
+    subtitle: String,
+    active: Boolean,
+    fancy: Boolean,
+    onFocused: () -> Unit,
+    onClick: () -> Unit,
+) {
+    FocusTile(fancy, Modifier.size(272.dp, 96.dp), false, onFocused, onClick, null, grow = 1.08f, shadow = false) {
+        Row(
+            Modifier.fillMaxSize().glassPanel(TileShape, fancy).padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            TelikRowIcon(entry)
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        title, Modifier.weight(1f, fill = false), color = Color.White, fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                    if (active) Box(Modifier.padding(start = 8.dp).size(8.dp).clip(CircleShape).background(ActiveDot))
+                }
+                Text(
+                    subtitle, Modifier.padding(top = 2.dp), color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp,
+                    lineHeight = 18.sp, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
 }
 

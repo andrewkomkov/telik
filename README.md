@@ -16,6 +16,9 @@ Homebridge, server or iPhone app.
 - The iPhone keyboard for standard Android text fields, including Cyrillic. Apps that draw their own
   on-screen keyboard may not respond.
 - AirPlay screen mirroring and audio from iPhone, iPad and Mac.
+- An optional TV Home screen (Telik Home): HDMI inputs, search, settings, your apps, and cards for
+  Screen Mirroring, the remote, headphones, the Home app and HomePod sound with their state. Hold OK
+  on an app to move or hide it. Telik does not become the Home screen until you choose it.
 - A TV tile in Apple Home with power, volume and app inputs.
 - Experimental TV audio output to a HomePod.
 - A Headphones button on the home screen connects and disconnects AirPods. An optional setting connects them when the TV turns on. Needs network debugging on the TV.

@@ -332,6 +332,10 @@
     <string name="tv_headphones_connecting">Connecting…</string>
     <string name="tv_headphones_connected">Connected. Press OK to disconnect</string>
     <string name="tv_headphones_not_reached">Unavailable. Disconnect from your phone</string>
+    <string name="home_cast_visible">Visible as “%1$s”</string>
+    <string name="home_cast_mirroring">Mirroring now</string>
+    <string name="home_cast_playing">Playing: %1$s</string>
+    <string name="home_speaker_on">Playing on “%1$s”</string>
     <string name="home_launcher_label">Telik Home</string>
     <string name="home_entry_telik">Telik</string>
     <string name="home_entry_settings">Settings</string>

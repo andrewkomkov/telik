@@ -17,12 +17,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import io.github.henry753951.airplayremote.MainActivity
 import io.github.henry753951.airplayremote.R
 import io.github.henry753951.airplayremote.launcher.ui.HomeScreen
 import io.github.henry753951.airplayremote.launcher.ui.HomeState
 import io.github.henry753951.airplayremote.launcher.ui.InputEntry
+import io.github.henry753951.airplayremote.ui.TvHomeEntry
 import kotlinx.coroutines.launch
 
 /**
@@ -33,6 +36,7 @@ class LauncherActivity : ComponentActivity() {
     private lateinit var guard: CrashGuard
     private lateinit var store: LayoutStore
     private lateinit var repo: AppRepository
+    private lateinit var telik: TelikWatcher
 
     private var state by mutableStateOf(HomeState())
     private var layout = HomeLayout()
@@ -59,6 +63,7 @@ class LauncherActivity : ComponentActivity() {
         })
         store = LayoutStore(this)
         repo = AppRepository(this)
+        telik = TelikWatcher(this, lifecycleScope)
         state = state.copy(inputs = loadInputs(), isDefault = isDefaultHome(), glass = prefs().getBoolean(GLASS, true))
 
         setContent {
@@ -67,6 +72,7 @@ class LauncherActivity : ComponentActivity() {
                 onFirstFrame = guard::onFirstFrame,
                 onLaunch = ::launchApp,
                 onTelik = { startActivity(Intent(this, MainActivity::class.java)) },
+                onTelikEntry = ::openTelikEntry,
                 onInput = ::openInput,
                 onSettings = { open(Intent(Settings.ACTION_SETTINGS)) },
                 onSearch = { open(Intent("android.search.action.GLOBAL_SEARCH")) },
@@ -86,6 +92,31 @@ class LauncherActivity : ComponentActivity() {
 
         lifecycleScope.launch { store.layout.collect { layout = it; rebuild() } }
         lifecycleScope.launch { repo.apps.collect { apps = it; rebuild() } }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) { telik.status.collect { state = state.copy(telik = it) } }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (::telik.isInitialized) telik.bind()
+    }
+
+    override fun onStop() {
+        if (::telik.isInitialized) telik.unbind()
+        super.onStop()
+    }
+
+    /** Telik cards open the matching page of the Telik screen; Back there returns here. */
+    private fun openTelikEntry(entry: TvHomeEntry) {
+        val page = when (entry) {
+            TvHomeEntry.CAST -> MainActivity.PAGE_CAST
+            TvHomeEntry.REMOTE -> MainActivity.PAGE_REMOTE
+            TvHomeEntry.SPEAKERS -> MainActivity.PAGE_SPEAKERS
+            TvHomeEntry.HEADPHONES -> return telik.toggleHeadphones()
+            TvHomeEntry.HOMEKIT -> return open(Intent(this, dev.tvhomekit.HomeKitActivity::class.java))
+        }
+        open(Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_PAGE, page))
     }
 
     override fun onResume() {

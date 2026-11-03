@@ -332,6 +332,10 @@
     <string name="tv_headphones_connecting">Подключение…</string>
     <string name="tv_headphones_connected">Подключены. OK, чтобы отключить</string>
     <string name="tv_headphones_not_reached">Недоступны. Отключите от телефона</string>
+    <string name="home_cast_visible">Виден как «%1$s»</string>
+    <string name="home_cast_mirroring">Идёт повтор экрана</string>
+    <string name="home_cast_playing">Играет: %1$s</string>
+    <string name="home_speaker_on">Играет на «%1$s»</string>
     <string name="home_launcher_label">Телик Домой</string>
     <string name="home_entry_telik">Телик</string>
     <string name="home_entry_settings">Настройки</string>

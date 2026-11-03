@@ -1,0 +1,1 @@
+Telik can be the TV Home screen. It shows HDMI inputs, search, settings, your apps and the Telik cards: Screen Mirroring, Apple TV Remote, Headphones, Home app and HomePod sound, each with its state. Hold OK on an app to move or hide it.
