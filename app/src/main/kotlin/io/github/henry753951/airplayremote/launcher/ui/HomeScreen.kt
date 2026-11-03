@@ -193,6 +193,16 @@ internal fun HomeScreen(
     val gridTiles = if (editing != null) state.editTiles else state.tiles
     val firstTile = remember { FocusRequester() }
     val moveFocus = remember { FocusRequester() }
+    // A menu returns the focus to the tile that opened it, or to the first tile when that tile is gone.
+    val originFocus = remember { FocusRequester() }
+    var origin by remember { mutableStateOf<String?>(null) }
+    val menuOpen = state.appMenu != null || state.editingFavorite != null
+    LaunchedEffect(menuOpen) {
+        if (menuOpen || origin == null) return@LaunchedEffect
+        val back = runCatching { originFocus.requestFocus() }.getOrDefault(false)
+        if (!back) firstTile.requestFocusUntilLanded()
+        origin = null
+    }
     // The moved tile changes its place in the grid; the focus goes with it.
     LaunchedEffect(editing, gridTiles.map { it.packageName }) { if (editing != null) moveFocus.requestFocusUntilLanded() }
     val scroll = rememberScrollState()
@@ -201,6 +211,7 @@ internal fun HomeScreen(
     // The item in focus drives the backdrop and the title area, as on the Apple TV Home screen.
     var info by remember { mutableStateOf<FocusInfo?>(null) }
     val focusOn: (FocusInfo) -> Unit = { i -> info = i; focusStamp++ }
+    val pillFocus: () -> Unit = { info = null; focusStamp++ }
 
     // Rows scroll as a whole (HIG: never half a row). The top rows keep the page at the top; a
     // lower row moves up to a fixed place under the safe area.
@@ -248,15 +259,15 @@ internal fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                       ) {
-                        Pill(Icons.Default.Settings, stringResource(R.string.home_entry_telik), fancy, { focusStamp++ }, onClick = onTelik)
+                        Pill(Icons.Default.Settings, stringResource(R.string.home_entry_telik), fancy, pillFocus, onClick = onTelik)
                         state.inputs.forEach { i ->
-                            Pill(Icons.AutoMirrored.Filled.Input, i.label, fancy, { focusStamp++ }, { onToggleFavorite(Favorites.INPUT + i.id) }) {
+                            Pill(Icons.AutoMirrored.Filled.Input, i.label, fancy, pillFocus, { onToggleFavorite(Favorites.INPUT + i.id) }) {
                                 onInput(i.id)
                             }
                         }
-                        Pill(Icons.Default.Search, stringResource(R.string.home_entry_search), fancy, { focusStamp++ }, iconOnly = true, onClick = onSearch)
-                        Pill(Icons.Default.Tune, stringResource(R.string.home_entry_settings), fancy, { focusStamp++ }, iconOnly = true, onClick = onSettings)
-                        Pill(Icons.Default.Home, stringResource(R.string.home_entry_home), fancy, { focusStamp++ }, iconOnly = true) { onMenu(true) }
+                        Pill(Icons.Default.Search, stringResource(R.string.home_entry_search), fancy, pillFocus, iconOnly = true, onClick = onSearch)
+                        Pill(Icons.Default.Tune, stringResource(R.string.home_entry_settings), fancy, pillFocus, iconOnly = true, onClick = onSettings)
+                        Pill(Icons.Default.Home, stringResource(R.string.home_entry_home), fancy, pillFocus, iconOnly = true) { onMenu(true) }
                       }
                         Clock()
                     }
@@ -293,23 +304,25 @@ internal fun HomeScreen(
                         TileRow(0, rowTops, onRowFocus) {
                             state.favorites.forEach { key ->
                                 val selected = state.editingFavorite == key
-                                val onLong = { onEditFavorite(key) }
+                                val tag = "fav:$key"
+                                val back = if (origin == tag) Modifier.focusRequester(originFocus) else Modifier
+                                val onLong = { origin = tag; onEditFavorite(key) }
                                 when {
                                     key.startsWith(Favorites.APP) -> byPackage[key.removePrefix(Favorites.APP)]?.let { app ->
                                         AppTileView(
-                                            app, dim = false, selected = selected, fancy = fancy, modifier = firstMod(),
+                                            app, dim = false, selected = selected, fancy = fancy, modifier = firstMod().then(back),
                                             onFocused = focusOn,
                                             onClick = { if (state.editingFavorite != null) onEditFavorite(key) else onLaunch(app) },
-                                            onLongClick = { onAppMenu(app.packageName) },
+                                            onLongClick = { origin = tag; onAppMenu(app.packageName) },
                                         )
                                     }
                                     key.startsWith(Favorites.INPUT) -> inputs[key.removePrefix(Favorites.INPUT)]?.let { i ->
-                                        InputTile(i, fancy, firstMod(), focusOn, onLong) { onInput(i.id) }
+                                        InputTile(i, fancy, firstMod().then(back), focusOn, onLong) { onInput(i.id) }
                                     }
                                     key.startsWith(Favorites.TELIK) ->
                                         TvHomeEntry.entries.firstOrNull { it.name == key.removePrefix(Favorites.TELIK) }?.let { entry ->
                                             val (title, subtitle, active) = telikCardText(entry, state.telik)
-                                            TelikTile(entry, title, subtitle, active, fancy, firstMod(), focusOn, onLong) { onTelikEntry(entry) }
+                                            TelikTile(entry, title, subtitle, active, fancy, firstMod().then(back), focusOn, onLong) { onTelikEntry(entry) }
                                         }
                                 }
                             }
@@ -329,10 +342,11 @@ internal fun HomeScreen(
                                     dim = editing != null && app.packageName in state.hidden,
                                     selected = moving,
                                     fancy = fancy,
-                                    modifier = firstMod().then(if (moving) moveMod(app.packageName) else Modifier),
+                                    modifier = firstMod().then(if (moving) moveMod(app.packageName) else Modifier)
+                                        .then(if (origin == "app:" + app.packageName) Modifier.focusRequester(originFocus) else Modifier),
                                     onFocused = focusOn,
                                     onClick = { if (moving) onCloseEdit() else if (editing == null) onLaunch(app) },
-                                    onLongClick = { if (editing == null) onAppMenu(app.packageName) },
+                                    onLongClick = { if (editing == null) { origin = "app:" + app.packageName; onAppMenu(app.packageName) } },
                                 )
                             }
                         }
@@ -402,7 +416,8 @@ internal fun HomeScreen(
                 val first = remember { FocusRequester() }
                 LaunchedEffect(Unit) { first.requestFocusUntilLanded() }
                 Column(
-                    Modifier.width(360.dp).glassPanel(RoundedCornerShape(24.dp), fancy).padding(24.dp),
+                    Modifier.width(360.dp).background(Color(0xF2161A22), RoundedCornerShape(24.dp))
+                        .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(24.dp)).padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     if (!state.isDefault) {
@@ -576,7 +591,8 @@ private fun ModalMenu(title: String, fancy: Boolean, content: @Composable (Modif
         val first = remember { FocusRequester() }
         LaunchedEffect(Unit) { first.requestFocusUntilLanded() }
         Column(
-            Modifier.width(320.dp).glassPanel(RoundedCornerShape(24.dp), fancy).padding(24.dp),
+            Modifier.width(320.dp).background(Color(0xF2161A22), RoundedCornerShape(24.dp))
+                .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(24.dp)).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
