@@ -359,6 +359,10 @@
     <string name="home_fav_remove">Remove from Favorites</string>
     <string name="home_fav_added">Added to Favorites</string>
     <string name="home_fav_removed">Removed from Favorites</string>
+    <string name="home_np_title">Now Playing</string>
+    <string name="home_np_play">Play</string>
+    <string name="home_np_pause">Pause</string>
+    <string name="home_np_next">Next</string>
     <string name="home_crash_notice">Telik Home failed to start and was turned off. The previous Home screen is back.</string>
     <string name="home_cannot_open">Cannot open this app</string>
 </resources>

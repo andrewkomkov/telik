@@ -359,6 +359,10 @@
     <string name="home_fav_remove">Убрать из избранного</string>
     <string name="home_fav_added">Добавлено в избранное</string>
     <string name="home_fav_removed">Убрано из избранного</string>
+    <string name="home_np_title">Сейчас играет</string>
+    <string name="home_np_play">Играть</string>
+    <string name="home_np_pause">Пауза</string>
+    <string name="home_np_next">Далее</string>
     <string name="home_crash_notice">Домашний экран Телика не запустился и выключен. Вернулся прежний экран.</string>
     <string name="home_cannot_open">Не удалось открыть приложение</string>
 </resources>

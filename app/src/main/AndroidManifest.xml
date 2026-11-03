@@ -86,6 +86,14 @@
             </intent-filter>
         </activity>
 
+        <!-- 005 US2: the key for the media sessions of all apps. It reads no notifications. -->
+        <service android:name=".launcher.NowPlayingListener"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter><action android:name="android.service.notification.NotificationListenerService" /></intent-filter>
+        </service>
+
         <!-- The Home role lives on an alias. CrashGuard and the settings switch it off
              without touching the activity, so the Telik screen can always be opened again. -->
         <activity-alias android:name=".launcher.HomeAlias"

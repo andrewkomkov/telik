@@ -51,6 +51,7 @@ class LauncherActivity : ComponentActivity() {
     private var apps: List<AppTile> = emptyList()
     private var favorites: List<String> = emptyList()
     private var launches: List<Launch> = emptyList()
+    private lateinit var nowPlaying: NowPlayingWatcher
 
     private val roleRequest = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         refreshDefault()
@@ -83,6 +84,7 @@ class LauncherActivity : ComponentActivity() {
         store = LayoutStore(this)
         repo = AppRepository(this)
         telik = TelikWatcher(this, lifecycleScope)
+        nowPlaying = NowPlayingWatcher(this)
         state = state.copy(
             inputs = loadInputs(), isDefault = isDefaultHome(), glass = prefs().getBoolean(GLASS, true),
             localNetwork = hasLocalNetwork(),
@@ -103,6 +105,9 @@ class LauncherActivity : ComponentActivity() {
                 onTelikEntry = ::openTelikEntry,
                 onAttention = ::fixAttention,
                 onToggleFavorite = ::toggleFavorite,
+                onNowPlaying = { state.nowPlaying?.let { openPackage(it.packageName) } },
+                onPlayPause = { nowPlaying.playPause() },
+                onNext = { nowPlaying.next() },
                 onEditFavorite = { state = state.copy(editingFavorite = it) },
                 onMoveFavorite = { key, d -> saveFavorites(Favorites.move(favorites, key, d)) },
                 onInput = ::openInput,
@@ -125,6 +130,7 @@ class LauncherActivity : ComponentActivity() {
         lifecycleScope.launch { store.layout.collect { layout = it; rebuild() } }
         lifecycleScope.launch { repo.apps.collect { apps = it; rebuild() } }
         lifecycleScope.launch { store.favorites.collect { favorites = it; rebuild() } }
+        lifecycleScope.launch { nowPlaying.current.collect { state = state.copy(nowPlaying = it) } }
         lifecycleScope.launch { store.launches.collect { launches = it; rebuild() } }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) { telik.status.collect { state = state.copy(telik = it) } }
@@ -134,6 +140,7 @@ class LauncherActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         if (::telik.isInitialized) telik.bind()
+        if (::nowPlaying.isInitialized) nowPlaying.start()
         syncLocalNetwork()
     }
 
@@ -185,6 +192,7 @@ class LauncherActivity : ComponentActivity() {
 
     override fun onStop() {
         if (::telik.isInitialized) telik.unbind()
+        if (::nowPlaying.isInitialized) nowPlaying.stop()
         super.onStop()
     }
 
@@ -256,6 +264,11 @@ class LauncherActivity : ComponentActivity() {
             .addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
         open(intent)
+    }
+
+    private fun openPackage(pkg: String) {
+        val intent = packageManager.getLeanbackLaunchIntentForPackage(pkg) ?: packageManager.getLaunchIntentForPackage(pkg)
+        if (intent != null) open(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
     private fun open(intent: Intent) {

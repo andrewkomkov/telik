@@ -71,6 +71,8 @@ import io.github.henry753951.airplayremote.launcher.AppTile
 import io.github.henry753951.airplayremote.launcher.Attention
 import io.github.henry753951.airplayremote.launcher.Attentions
 import io.github.henry753951.airplayremote.launcher.Favorites
+import io.github.henry753951.airplayremote.launcher.NowPlaying
+import androidx.compose.ui.graphics.asImageBitmap
 import io.github.henry753951.airplayremote.launcher.TelikStatus
 import io.github.henry753951.airplayremote.audiooutput.SpeakerOutputState
 import io.github.henry753951.airplayremote.headphones.HeadphonesStatus
@@ -105,6 +107,8 @@ data class HomeState(
     val favoriteKeys: Set<String> = emptySet(),
     /** Favorite in edit mode: move or remove. */
     val editingFavorite: String? = null,
+    /** 005 US2: the media session of any app that plays now. */
+    val nowPlaying: NowPlaying? = null,
 )
 
 private val TileShape = RoundedCornerShape(16.dp)
@@ -120,6 +124,9 @@ internal fun HomeScreen(
     onTelikEntry: (TvHomeEntry) -> Unit,
     onAttention: (Attention) -> Unit,
     onToggleFavorite: (String) -> Unit,
+    onNowPlaying: () -> Unit,
+    onPlayPause: () -> Unit,
+    onNext: () -> Unit,
     onEditFavorite: (String?) -> Unit,
     onMoveFavorite: (String, Int) -> Unit,
     onInput: (String) -> Unit,
@@ -212,6 +219,8 @@ internal fun HomeScreen(
                     fontSize = 16.sp,
                 )
             }
+
+            if (editing == null) state.nowPlaying?.let { NowPlayingCard(it, fancy, { focusStamp++ }, onNowPlaying, onPlayPause, onNext) }
 
             // Favorites (005 US1): apps, inputs and Telik cards that the user pinned. Hold OK to move
             // or remove. With no favorites yet, the row suggests the apps opened most from Telik.
@@ -469,6 +478,50 @@ private fun speakerLine(s: SpeakerOutputState): String = when {
 
 /** A large glass card in the Telik row: the entry's icon, its name and its state. */
 private const val ATTENTION_DELAY_MS = 1_500L
+
+@Composable
+private fun NowPlayingCard(
+    np: NowPlaying, fancy: Boolean, onFocused: () -> Unit,
+    onOpen: () -> Unit, onPlayPause: () -> Unit, onNext: () -> Unit,
+) {
+    Row(
+        Modifier.padding(start = EdgeMargin, end = EdgeMargin, top = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        FocusTile(fancy, Modifier.weight(1f).height(96.dp), false, onFocused, onOpen, null, grow = 1.03f, shadow = false) {
+            Row(
+                Modifier.fillMaxSize().glassPanel(TileShape, fancy).padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                val art = np.art
+                if (art != null) {
+                    val image = remember(art) { art.asImageBitmap() }
+                    Image(image, null, Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)), contentScale = ContentScale.Crop)
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.home_np_title), color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp, maxLines = 1,
+                    )
+                    Text(
+                        np.title, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                    if (np.subtitle.isNotBlank()) {
+                        Text(
+                            np.subtitle, color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                if (np.playing) Box(Modifier.size(8.dp).clip(CircleShape).background(ActiveDot))
+            }
+        }
+        ActionButton(stringResource(if (np.playing) R.string.home_np_pause else R.string.home_np_play), fancy, onClick = onPlayPause)
+        if (np.canNext) ActionButton(stringResource(R.string.home_np_next), fancy, onClick = onNext)
+    }
+}
 
 @Composable
 private fun AttentionRow(attention: Attention, fancy: Boolean, onAction: () -> Unit) {

@@ -8,15 +8,15 @@
 
 ## Phase 1: Favorites (US1, P1)
 
-- [x] T010 [US1] Add `FavoritesStore` with apps, inputs and Telik cards. Add unit tests for add, remove, move and the removal of uninstalled apps.
+- [x] T010 [US1] Keep the favorites in `LayoutStore`: apps, inputs and Telik cards. Add unit tests for add, remove, move and the removal of uninstalled apps.
 - [x] T011 [US1] Add `LaunchLog` and write a record on each launch from the Home screen. Add unit tests for the default favorites.
 - [x] T012 [US1] Add the Favorites row and "Add to favorites" and "Remove from favorites" in the edit menu.
 - [ ] T013 [US1] Check on the TV: add, move, remove, reboot.
 
 ## Phase 2: Now playing (US2, P1)
 
-- [ ] T020 [US2] Add the notification listener service and `ListenerRestore`. Add unit tests for the merge of the list.
-- [ ] T021 [US2] Add the now playing card with play, pause and next. OK opens the app.
+- [x] T020 [US2] Add the notification listener service and its restore. The restore uses `AccessibilityRestore.merged`, which has unit tests.
+- [x] T021 [US2] Add the now playing card with play, pause and next. OK opens the app.
 - [ ] T022 [US2] Check on the TV with Apple TV, YouTube and Telik audio.
 
 ## Phase 3: Recent, new and installs (US3, P2)
