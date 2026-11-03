@@ -336,15 +336,14 @@
     <string name="home_cast_mirroring">Идёт повтор экрана</string>
     <string name="home_cast_playing">Играет: %1$s</string>
     <string name="home_speaker_on">Играет на «%1$s»</string>
-    <string name="home_launcher_label">Телик Домой</string>
-    <string name="home_entry_telik">Телик</string>
+    <string name="home_entry_telik">Настройки Телика</string>
     <string name="home_entry_settings">Настройки</string>
     <string name="home_entry_search">Поиск</string>
     <string name="home_entry_input">Вход</string>
     <string name="home_entry_home">Домашний экран</string>
     <string name="home_make_default">Сделать Телик домашним экраном</string>
     <string name="home_restore_old">Вернуть прежний домашний экран</string>
-    <string name="home_restored">Домашний экран Телика выключен. Чтобы включить снова, откройте «Телик Домой» из списка приложений.</string>
+    <string name="home_restored">Домашний экран Телика выключен. Чтобы включить его снова, откройте «Телик» из списка приложений.</string>
     <string name="home_not_default">Телик пока не домашний экран</string>
     <string name="home_glass_on">Эффект стекла: включён</string>
     <string name="home_glass_off">Эффект стекла: выключен</string>

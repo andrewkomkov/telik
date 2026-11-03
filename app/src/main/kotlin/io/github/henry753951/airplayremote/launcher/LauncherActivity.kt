@@ -1,5 +1,6 @@
 package io.github.henry753951.airplayremote.launcher
 
+import android.Manifest
 import android.app.role.RoleManager
 import android.content.ComponentName
 import android.content.Intent
@@ -8,6 +9,7 @@ import android.media.tv.TvContract
 import android.media.tv.TvInputInfo
 import android.media.tv.TvInputManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
@@ -17,10 +19,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import io.github.henry753951.airplayremote.MainActivity
+import io.github.henry753951.airplayremote.Prefs
+import io.github.henry753951.airplayremote.appSettingsIntent
+import io.github.henry753951.airplayremote.get
+import io.github.henry753951.airplayremote.hasLocalNetwork
+import io.github.henry753951.airplayremote.runtime.AirPlayService
 import io.github.henry753951.airplayremote.R
 import io.github.henry753951.airplayremote.launcher.ui.HomeScreen
 import io.github.henry753951.airplayremote.launcher.ui.HomeState
@@ -46,6 +54,13 @@ class LauncherActivity : ComponentActivity() {
         refreshDefault()
     }
 
+    // FR-019: the Home screen asks for what MainActivity asked for before, and starts AirPlay.
+    private var askedLocalNetwork = false
+    private val permissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        syncLocalNetwork()
+        autoStart()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         guard = CrashGuard(this)
@@ -64,15 +79,25 @@ class LauncherActivity : ComponentActivity() {
         store = LayoutStore(this)
         repo = AppRepository(this)
         telik = TelikWatcher(this, lifecycleScope)
-        state = state.copy(inputs = loadInputs(), isDefault = isDefaultHome(), glass = prefs().getBoolean(GLASS, true))
+        state = state.copy(
+            inputs = loadInputs(), isDefault = isDefaultHome(), glass = prefs().getBoolean(GLASS, true),
+            localNetwork = hasLocalNetwork(),
+        )
+        // Start once per launch, as MainActivity did. Home comes back often, and a user who
+        // turned AirPlay off does not want it back on each visit.
+        if (savedInstanceState == null) {
+            askMissingPermissions()
+            autoStart()
+        }
 
         setContent {
             HomeScreen(
                 state = state,
                 onFirstFrame = guard::onFirstFrame,
                 onLaunch = ::launchApp,
-                onTelik = { startActivity(Intent(this, MainActivity::class.java)) },
+                onTelik = { openTelikPage(MainActivity.PAGE_SETTINGS) },
                 onTelikEntry = ::openTelikEntry,
+                onAttention = ::fixAttention,
                 onInput = ::openInput,
                 onSettings = { open(Intent(Settings.ACTION_SETTINGS)) },
                 onSearch = { open(Intent("android.search.action.GLOBAL_SEARCH")) },
@@ -100,7 +125,54 @@ class LauncherActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         if (::telik.isInitialized) telik.bind()
+        syncLocalNetwork()
     }
+
+    private fun askMissingPermissions() {
+        val missing = buildList {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(this@LauncherActivity, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+            ) add(Manifest.permission.POST_NOTIFICATIONS)
+            if (!hasLocalNetwork()) add(Manifest.permission.ACCESS_LOCAL_NETWORK)
+        }
+        if (missing.isNotEmpty()) {
+            if (Manifest.permission.ACCESS_LOCAL_NETWORK in missing) askedLocalNetwork = true
+            permissions.launch(missing.toTypedArray())
+        }
+    }
+
+    private fun syncLocalNetwork() { state = state.copy(localNetwork = hasLocalNetwork()) }
+
+    /** Start AirPlay when auto start is on. A running server ignores the start. */
+    private fun autoStart() {
+        if (!hasLocalNetwork()) return
+        if (getSharedPreferences(Prefs.NAME, MODE_PRIVATE)[Prefs.AUTO_START]) startAirPlay()
+    }
+
+    private fun startAirPlay() {
+        val intent = Intent(this, AirPlayService::class.java).setAction(AirPlayService.ACTION_START_SERVER)
+        runCatching { ContextCompat.startForegroundService(this, intent) }
+    }
+
+    private fun fixAttention(attention: Attention) {
+        when (attention) {
+            // after one refusal the system dialog does not come back; the app settings do
+            Attention.LOCAL_NETWORK ->
+                if (askedLocalNetwork && !shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_LOCAL_NETWORK)) {
+                    open(appSettingsIntent())
+                } else {
+                    askedLocalNetwork = true
+                    permissions.launch(arrayOf(Manifest.permission.ACCESS_LOCAL_NETWORK))
+                }
+            Attention.AIRPLAY_ERROR, Attention.AIRPLAY_OFF -> startAirPlay()
+            Attention.NETWORK -> open(Intent(Settings.ACTION_WIFI_SETTINGS))
+            Attention.REMOTE_ERROR -> openTelikPage(MainActivity.PAGE_REMOTE_SETTINGS)
+        }
+    }
+
+    private fun openTelikPage(page: String) =
+        open(Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_PAGE, page))
 
     override fun onStop() {
         if (::telik.isInitialized) telik.unbind()
@@ -116,7 +188,7 @@ class LauncherActivity : ComponentActivity() {
             TvHomeEntry.HEADPHONES -> return telik.toggleHeadphones()
             TvHomeEntry.HOMEKIT -> return open(Intent(this, dev.tvhomekit.HomeKitActivity::class.java))
         }
-        open(Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_PAGE, page))
+        openTelikPage(page)
     }
 
     override fun onResume() {

@@ -225,11 +225,13 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        /** Page to open: [PAGE_CAST], [PAGE_REMOTE] or [PAGE_SPEAKERS]. */
+        /** Page to open: [PAGE_CAST], [PAGE_REMOTE], [PAGE_SPEAKERS], [PAGE_SETTINGS] or [PAGE_REMOTE_SETTINGS]. */
         const val EXTRA_PAGE = "dev.telik.tv.extra.PAGE"
         const val PAGE_CAST = "cast"
         const val PAGE_REMOTE = "remote"
         const val PAGE_SPEAKERS = "speakers"
+        const val PAGE_SETTINGS = "settings"
+        const val PAGE_REMOTE_SETTINGS = "remote_settings"
     }
 
     override fun onDestroy() {

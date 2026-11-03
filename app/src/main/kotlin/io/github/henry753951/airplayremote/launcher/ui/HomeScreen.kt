@@ -66,6 +66,8 @@ import androidx.compose.ui.zIndex
 import androidx.compose.foundation.Image
 import io.github.henry753951.airplayremote.R
 import io.github.henry753951.airplayremote.launcher.AppTile
+import io.github.henry753951.airplayremote.launcher.Attention
+import io.github.henry753951.airplayremote.launcher.Attentions
 import io.github.henry753951.airplayremote.launcher.TelikStatus
 import io.github.henry753951.airplayremote.audiooutput.SpeakerOutputState
 import io.github.henry753951.airplayremote.headphones.HeadphonesStatus
@@ -74,6 +76,7 @@ import io.github.henry753951.airplayremote.ui.TelikRowIcon
 import io.github.henry753951.airplayremote.ui.TvHomeEntry
 import io.github.henry753951.airplayremote.ui.requestFocusUntilLanded
 import io.github.henry753951.airplayremote.ui.theme.AirPlayTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 
 data class InputEntry(val id: String, val label: String)
@@ -90,6 +93,8 @@ data class HomeState(
     /** Changes when Home is pressed while Home is already open. */
     val homeTick: Int = 0,
     val telik: TelikStatus = TelikStatus(),
+    /** ACCESS_LOCAL_NETWORK is granted. */
+    val localNetwork: Boolean = true,
 )
 
 private val TileShape = RoundedCornerShape(16.dp)
@@ -103,6 +108,7 @@ internal fun HomeScreen(
     onLaunch: (AppTile) -> Unit,
     onTelik: () -> Unit,
     onTelikEntry: (TvHomeEntry) -> Unit,
+    onAttention: (Attention) -> Unit,
     onInput: (String) -> Unit,
     onSettings: () -> Unit,
     onSearch: () -> Unit,
@@ -164,7 +170,7 @@ internal fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(horizontal = EdgeMargin),
             ) {
-                item { Pill(Icons.Default.Home, stringResource(R.string.home_entry_telik), fancy, { focusStamp++ }, onTelik) }
+                item { Pill(Icons.Default.Settings, stringResource(R.string.home_entry_telik), fancy, { focusStamp++ }, onTelik) }
                 items(state.inputs, key = { it.id }) { i ->
                     Pill(Icons.AutoMirrored.Filled.Input, i.label, fancy, { focusStamp++ }) { onInput(i.id) }
                 }
@@ -172,6 +178,16 @@ internal fun HomeScreen(
                 item { Pill(Icons.Default.Settings, stringResource(R.string.home_entry_settings), fancy, { focusStamp++ }, onSettings) }
                 item { Pill(Icons.Default.Home, stringResource(R.string.home_entry_home), fancy, { focusStamp++ }) { onMenu(true) } }
             }
+            // FR-019: the problems of the old Telik start page. States settle for a moment after a
+            // start (the service binds, the network comes up), so only a lasting problem shows.
+            val pending = Attentions.pick(
+                state.localNetwork, state.telik.server, state.telik.remoteEnabled, state.telik.remote,
+            )
+            var shown by remember { mutableStateOf<Attention?>(null) }
+            LaunchedEffect(pending) {
+                if (pending == null) shown = null else { delay(ATTENTION_DELAY_MS); shown = pending }
+            }
+            shown?.let { AttentionRow(it, fancy) { onAttention(it) } }
             if (!state.isDefault) {
                 Text(
                     stringResource(R.string.home_not_default),
@@ -371,6 +387,35 @@ private fun speakerLine(s: SpeakerOutputState): String = when {
 }
 
 /** A large glass card in the Telik row: the entry's icon, its name and its state. */
+private const val ATTENTION_DELAY_MS = 1_500L
+
+@Composable
+private fun AttentionRow(attention: Attention, fancy: Boolean, onAction: () -> Unit) {
+    val (title, body, action) = when (attention) {
+        Attention.LOCAL_NETWORK -> Triple(R.string.tv_attn_permission, R.string.local_network_desc, R.string.btn_allow)
+        Attention.AIRPLAY_ERROR -> Triple(R.string.tv_attn_airplay_error, R.string.tv_attn_airplay_error_body, R.string.tv_retry)
+        Attention.AIRPLAY_OFF -> Triple(R.string.tv_attn_airplay_off, R.string.tv_attn_airplay_off_body, R.string.btn_start)
+        Attention.NETWORK -> Triple(R.string.tv_attn_network, R.string.tv_attn_network_body, R.string.tv_attn_network_action)
+        Attention.REMOTE_ERROR ->
+            Triple(R.string.tv_attn_remote_error, R.string.tv_attn_remote_error_body, R.string.tv_remote_guide_settings)
+    }
+    Row(
+        Modifier.padding(start = EdgeMargin, end = EdgeMargin, top = 16.dp).fillMaxWidth()
+            .glassPanel(TileShape, fancy).padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(title), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(
+                stringResource(body), color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp, lineHeight = 18.sp,
+                maxLines = 2, overflow = TextOverflow.Ellipsis,
+            )
+        }
+        ActionButton(stringResource(action), fancy, onClick = onAction)
+    }
+}
+
 @Composable
 private fun TelikCard(
     entry: TvHomeEntry,

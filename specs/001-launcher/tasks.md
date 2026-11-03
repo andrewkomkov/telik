@@ -36,7 +36,7 @@
 - [x] T018b [US6] (the remote service already sends GLOBAL_ACTION_HOME; TV check open) Send the D-pad keys from the Telik remote service to the Home screen and check that the remote Home action opens it.
 - [x] T018c [US1] Add the fallback: after three failed starts as Home, drop the Home role and show a notice. Test it with a forced crash.
 - [x] T019 [US1] Add English and Russian strings in `app/src/main/res/values/` and `values-ru/`.
-- [ ] T020 [US1] Check on the TV: Home opens in 1 second or less, the order survives a reboot, the removal path works, and a crash test leaves a usable Home.
+- [x] T020 [US1] Check on the TV: Home opens in 1 second or less, the order survives a reboot, the removal path works, and a crash test leaves a usable Home. The user accepted this check on 2026-11-03.
 - [ ] T021 Add changelog files `fastlane/metadata/android/*/changelogs/20.txt`, bump the version to 2.1.0 and release.
 
 **Checkpoint**: The user can use Telik as the Home screen with an app row.
@@ -63,3 +63,15 @@
 
 - Phase 0 blocks all other phases.
 - Phase 1 blocks phases 2, 3 and 4. Phases 2, 3 and 4 are independent of each other.
+
+## One interface (FR-019)
+
+- [x] T060 [US1] Remove the app list entry of `MainActivity`. Give `LauncherActivity` the label "Telik".
+- [x] T061 [US1] Add a "Telik settings" entry to the Home screen. It opens the settings page of `MainActivity`.
+- [x] T062 [US1] Remove the Telik start page. `MainActivity` closes when it shows no page, no session and no pending video.
+- [x] T063 [US1] Show the problems of the old start page on the Home screen, with the same actions.
+- [x] T064 [US1] Start AirPlay from the Home screen when auto start is on, as `MainActivity` did. Ask for local network access there.
+Note: T060-T064 compile, and `AttentionsTest` passes. The TV check is T065.
+
+- [ ] T065 [US1] Check on the TV: one Telik entry in the app list, settings open and Back returns, a session ends on the Home screen.
+

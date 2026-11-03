@@ -304,15 +304,14 @@
     <string name="home_cast_mirroring">正在鏡像輸出</string>
     <string name="home_cast_playing">正在播放：%1$s</string>
     <string name="home_speaker_on">正在「%1$s」播放</string>
-    <string name="home_launcher_label">Telik 主畫面</string>
-    <string name="home_entry_telik">Telik</string>
+    <string name="home_entry_telik">Telik 設定</string>
     <string name="home_entry_settings">設定</string>
     <string name="home_entry_search">搜尋</string>
     <string name="home_entry_input">輸入來源</string>
     <string name="home_entry_home">主畫面</string>
     <string name="home_make_default">將 Telik 設為預設主畫面</string>
     <string name="home_restore_old">恢復先前的主畫面</string>
-    <string name="home_restored">Telik 主畫面已關閉。可從應用程式清單開啟「Telik 主畫面」以重新啟用。</string>
+    <string name="home_restored">Telik 主畫面已關閉。可從應用程式清單開啟「Telik」以重新啟用。</string>
     <string name="home_not_default">Telik 尚未成為主畫面</string>
     <string name="home_glass_on">玻璃效果：開</string>
     <string name="home_glass_off">玻璃效果：關</string>

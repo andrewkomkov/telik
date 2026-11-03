@@ -66,19 +66,13 @@
             android:turnScreenOn="true"
             android:supportsPictureInPicture="true"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
-            android:launchMode="singleTop">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:launchMode="singleTop" />
 
-        <!-- Telik Home. It opens from the app list too, and offers to become the Home screen. -->
+        <!-- Telik has one interface: this Home screen. It is the only app list entry, and it offers
+             to become the Home screen. MainActivity shows the settings, the guides and playback. -->
         <activity
             android:name=".launcher.LauncherActivity"
             android:exported="true"
-            android:label="@string/home_launcher_label"
             android:banner="@drawable/banner"
             android:launchMode="singleTask"
             android:stateNotNeeded="true"
@@ -93,11 +87,10 @@
         </activity>
 
         <!-- The Home role lives on an alias. CrashGuard and the settings switch it off
-             without touching the activity, so Telik Home can always be opened again. -->
+             without touching the activity, so the Telik screen can always be opened again. -->
         <activity-alias android:name=".launcher.HomeAlias"
             android:targetActivity=".launcher.LauncherActivity"
             android:exported="true"
-            android:label="@string/home_launcher_label"
             android:enabled="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
