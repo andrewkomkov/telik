@@ -1,5 +1,7 @@
 package io.github.henry753951.airplayremote.ui
 
+import io.github.henry753951.airplayremote.MainActivity
+
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -101,7 +103,10 @@ fun MainScreen(
     onSurfaceAvailable: (android.view.Surface) -> Unit,
     onSurfaceDestroyed: (android.view.Surface) -> Unit,
     onPip: () -> Unit = {},
-    onLocalNetwork: () -> Unit = {}
+    onLocalNetwork: () -> Unit = {},
+    pageRequest: String? = null,
+    onPageRequestHandled: () -> Unit = {},
+    onLeave: () -> Unit = {}
 ) {
     val tvDevice = isTv()
     var tab by remember { mutableStateOf(Tab.OVERVIEW) }
@@ -550,9 +555,46 @@ fun MainScreen(
         )
     } else if (isTv()) {
         var tvPage by rememberSaveable { mutableStateOf(TvPage.HOME) }
+        // a page opened from the Home screen goes back there, not to this app's own home
+        var fromHome by rememberSaveable { mutableStateOf(false) }
+        LaunchedEffect(pageRequest) {
+            val target = when (pageRequest) {
+                MainActivity.PAGE_CAST -> TvPage.CAST_GUIDE
+                MainActivity.PAGE_REMOTE -> TvPage.REMOTE_GUIDE
+                MainActivity.PAGE_SPEAKERS -> TvPage.SPEAKERS
+                MainActivity.PAGE_SETTINGS -> TvPage.SETTINGS
+                MainActivity.PAGE_REMOTE_SETTINGS -> TvPage.REMOTE
+                else -> null
+            }
+            if (target != null) {
+                tvPage = target
+                fromHome = true
+            }
+            if (pageRequest != null) onPageRequestHandled()
+        }
+        // FR-019: the Home screen is the only start page. With no page, no session and no pending
+        // video, this screen has nothing to show, so it closes and the Home screen comes back.
+        // The delay covers the start of a session, when the flags come up one by one.
+        val nothingToShow = tvPage == TvPage.HOME && !mirroringActive && !audioOnly &&
+            !videoPlaybackActive && connections == 0 && castStage?.visible != true
+        LaunchedEffect(nothingToShow) {
+            if (nothingToShow) {
+                delay(LEAVE_DELAY_MS)
+                fromHome = false
+                onLeave()
+            }
+        }
         Surface(color = TvBg, contentColor = TvText) {
             TvRouter(
-                viewModel, tvPage, onPage = { tvPage = it },
+                viewModel, tvPage,
+                onPage = {
+                    if (fromHome && it == TvPage.HOME) {
+                        fromHome = false
+                        onLeave()
+                    } else {
+                        tvPage = it
+                    }
+                },
                 idle = !mirroringActive && !audioOnly,
                 covered = castStage?.visible == true,
                 onLocalNetwork = onLocalNetwork
@@ -1127,6 +1169,9 @@ private fun VolumeSlider(
 private const val CLIENT_VOLUME_STEP = 1f / 16
 
 private const val VIDEO_OVERLAY_HIDE_MS = 4000L
+
+// FR-019: how long the old start page may stay empty before the Home screen comes back
+private const val LEAVE_DELAY_MS = 1500L
 
 @Composable
 private fun DebugOverlay(info: DebugInfo, modifier: Modifier = Modifier) {

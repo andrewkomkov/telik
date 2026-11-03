@@ -183,13 +183,9 @@ internal fun TvRouter(
         }.focusGroup().onPreviewKeyEvent { target != page }) {
             when (target) {
                 TvPage.HOME -> if (idle) {
-                    // home is the root: nothing to go back to past here
+                    // FR-019: the Home screen is the start page; MainScreen closes this screen soon
                     LaunchedEffect(Unit) { trail.clear() }
-                    TvIdleScreen(
-                        viewModel, onLocalNetwork, go,
-                        focusIndex = focusMemory[TvPage.HOME], onFocusIndex = saveFocus(TvPage.HOME),
-                        covered = covered
-                    )
+                    Box(Modifier.fillMaxSize().telikBackdrop())
                 } else {
                     BackHandler { viewModel.disconnectSession() }
                     overview({ go(TvPage.SETTINGS) }, cameFrom == TvPage.SETTINGS)
@@ -267,273 +263,9 @@ private fun remoteStatus(viewModel: MainViewModel): TvStatus {
     }
 }
 
-// Home stays silent while things work; only a problem the viewer can act on earns a line on screen.
-private class TvAttention(@StringRes val title: Int, @StringRes val body: Int, @StringRes val action: Int, val onAction: () -> Unit)
-
-@Composable
-private fun homeAttention(viewModel: MainViewModel, onLocalNetwork: () -> Unit, go: (TvPage) -> Unit): TvAttention? {
-    val state by viewModel.serverState.collectAsState()
-    val localNetwork by viewModel.localNetwork.collectAsState()
-    val remoteEnabled by viewModel.pref(Prefs.REMOTE_ENABLED).collectAsState()
-    val remote by RemoteState.status.collectAsState()
-    val ctx = LocalContext.current
-    return when {
-        state != ServerState.RUNNING && localNetwork != LocalNetworkAccess.GRANTED ->
-            TvAttention(R.string.tv_attn_permission, R.string.local_network_desc, R.string.btn_allow, onLocalNetwork)
-        state == ServerState.ERROR ->
-            TvAttention(R.string.tv_attn_airplay_error, R.string.tv_attn_airplay_error_body, R.string.tv_retry, viewModel::startServer)
-        state == ServerState.STOPPED ->
-            TvAttention(R.string.tv_attn_airplay_off, R.string.tv_attn_airplay_off_body, R.string.btn_start, viewModel::startServer)
-        // the remote is the only part that reports the network; without one AirPlay can't be found either
-        remoteEnabled && remote == "waiting" ->
-            TvAttention(R.string.tv_attn_network, R.string.tv_attn_network_body, R.string.tv_attn_network_action) {
-                openSystemSettings(ctx, Settings.ACTION_WIFI_SETTINGS)
-            }
-        remoteEnabled && remote == "error" ->
-            TvAttention(R.string.tv_attn_remote_error, R.string.tv_attn_remote_error_body, R.string.tv_remote_guide_settings) {
-                go(TvPage.REMOTE)
-            }
-        else -> null
-    }
-}
-
-private fun openSystemSettings(ctx: android.content.Context, action: String) {
-    val intent = Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    try {
-        ctx.startActivity(intent)
-    } catch (_: ActivityNotFoundException) {
-        try {
-            ctx.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        } catch (_: ActivityNotFoundException) {
-        }
-    }
-}
-
 // ---- home ----
 
-private enum class TvHomeEntry { CAST, REMOTE, HEADPHONES, HOMEKIT, SPEAKERS }
-
-private const val ATTENTION_DELAY_MS = 1_500L
-
-@Composable
-internal fun TvIdleScreen(
-    viewModel: MainViewModel,
-    onLocalNetwork: () -> Unit,
-    go: (TvPage) -> Unit,
-    focusIndex: Int?,
-    onFocusIndex: (Int) -> Unit,
-    covered: Boolean
-) {
-    val state by viewModel.serverState.collectAsState()
-    val connections by viewModel.connectionCount.collectAsState()
-    val serverName by viewModel.pref(Prefs.SERVER_NAME).collectAsState()
-    val remoteEnabled by viewModel.pref(Prefs.REMOTE_ENABLED).collectAsState()
-    val activity = LocalContext.current as? Activity
-    // states settle for a moment after launch (the service binds, the network comes up); only a
-    // problem that lasts gets shown, and it leaves as soon as it is fixed
-    val pending = homeAttention(viewModel, onLocalNetwork, go)
-    var settled by remember { mutableStateOf<Int?>(null) }
-    LaunchedEffect(pending?.title) {
-        settled = null
-        if (pending != null) {
-            delay(ATTENTION_DELAY_MS)
-            settled = pending.title
-        }
-    }
-    val attention = pending?.takeIf { it.title == settled }
-
-    // End any pending cast before returning to the TV home; discovery stays available.
-    BackHandler {
-        viewModel.disconnectSession()
-        activity?.startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-    }
-
-    val entries = TvHomeEntry.entries
-    val homeContext = LocalContext.current
-    val requesters = remember { List(entries.size + 1) { FocusRequester() } }
-    val settingsFocus = requesters.last()
-    var settingsFocused by remember { mutableStateOf(false) }
-    val actionFocus = remember { FocusRequester() }
-    var actionFocused by remember { mutableStateOf(false) }
-    // once the problem is fixed its card leaves; the focus must not leave with it
-    LaunchedEffect(attention == null) {
-        if (attention == null && actionFocused) {
-            actionFocused = false
-            requesters[0].requestFocusUntilLanded()
-        }
-    }
-    // The gear remembers which primary entry led to it (indices 3–5).
-    var focused by remember { mutableStateOf(entries[(focusIndex ?: 0).coerceAtLeast(0) % entries.size]) }
-    // coming back lands where the viewer left; a fresh visit starts on the first entry
-    val firstVisit = remember { focusIndex == null }
-    var moves by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) { requesters[(focusIndex ?: 0).coerceIn(0, requesters.lastIndex)].requestFocusUntilLanded() }
-    // a problem that turns up on a fresh visit, before the viewer has moved, takes the focus to its fix
-    LaunchedEffect(attention != null) {
-        if (attention != null && firstVisit && moves <= 1) actionFocus.requestFocusUntilLanded()
-    }
-
-    // the entrance plays once, after the cast stage has lifted rather than hidden underneath it;
-    // coming back from a page inside the app just shows home
-    val reveal = remember { Animatable(if (focusIndex == null) 0f else 1f) }
-    LaunchedEffect(covered) {
-        if (!covered) reveal.animateTo(1f, tween(420, easing = FastOutSlowInEasing))
-    }
-
-    Row(
-        Modifier
-            .fillMaxSize()
-            .telikBackdrop()
-            .padding(start = TV_EDGE_START, end = TV_EDGE_END)
-            .graphicsLayer { alpha = reveal.value }
-    ) {
-        Column(
-            Modifier
-                .weight(1f - TV_ART_WEIGHT)
-                .fillMaxHeight()
-                .padding(top = 24.dp, bottom = 20.dp, end = 40.dp)
-                .graphicsLayer { translationY = (1f - reveal.value) * 12.dp.toPx() }
-        ) {
-            Text(
-                stringResource(R.string.tv_home_title),
-                color = TvText, fontSize = 44.sp, lineHeight = 50.sp, fontWeight = FontWeight.SemiBold,
-                letterSpacing = (-1).sp,
-                maxLines = 1, overflow = TextOverflow.Ellipsis
-            )
-            Spacer(Modifier.height(6.dp))
-            // the name sits in the sentence the viewer needs it for, not as a headline
-            val waiting = state == ServerState.RUNNING && connections > 0
-            Text(
-                if (waiting) {
-                    androidx.compose.ui.text.AnnotatedString(stringResource(R.string.waiting_for_playback))
-                } else {
-                    tvChooseName(stringResource(R.string.tv_home_hint, serverName), serverName)
-                },
-                color = TvMuted, fontSize = 16.sp, lineHeight = 24.sp,
-                maxLines = 2, overflow = TextOverflow.Ellipsis
-            )
-            Spacer(Modifier.height(14.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                entries.forEachIndexed { i, entry ->
-                    val labels = when (entry) {
-                        TvHomeEntry.CAST -> R.string.tv_home_cast to R.string.tv_home_cast_sub
-                        TvHomeEntry.REMOTE -> R.string.tv_home_remote to
-                            if (remoteEnabled) R.string.tv_home_remote_sub else R.string.tv_home_remote_off
-                        TvHomeEntry.HEADPHONES -> R.string.tv_headphones_title to R.string.tv_headphones_idle
-                        TvHomeEntry.HOMEKIT -> R.string.tv_home_homekit to R.string.tv_home_homekit_sub
-                        TvHomeEntry.SPEAKERS -> R.string.speaker_title to R.string.speaker_home_sub
-                    }
-                    TvHomeRow(
-                        entry = entry,
-                        title = stringResource(labels.first),
-                        subtitle = if (entry == TvHomeEntry.HEADPHONES) headphonesValue() else stringResource(labels.second),
-                        modifier = Modifier.weight(1f).focusRequester(requesters[i]).focusProperties {
-                            up = if (i == 0) settingsFocus else requesters[i - 1]
-                            down = if (i == entries.lastIndex) FocusRequester.Cancel else requesters[i + 1]
-                            right = if (attention != null) actionFocus else settingsFocus
-                        },
-                        onFocused = {
-                            focused = entry
-                            moves++
-                            onFocusIndex(i)
-                        },
-                        onClick = {
-                            when (entry) {
-                                TvHomeEntry.CAST -> go(TvPage.CAST_GUIDE)
-                                TvHomeEntry.REMOTE -> go(TvPage.REMOTE_GUIDE)
-                                TvHomeEntry.HEADPHONES -> HeadphonesController.toggleConnection()
-                                TvHomeEntry.HOMEKIT -> homeContext.startActivity(
-                                    Intent(homeContext, dev.tvhomekit.HomeKitActivity::class.java)
-                                )
-                                TvHomeEntry.SPEAKERS -> go(TvPage.SPEAKERS)
-                            }
-                        }
-                    )
-                }
-            }
-        }
-        // the right half answers "what is this?" for the focused entry, with a picture, not words
-        Box(Modifier.weight(TV_ART_WEIGHT).fillMaxHeight(), contentAlignment = Alignment.Center) {
-            Row(
-                Modifier.align(Alignment.TopEnd).padding(top = 32.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                TvMinuteClock()
-                Box(
-                    Modifier.size(48.dp).focusRequester(settingsFocus).focusProperties {
-                        left = requesters[focused.ordinal]
-                        down = if (attention != null) actionFocus else requesters[focused.ordinal]
-                    }.onFocusChanged {
-                        settingsFocused = it.isFocused
-                        if (it.isFocused) onFocusIndex(entries.size + focused.ordinal)
-                    }.clip(CircleShape)
-                        .background(if (settingsFocused) TvText else Color(0x1FFFFFFF))
-                        .clickable(role = Role.Button) { go(TvPage.SETTINGS) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Settings, stringResource(R.string.tv_settings), Modifier.size(24.dp),
-                        tint = if (settingsFocused) TvInk else TvText)
-                }
-            }
-            if (attention != null) {
-                Box(Modifier.fillMaxSize().padding(top = 96.dp, bottom = 32.dp)
-                    .verticalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
-                    TvAttentionCard(attention, Modifier.focusRequester(actionFocus)
-                        .onFocusChanged { actionFocused = it.isFocused }
-                        .focusProperties { left = requesters[focused.ordinal]; up = settingsFocus })
-                }
-            } else {
-                AnimatedContent(
-                    targetState = focused,
-                    modifier = Modifier.padding(top = 56.dp).size(TV_ART_SIZE),
-                    contentAlignment = Alignment.Center,
-                    transitionSpec = {
-                        val dir = if (targetState.ordinal > initialState.ordinal) 1 else -1
-                        (fadeIn(tween(240, delayMillis = 60)) +
-                            scaleIn(tween(340, easing = FastOutSlowInEasing), initialScale = 0.94f) +
-                            slideInVertically(tween(340, easing = FastOutSlowInEasing)) { h -> dir * h / 12 })
-                            .togetherWith(
-                                fadeOut(tween(140)) +
-                                    slideOutVertically(tween(240, easing = FastOutSlowInEasing)) { h -> -dir * h / 16 }
-                            )
-                            .using(SizeTransform(clip = false))
-                    },
-                    label = "art"
-                ) { entry ->
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        TelikMascot(entry)
-                    }
-                }
-            }
-        }
-    }
-}
-
-// brightens just the TV name inside the sentence, so it reads as the thing to pick
-private fun tvChooseName(sentence: String, name: String) = androidx.compose.ui.text.buildAnnotatedString {
-    append(sentence)
-    val at = sentence.indexOf(name)
-    if (at >= 0 && name.isNotEmpty()) {
-        addStyle(androidx.compose.ui.text.SpanStyle(color = TvText), at, at + name.length)
-    }
-}
-
-// a quiet clock in the corner; it wakes once a minute, on the minute, and follows the system 12/24-hour setting
-@Composable
-private fun TvMinuteClock(modifier: Modifier = Modifier) {
-    val ctx = LocalContext.current
-    val format = remember(ctx) { android.text.format.DateFormat.getTimeFormat(ctx) }
-    var now by remember { mutableStateOf(java.util.Date()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            val ms = System.currentTimeMillis()
-            delay(60_000L - ms % 60_000L + 50L)
-            now = java.util.Date()
-        }
-    }
-    Text(format.format(now), color = TvMuted, fontSize = 17.sp, maxLines = 1, modifier = modifier)
-}
+internal enum class TvHomeEntry { CAST, REMOTE, HEADPHONES, HOMEKIT, SPEAKERS }
 
 private fun Modifier.telikBackdrop(): Modifier = drawBehind {
     drawRect(Color(0xFF07070C))
@@ -560,7 +292,7 @@ private fun Modifier.telikBackdrop(): Modifier = drawBehind {
     )
 }
 
-private fun TvHomeEntry.accent(): List<Color> = when (this) {
+internal fun TvHomeEntry.accent(): List<Color> = when (this) {
     TvHomeEntry.CAST -> listOf(Color(0xFF4FC3FF), Color(0xFF3A6BFF))
     TvHomeEntry.REMOTE -> listOf(Color(0xFFB98CFF), Color(0xFF6A4DFF))
     TvHomeEntry.HEADPHONES -> listOf(Color(0xFFFF8FD0), Color(0xFFB04DFF))
@@ -569,30 +301,7 @@ private fun TvHomeEntry.accent(): List<Color> = when (this) {
 }
 
 @Composable
-private fun TelikMascot(entry: TvHomeEntry) {
-    val accent = entry.accent().first()
-    Box(Modifier.size(TV_ART_SIZE), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.fillMaxSize()) {
-            drawCircle(
-                androidx.compose.ui.graphics.Brush.radialGradient(
-                    listOf(accent.copy(alpha = 0.42f), Color.Transparent),
-                    center = center,
-                    radius = size.minDimension * 0.62f,
-                ),
-                radius = size.minDimension * 0.62f,
-            )
-        }
-        Icon(
-            androidx.compose.ui.res.painterResource(R.drawable.mascot),
-            null,
-            Modifier.size(330.dp),
-            tint = Color.Unspecified,
-        )
-    }
-}
-
-@Composable
-private fun TelikRowIcon(entry: TvHomeEntry) {
+internal fun TelikRowIcon(entry: TvHomeEntry) {
     Box(
         Modifier
             .size(52.dp)
@@ -610,77 +319,6 @@ private fun TelikRowIcon(entry: TvHomeEntry) {
             TvHomeEntry.HOMEKIT -> Icon(Icons.Default.Home, null, Modifier.size(30.dp), tint = Color.White)
             TvHomeEntry.SPEAKERS -> Icon(Icons.Default.Speaker, null, Modifier.size(30.dp), tint = Color.White)
         }
-    }
-}
-
-@Composable
-private fun TvHomeRow(
-    entry: TvHomeEntry,
-    title: String,
-    subtitle: String,
-    modifier: Modifier,
-    onFocused: () -> Unit,
-    onClick: () -> Unit
-) {
-    var focused by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(if (focused) 1.035f else 1f, tween(FOCUS_MS), label = "homeScale")
-    val glass by animateColorAsState(if (focused) Color(0xF2FFFFFF) else Color(0x1AFFFFFF), tween(FOCUS_MS), label = "homeBg")
-    val fg by animateColorAsState(if (focused) Color(0xFF0B0B10) else TvText, tween(FOCUS_MS), label = "homeFg")
-    val sub by animateColorAsState(if (focused) Color(0x990B0B10) else TvMuted, tween(FOCUS_MS), label = "homeSub")
-    val shape = RoundedCornerShape(26.dp)
-    Row(
-        modifier
-            .fillMaxWidth()
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .onFocusChanged {
-                focused = it.isFocused
-                if (it.isFocused) onFocused()
-            }
-            .clip(shape)
-            .background(glass)
-            .border(
-                1.dp,
-                androidx.compose.ui.graphics.Brush.verticalGradient(
-                    listOf(Color(0x66FFFFFF), Color(0x0DFFFFFF)),
-                ),
-                shape,
-            )
-            .clickable(remember { MutableInteractionSource() }, indication = null, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 22.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        TelikRowIcon(entry)
-        Spacer(Modifier.width(20.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, color = fg, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold,
-                maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(subtitle, color = sub, fontSize = 16.sp, lineHeight = 22.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    }
-}
-
-@Composable
-private fun TvAttentionCard(attention: TvAttention, actionModifier: Modifier) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .border(1.dp, TvError.copy(alpha = 0.45f), RoundedCornerShape(18.dp))
-            .background(TvError.copy(alpha = 0.08f))
-            .padding(horizontal = 24.dp, vertical = 18.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(8.dp).clip(CircleShape).background(TvError))
-            Spacer(Modifier.width(12.dp))
-            Text(stringResource(attention.title), color = TvText, fontSize = 19.sp, fontWeight = FontWeight.Medium)
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(stringResource(attention.body), color = TvMuted, fontSize = 16.sp, lineHeight = 23.sp)
-        Spacer(Modifier.height(14.dp))
-        TvPill(stringResource(attention.action), attention.onAction, actionModifier)
     }
 }
 

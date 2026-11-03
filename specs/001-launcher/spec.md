@@ -123,6 +123,9 @@ The user reaches the HDMI inputs, the system settings and the search from the Ho
 - **FR-013**: The launcher MUST stay light: no heavy library, no work in the background while the Home screen is hidden, and cached icons.
 - **FR-018**: The Home screen MUST answer a key press at once. Icons decode off the main thread, the next icons load before the user reaches them, and animations run on the render thread.
 - **FR-014**: The launcher MUST use the newest stable platform APIs and tools, with exact version pins.
+- **FR-019**: Telik MUST have one interface: the Home screen. The app list MUST show one Telik entry, and it MUST open the Home screen.
+  The old Telik start page MUST go. The settings, the guides and the playback screen MUST open from the Home screen, and Back MUST return to it.
+  The Home screen MUST show the problems that the old start page showed: no local network access, AirPlay off or failed, and no network.
 
 ### Key Entities
 

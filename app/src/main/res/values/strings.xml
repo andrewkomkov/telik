@@ -332,4 +332,27 @@
     <string name="tv_headphones_connecting">Connecting…</string>
     <string name="tv_headphones_connected">Connected. Press OK to disconnect</string>
     <string name="tv_headphones_not_reached">Unavailable. Disconnect from your phone</string>
+    <string name="home_cast_visible">Visible as “%1$s”</string>
+    <string name="home_cast_mirroring">Mirroring now</string>
+    <string name="home_cast_playing">Playing: %1$s</string>
+    <string name="home_speaker_on">Playing on “%1$s”</string>
+    <string name="home_entry_telik">Telik settings</string>
+    <string name="home_entry_settings">Settings</string>
+    <string name="home_entry_search">Search</string>
+    <string name="home_entry_input">Input</string>
+    <string name="home_entry_home">Home screen</string>
+    <string name="home_make_default">Make Telik the default Home screen</string>
+    <string name="home_restore_old">Go back to the previous Home screen</string>
+    <string name="home_restored">Telik Home is off. Open Telik from the app list to turn it on again.</string>
+    <string name="home_not_default">Telik is not your Home screen yet</string>
+    <string name="home_glass_on">Glass effect: on</string>
+    <string name="home_glass_off">Glass effect: off</string>
+    <string name="home_edit_left">Move left</string>
+    <string name="home_edit_right">Move right</string>
+    <string name="home_edit_hide">Hide</string>
+    <string name="home_edit_show">Show</string>
+    <string name="home_edit_info">App info</string>
+    <string name="home_edit_done">Done</string>
+    <string name="home_crash_notice">Telik Home failed to start and was turned off. The previous Home screen is back.</string>
+    <string name="home_cannot_open">Cannot open this app</string>
 </resources>

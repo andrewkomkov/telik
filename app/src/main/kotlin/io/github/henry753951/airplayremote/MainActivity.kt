@@ -41,6 +41,8 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
     private var service: AirPlayService? = null
     val isInPip = mutableStateOf(false)
+    // a page the Home screen asked for; Back from it returns to the Home screen
+    private val pageRequest = mutableStateOf<String?>(null)
     private val logCallback: (String) -> Unit = { viewModel.addLog(it) }
 
     private val connection = object : ServiceConnection {
@@ -65,6 +67,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (savedInstanceState == null) pageRequest.value = intent.getStringExtra(EXTRA_PAGE)
 
         val missing = buildList {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !_granted(Manifest.permission.POST_NOTIFICATIONS)) {
@@ -117,10 +120,19 @@ class MainActivity : ComponentActivity() {
                     onSurfaceAvailable = { viewModel.onSurfaceAvailable(it) },
                     onSurfaceDestroyed = { viewModel.onSurfaceDestroyed(it) },
                     onPip = { enterPip() },
-                    onLocalNetwork = ::_requestLocalNetwork
+                    onLocalNetwork = ::_requestLocalNetwork,
+                    pageRequest = pageRequest.value,
+                    onPageRequestHandled = { pageRequest.value = null },
+                    onLeave = ::finish
                 )
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent.getStringExtra(EXTRA_PAGE)?.let { pageRequest.value = it }
     }
 
     private fun _granted(permission: String) =
@@ -210,6 +222,16 @@ class MainActivity : ComponentActivity() {
             !io.github.henry753951.airplayremote.remote.RemoteState.connected.value) {
             viewModel.stopServer()
         }
+    }
+
+    companion object {
+        /** Page to open: [PAGE_CAST], [PAGE_REMOTE], [PAGE_SPEAKERS], [PAGE_SETTINGS] or [PAGE_REMOTE_SETTINGS]. */
+        const val EXTRA_PAGE = "dev.telik.tv.extra.PAGE"
+        const val PAGE_CAST = "cast"
+        const val PAGE_REMOTE = "remote"
+        const val PAGE_SPEAKERS = "speakers"
+        const val PAGE_SETTINGS = "settings"
+        const val PAGE_REMOTE_SETTINGS = "remote_settings"
     }
 
     override fun onDestroy() {

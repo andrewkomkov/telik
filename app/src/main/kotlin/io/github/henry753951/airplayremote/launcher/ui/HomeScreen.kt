@@ -1,0 +1,571 @@
+package io.github.henry753951.airplayremote.launcher.ui
+
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Input
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import androidx.compose.foundation.Image
+import io.github.henry753951.airplayremote.R
+import io.github.henry753951.airplayremote.launcher.AppTile
+import io.github.henry753951.airplayremote.launcher.Attention
+import io.github.henry753951.airplayremote.launcher.Attentions
+import io.github.henry753951.airplayremote.launcher.TelikStatus
+import io.github.henry753951.airplayremote.audiooutput.SpeakerOutputState
+import io.github.henry753951.airplayremote.headphones.HeadphonesStatus
+import io.github.henry753951.airplayremote.runtime.AirPlayService.ServerState
+import io.github.henry753951.airplayremote.ui.TelikRowIcon
+import io.github.henry753951.airplayremote.ui.TvHomeEntry
+import io.github.henry753951.airplayremote.ui.requestFocusUntilLanded
+import io.github.henry753951.airplayremote.ui.theme.AirPlayTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
+
+data class InputEntry(val id: String, val label: String)
+
+data class HomeState(
+    val tiles: List<AppTile> = emptyList(),
+    val editTiles: List<AppTile> = emptyList(),
+    val hidden: Set<String> = emptySet(),
+    val inputs: List<InputEntry> = emptyList(),
+    val isDefault: Boolean = true,
+    val glass: Boolean = true,
+    val editing: String? = null,
+    val menuOpen: Boolean = false,
+    /** Changes when Home is pressed while Home is already open. */
+    val homeTick: Int = 0,
+    val telik: TelikStatus = TelikStatus(),
+    /** ACCESS_LOCAL_NETWORK is granted. */
+    val localNetwork: Boolean = true,
+)
+
+private val TileShape = RoundedCornerShape(16.dp)
+private val EdgeMargin = 56.dp
+private val ActiveDot = Color(0xFF34C759)
+
+@Composable
+internal fun HomeScreen(
+    state: HomeState,
+    onFirstFrame: () -> Unit,
+    onLaunch: (AppTile) -> Unit,
+    onTelik: () -> Unit,
+    onTelikEntry: (TvHomeEntry) -> Unit,
+    onAttention: (Attention) -> Unit,
+    onInput: (String) -> Unit,
+    onSettings: () -> Unit,
+    onSearch: () -> Unit,
+    onMakeDefault: () -> Unit,
+    onRestoreOld: () -> Unit,
+    onToggleGlass: () -> Unit,
+    onEdit: (String) -> Unit,
+    onCloseEdit: () -> Unit,
+    onMenu: (Boolean) -> Unit,
+    onMove: (String, Int) -> Unit,
+    onHide: (String, Boolean) -> Unit,
+    onInfo: (String) -> Unit,
+) = AirPlayTheme {
+    // Frame watch (FR-012): slow frames while focus moves switch the effects to plain.
+    var slow by remember { mutableStateOf(false) }
+    var focusStamp by remember { mutableIntStateOf(0) }
+    val fancy = state.glass && !slow
+
+    LaunchedEffect(Unit) { withFrameNanos { }; onFirstFrame() }
+    LaunchedEffect(focusStamp) {
+        if (focusStamp == 0 || slow) return@LaunchedEffect
+        var last = 0L
+        var sum = 0L
+        var n = 0
+        withTimeoutOrNull(300) {
+            while (true) {
+                withFrameNanos { t ->
+                    if (last != 0L && t - last < 100_000_000L) { sum += t - last; n++ }
+                    last = t
+                }
+            }
+        }
+        if (n >= 4 && sum / n > 33_000_000L) slow = true
+    }
+
+    val editing = state.editing
+    val rowTiles = if (editing != null) state.editTiles else state.tiles
+    val listState = rememberLazyListState()
+    val firstTile = remember { FocusRequester() }
+
+    LaunchedEffect(state.homeTick) {
+        if (state.homeTick > 0) {
+            listState.scrollToItem(0)
+            firstTile.requestFocusUntilLanded()
+        }
+    }
+    LaunchedEffect(Unit) { firstTile.requestFocusUntilLanded() }
+
+    Box(
+        Modifier.fillMaxSize().background(
+            Brush.verticalGradient(listOf(Color(0xFF1B2433), Color(0xFF0B0D12))),
+        ),
+    ) {
+        // Rows run to the screen edges and keep the margin as content padding, so a cut tile
+        // at the edge shows that the row scrolls.
+        Column(Modifier.fillMaxSize().padding(vertical = 28.dp)) {
+            // shortcuts: Telik, HDMI inputs, search, settings, Home screen menu
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(horizontal = EdgeMargin),
+            ) {
+                item { Pill(Icons.Default.Settings, stringResource(R.string.home_entry_telik), fancy, { focusStamp++ }, onTelik) }
+                items(state.inputs, key = { it.id }) { i ->
+                    Pill(Icons.AutoMirrored.Filled.Input, i.label, fancy, { focusStamp++ }) { onInput(i.id) }
+                }
+                item { Pill(Icons.Default.Search, stringResource(R.string.home_entry_search), fancy, { focusStamp++ }, onSearch) }
+                item { Pill(Icons.Default.Settings, stringResource(R.string.home_entry_settings), fancy, { focusStamp++ }, onSettings) }
+                item { Pill(Icons.Default.Home, stringResource(R.string.home_entry_home), fancy, { focusStamp++ }) { onMenu(true) } }
+            }
+            // FR-019: the problems of the old Telik start page. States settle for a moment after a
+            // start (the service binds, the network comes up), so only a lasting problem shows.
+            val pending = Attentions.pick(
+                state.localNetwork, state.telik.server, state.telik.remoteEnabled, state.telik.remote,
+            )
+            var shown by remember { mutableStateOf<Attention?>(null) }
+            LaunchedEffect(pending) {
+                if (pending == null) shown = null else { delay(ATTENTION_DELAY_MS); shown = pending }
+            }
+            shown?.let { AttentionRow(it, fancy) { onAttention(it) } }
+            if (!state.isDefault) {
+                Text(
+                    stringResource(R.string.home_not_default),
+                    Modifier.padding(start = EdgeMargin, top = 12.dp),
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 16.sp,
+                )
+            }
+
+            // Telik row: AirPlay and its accessories as part of the Home screen, each with its state.
+            // Edit mode is about the app row, so this row steps aside to make room for the panel.
+            if (editing == null) {
+                LazyRow(
+                    Modifier.padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    contentPadding = PaddingValues(vertical = 16.dp, horizontal = EdgeMargin),
+                ) {
+                    items(TvHomeEntry.entries) { entry ->
+                        val (title, subtitle, active) = telikCardText(entry, state.telik)
+                        TelikCard(entry, title, subtitle, active, fancy, { focusStamp++ }) { onTelikEntry(entry) }
+                    }
+                }
+            }
+
+            Box(Modifier.weight(1f))
+
+            LazyRow(
+                state = listState,
+                horizontalArrangement = Arrangement.spacedBy(28.dp),
+                contentPadding = PaddingValues(vertical = 24.dp, horizontal = EdgeMargin),
+            ) {
+                items(rowTiles, key = { it.packageName }) { app ->
+                    val isFirst = app === rowTiles.first()
+                    AppCard(
+                        app = app,
+                        dim = editing != null && app.packageName in state.hidden,
+                        selected = editing == app.packageName,
+                        fancy = fancy,
+                        modifier = if (isFirst) Modifier.focusRequester(firstTile) else Modifier,
+                        onFocused = { focusStamp++ },
+                        onClick = { if (editing != null) onEdit(app.packageName) else onLaunch(app) },
+                        onLongClick = { onEdit(app.packageName) },
+                    )
+                }
+            }
+
+            if (editing != null) {
+                val isHidden = editing in state.hidden
+                Row(
+                    Modifier.padding(horizontal = EdgeMargin).fillMaxWidth()
+                        .glassPanel(RoundedCornerShape(20.dp), fancy)
+                        .horizontalScroll(rememberScrollState()).padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    ActionButton(stringResource(R.string.home_edit_left), fancy) { onMove(editing, -1) }
+                    ActionButton(stringResource(R.string.home_edit_right), fancy) { onMove(editing, 1) }
+                    ActionButton(
+                        stringResource(if (isHidden) R.string.home_edit_show else R.string.home_edit_hide), fancy,
+                    ) { onHide(editing, !isHidden) }
+                    ActionButton(stringResource(R.string.home_edit_info), fancy) { onInfo(editing) }
+                    ActionButton(stringResource(R.string.home_edit_done), fancy, onClick = onCloseEdit)
+                }
+            } else {
+                Box(Modifier.height(24.dp))
+            }
+        }
+
+        if (state.menuOpen) {
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)), contentAlignment = Alignment.Center) {
+                val first = remember { FocusRequester() }
+                LaunchedEffect(Unit) { first.requestFocusUntilLanded() }
+                Column(
+                    Modifier.glassPanel(RoundedCornerShape(28.dp), fancy).padding(32.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    if (!state.isDefault) {
+                        ActionButton(stringResource(R.string.home_make_default), fancy, Modifier.focusRequester(first), onMakeDefault)
+                    }
+                    ActionButton(
+                        stringResource(if (state.glass) R.string.home_glass_on else R.string.home_glass_off),
+                        fancy,
+                        if (state.isDefault) Modifier.focusRequester(first) else Modifier,
+                        onToggleGlass,
+                    )
+                    ActionButton(stringResource(R.string.home_restore_old), fancy, onClick = onRestoreOld)
+                    ActionButton(stringResource(R.string.home_edit_done), fancy) { onMenu(false) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppCard(
+    app: AppTile,
+    dim: Boolean,
+    selected: Boolean,
+    fancy: Boolean,
+    modifier: Modifier,
+    onFocused: () -> Unit,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+) {
+    val art by rememberArt(app.packageName, app.activity)
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        FocusTile(
+            fancy = fancy,
+            modifier = Modifier.size(264.dp, 148.dp),
+            selected = selected,
+            onFocused = onFocused,
+            onClick = onClick,
+            onLongClick = onLongClick,
+        ) {
+            val a = art
+            Box(
+                Modifier.fillMaxSize().background(tileColor(app.packageName)).graphicsLayer { alpha = if (dim) 0.35f else 1f },
+                contentAlignment = Alignment.Center,
+            ) {
+                if (a != null) {
+                    Image(
+                        a.image, app.label,
+                        Modifier.fillMaxSize().let { if (a.isBanner) it else it.padding(24.dp) },
+                        contentScale = if (a.isBanner) ContentScale.Crop else ContentScale.Fit,
+                    )
+                }
+            }
+        }
+        Text(
+            app.label, Modifier.padding(top = 18.dp).size(264.dp, 28.dp),
+            color = Color.White.copy(alpha = 0.85f), fontSize = 18.sp,
+            maxLines = 1, overflow = TextOverflow.Ellipsis,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+    }
+}
+
+/** Title, state line and whether the entry is in use right now (a green dot). */
+@Composable
+private fun telikCardText(entry: TvHomeEntry, t: TelikStatus): Triple<String, String, Boolean> = when (entry) {
+    TvHomeEntry.CAST -> Triple(
+        stringResource(R.string.tv_home_cast),
+        when {
+            t.server == ServerState.ERROR -> stringResource(R.string.tv_state_error)
+            t.server != ServerState.RUNNING -> stringResource(R.string.tv_state_stopped)
+            t.mirroring -> stringResource(R.string.home_cast_mirroring)
+            t.audioOnly && t.connections > 0 && t.track.isNotBlank() -> stringResource(R.string.home_cast_playing, t.track)
+            t.connections > 0 -> stringResource(R.string.waiting_for_playback)
+            else -> stringResource(R.string.home_cast_visible, t.serverName)
+        },
+        t.server == ServerState.RUNNING && t.connections > 0,
+    )
+    TvHomeEntry.REMOTE -> Triple(
+        stringResource(R.string.tv_home_remote),
+        stringResource(
+            when {
+                !t.remoteEnabled -> R.string.tv_state_off
+                t.remote == "running" && t.remoteConnected -> R.string.tv_state_connected
+                t.remote == "running" -> R.string.tv_state_ready
+                t.remote == "starting" -> R.string.tv_state_starting
+                t.remote == "waiting" -> R.string.tv_state_waiting_network
+                t.remote == "error" -> R.string.tv_state_error
+                else -> R.string.tv_state_stopped
+            },
+        ),
+        t.remoteEnabled && t.remote == "running" && t.remoteConnected,
+    )
+    TvHomeEntry.HEADPHONES -> Triple(
+        stringResource(R.string.tv_headphones_title),
+        stringResource(
+            when (t.headphones) {
+                HeadphonesStatus.IDLE -> R.string.tv_headphones_idle
+                HeadphonesStatus.NEEDS_APPROVAL -> R.string.tv_headphones_needs_approval
+                HeadphonesStatus.NO_DEBUGGING -> R.string.tv_headphones_no_debugging
+                HeadphonesStatus.NOT_PAIRED -> R.string.tv_headphones_not_paired
+                HeadphonesStatus.CONNECTING -> R.string.tv_headphones_connecting
+                HeadphonesStatus.CONNECTED -> R.string.tv_headphones_connected
+                HeadphonesStatus.NOT_REACHED -> R.string.tv_headphones_not_reached
+            },
+        ),
+        t.headphones == HeadphonesStatus.CONNECTED,
+    )
+    TvHomeEntry.HOMEKIT -> Triple(
+        stringResource(R.string.tv_home_homekit), stringResource(R.string.tv_home_homekit_sub), false,
+    )
+    TvHomeEntry.SPEAKERS -> Triple(
+        stringResource(R.string.speaker_title),
+        speakerLine(t.speaker),
+        t.speaker.active && !t.speaker.error,
+    )
+}
+
+@Composable
+private fun speakerLine(s: SpeakerOutputState): String = when {
+    s.error -> stringResource(R.string.tv_state_error)
+    s.active && s.target.isNotBlank() -> stringResource(R.string.home_speaker_on, s.target)
+    else -> stringResource(R.string.speaker_home_sub)
+}
+
+/** A large glass card in the Telik row: the entry's icon, its name and its state. */
+private const val ATTENTION_DELAY_MS = 1_500L
+
+@Composable
+private fun AttentionRow(attention: Attention, fancy: Boolean, onAction: () -> Unit) {
+    val (title, body, action) = when (attention) {
+        Attention.LOCAL_NETWORK -> Triple(R.string.tv_attn_permission, R.string.local_network_desc, R.string.btn_allow)
+        Attention.AIRPLAY_ERROR -> Triple(R.string.tv_attn_airplay_error, R.string.tv_attn_airplay_error_body, R.string.tv_retry)
+        Attention.AIRPLAY_OFF -> Triple(R.string.tv_attn_airplay_off, R.string.tv_attn_airplay_off_body, R.string.btn_start)
+        Attention.NETWORK -> Triple(R.string.tv_attn_network, R.string.tv_attn_network_body, R.string.tv_attn_network_action)
+        Attention.REMOTE_ERROR ->
+            Triple(R.string.tv_attn_remote_error, R.string.tv_attn_remote_error_body, R.string.tv_remote_guide_settings)
+    }
+    Row(
+        Modifier.padding(start = EdgeMargin, end = EdgeMargin, top = 16.dp).fillMaxWidth()
+            .glassPanel(TileShape, fancy).padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(title), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Text(
+                stringResource(body), color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp, lineHeight = 18.sp,
+                maxLines = 2, overflow = TextOverflow.Ellipsis,
+            )
+        }
+        ActionButton(stringResource(action), fancy, onClick = onAction)
+    }
+}
+
+@Composable
+private fun TelikCard(
+    entry: TvHomeEntry,
+    title: String,
+    subtitle: String,
+    active: Boolean,
+    fancy: Boolean,
+    onFocused: () -> Unit,
+    onClick: () -> Unit,
+) {
+    FocusTile(fancy, Modifier.size(272.dp, 96.dp), false, onFocused, onClick, null, grow = 1.08f, shadow = false) {
+        Row(
+            Modifier.fillMaxSize().glassPanel(TileShape, fancy).padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            TelikRowIcon(entry)
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        title, Modifier.weight(1f, fill = false), color = Color.White, fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
+                    if (active) Box(Modifier.padding(start = 8.dp).size(8.dp).clip(CircleShape).background(ActiveDot))
+                }
+                Text(
+                    subtitle, Modifier.padding(top = 2.dp), color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp,
+                    lineHeight = 18.sp, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun Pill(icon: ImageVector, label: String, fancy: Boolean, onFocused: () -> Unit, onClick: () -> Unit) {
+    FocusTile(fancy, Modifier.height(56.dp), false, onFocused, onClick, null, grow = 1.08f, shadow = false) {
+        Row(
+            Modifier.glassPanel(TileShape, fancy).padding(horizontal = 20.dp).height(56.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Icon(icon, null, tint = Color.White)
+            Text(label, color = Color.White, fontSize = 18.sp, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun ActionButton(label: String, fancy: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    FocusTile(fancy, modifier, false, {}, onClick, null, grow = 1.06f, shadow = false) {
+        Box(
+            Modifier.glassPanel(TileShape, fancy).padding(horizontal = 18.dp).height(52.dp),
+            contentAlignment = Alignment.Center,
+        ) { Text(label, color = Color.White, fontSize = 18.sp, maxLines = 1) }
+    }
+}
+
+/**
+ * Focus effect: scale, a small tilt and a light sweep. All of it runs in graphicsLayer and
+ * drawWithContent, so a focus change recomposes nothing (FR-018). Plain frame when not [fancy].
+ */
+@Composable
+private fun FocusTile(
+    fancy: Boolean,
+    modifier: Modifier,
+    selected: Boolean,
+    onFocused: () -> Unit,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)?,
+    grow: Float = 1.14f,
+    // A shadow shows through translucent glass as a dark band, so glass tiles go without it.
+    shadow: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    var focused by remember { mutableStateOf(false) }
+    var longDone by remember { mutableStateOf(false) }
+    val t by animateFloatAsState(if (focused) 1f else 0f, tween(if (fancy) 160 else 60), label = "focus")
+    Box(
+        modifier
+            .zIndex(if (focused) 1f else 0f)
+            .graphicsLayer {
+                if (fancy) {
+                    val s = 1f + (grow - 1f) * t
+                    scaleX = s; scaleY = s
+                    rotationX = -3f * t
+                    cameraDistance = 16f * density
+                    shadowElevation = if (shadow) 24f * t else 0f
+                    shape = TileShape
+                    clip = false
+                }
+            }
+            .onFocusChanged { if (it.isFocused && !focused) onFocused(); focused = it.isFocused }
+            .onKeyEvent { e ->
+                val ok = e.key == Key.DirectionCenter || e.key == Key.Enter || e.key == Key.NumPadEnter
+                if (!ok) return@onKeyEvent false
+                when (e.type) {
+                    KeyEventType.KeyDown -> {
+                        if (e.nativeKeyEvent.isLongPress && onLongClick != null && !longDone) {
+                            longDone = true
+                            onLongClick()
+                        }
+                        true
+                    }
+                    KeyEventType.KeyUp -> {
+                        if (!longDone) onClick()
+                        longDone = false
+                        true
+                    }
+                    else -> false
+                }
+            }
+            .focusable()
+            // touch and mouse: tap and long press
+            .pointerInput(onClick, onLongClick) {
+                detectTapGestures(onTap = { onClick() }, onLongPress = { onLongClick?.invoke() })
+            }
+            .clip(TileShape)
+            .drawWithContent {
+                drawContent()
+                if (t > 0f) {
+                    if (fancy) {
+                        // light sweep across the face
+                        drawRect(
+                            Brush.linearGradient(
+                                listOf(Color.Transparent, Color.White.copy(alpha = 0.22f * t), Color.Transparent),
+                                start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                                end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                            ),
+                        )
+                    }
+                    // plain frame, also the fallback look
+                    drawRoundRect(
+                        Color.White.copy(alpha = t),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = (if (fancy) 2.dp else 4.dp).toPx()),
+                    )
+                } else if (selected) {
+                    drawRoundRect(
+                        Color(0xFF5AC8FA),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4.dp.toPx()),
+                    )
+                }
+            },
+    ) { content() }
+}
+
+/** Stable color per package for apps without a banner. */
+private fun tileColor(pkg: String): Color {
+    val h = (pkg.hashCode().toLong() and 0xFFFFFFFFL) % 360
+    return Color.hsv(h.toFloat(), 0.45f, 0.35f)
+}
