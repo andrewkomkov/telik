@@ -2,7 +2,7 @@
 
 **Feature Branch**: `fix/watch-remote`
 **Created**: 2026-11-03
-**Status**: The fix is written. The TV check is open.
+**Status**: Partly done. The keys and the iPhone remote work. The watch still needs up to three tries.
 **Input**: The user says that the Apple Watch remote again does not connect on the first try. The iPhone remote connects.
 
 ## Findings
