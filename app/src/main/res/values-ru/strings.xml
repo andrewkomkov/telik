@@ -355,6 +355,7 @@
     <string name="home_edit_done">Готово</string>
     <string name="home_fav_title">Избранное</string>
     <string name="home_apps_title">Приложения</string>
+    <string name="home_move_hint">Двигайте стрелками. Нажмите OK, когда закончите.</string>
     <string name="home_menu_open">Открыть</string>
     <string name="home_menu_stop">Остановить</string>
     <string name="home_menu_move">Переместить</string>

@@ -355,6 +355,7 @@
     <string name="home_edit_done">Done</string>
     <string name="home_fav_title">Favorites</string>
     <string name="home_apps_title">Apps</string>
+    <string name="home_move_hint">Move with the arrows. Press OK when done.</string>
     <string name="home_menu_open">Open</string>
     <string name="home_menu_stop">Stop</string>
     <string name="home_menu_move">Move</string>

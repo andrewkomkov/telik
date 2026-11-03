@@ -192,6 +192,9 @@ internal fun HomeScreen(
     val editing = state.editing
     val gridTiles = if (editing != null) state.editTiles else state.tiles
     val firstTile = remember { FocusRequester() }
+    val moveFocus = remember { FocusRequester() }
+    // The moved tile changes its place in the grid; the focus goes with it.
+    LaunchedEffect(editing, gridTiles.map { it.packageName }) { if (editing != null) moveFocus.requestFocusUntilLanded() }
     val scroll = rememberScrollState()
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -275,6 +278,16 @@ internal fun HomeScreen(
                     val inputs = state.inputs.associateBy { it.id }
                     var firstSet = false
                     fun firstMod(): Modifier = if (!firstSet) { firstSet = true; Modifier.focusRequester(firstTile) } else Modifier
+                    // Move mode, as on Apple TV: the arrows move the tile, OK ends the mode.
+                    fun moveMod(pkg: String): Modifier = Modifier.focusRequester(moveFocus).onPreviewKeyEvent { e ->
+                        if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                        when (e.key) {
+                            Key.DirectionLeft -> { onMove(pkg, -1); true }
+                            Key.DirectionRight -> { onMove(pkg, 1); true }
+                            Key.DirectionUp, Key.DirectionDown -> true
+                            else -> false
+                        }
+                    }
                     if (editing == null && state.favorites.isNotEmpty()) {
                         RowTitle(if (state.favoritesSuggested) stringResource(R.string.home_fav_suggested) else null)
                         TileRow(0, rowTops, onRowFocus) {
@@ -310,14 +323,15 @@ internal fun HomeScreen(
                     gridLines.forEachIndexed { r, line ->
                         TileRow(1 + r, rowTops, onRowFocus, scrollable = false) {
                             line.forEach { app ->
+                                val moving = editing == app.packageName
                                 AppTileView(
                                     app,
                                     dim = editing != null && app.packageName in state.hidden,
-                                    selected = editing == app.packageName,
+                                    selected = moving,
                                     fancy = fancy,
-                                    modifier = firstMod(),
+                                    modifier = firstMod().then(if (moving) moveMod(app.packageName) else Modifier),
                                     onFocused = focusOn,
-                                    onClick = { if (editing != null) onEdit(app.packageName) else onLaunch(app) },
+                                    onClick = { if (moving) onCloseEdit() else if (editing == null) onLaunch(app) },
                                     onLongClick = { if (editing == null) onAppMenu(app.packageName) },
                                 )
                             }
@@ -344,24 +358,23 @@ internal fun HomeScreen(
         // Edit panels float over the bottom edge, inside the safe area.
         val panelMod = Modifier.align(Alignment.BottomCenter).padding(horizontal = SafeH, vertical = SafeV)
         if (editing != null) {
-            val isHidden = editing in state.hidden
-            EditPanel(fancy, panelMod) {
-                ActionButton(stringResource(R.string.home_edit_left), fancy) { onMove(editing, -1) }
-                ActionButton(stringResource(R.string.home_edit_right), fancy) { onMove(editing, 1) }
-                if (isHidden) ActionButton(stringResource(R.string.home_edit_show), fancy) { onHide(editing, false) }
-                ActionButton(stringResource(R.string.home_edit_done), fancy, onClick = onCloseEdit)
-            }
+            Text(
+                stringResource(R.string.home_move_hint),
+                panelMod.background(Color(0xF0101318), RoundedCornerShape(20.dp)).padding(horizontal = 24.dp, vertical = 12.dp),
+                color = Color.White, fontSize = TvType.Body, fontWeight = FontWeight.Medium,
+            )
         }
         state.editingFavorite?.let { key ->
-            EditPanel(fancy, panelMod) {
+            ModalMenu(favoriteTitle(key, state), fancy) { first ->
                 if (!state.favoritesSuggested) {
-                    ActionButton(stringResource(R.string.home_edit_left), fancy) { onMoveFavorite(key, -1) }
-                    ActionButton(stringResource(R.string.home_edit_right), fancy) { onMoveFavorite(key, 1) }
+                    MenuButton(stringResource(R.string.home_edit_left), fancy, first) { onMoveFavorite(key, -1) }
+                    MenuButton(stringResource(R.string.home_edit_right), fancy) { onMoveFavorite(key, 1) }
                 }
-                ActionButton(stringResource(if (key in state.favoriteKeys) R.string.home_fav_remove else R.string.home_fav_add), fancy) {
-                    onToggleFavorite(key)
-                }
-                ActionButton(stringResource(R.string.home_edit_done), fancy) { onEditFavorite(null) }
+                MenuButton(
+                    stringResource(if (key in state.favoriteKeys) R.string.home_fav_remove else R.string.home_fav_add), fancy,
+                    if (state.favoritesSuggested) first else Modifier,
+                ) { onEditFavorite(null); onToggleFavorite(key) }
+                MenuButton(stringResource(R.string.home_edit_done), fancy) { onEditFavorite(null) }
             }
         }
 
@@ -541,6 +554,16 @@ private fun Clock() {
     )
 }
 
+/** The name of a favorite for the title of its menu. */
+@Composable
+private fun favoriteTitle(key: String, state: HomeState): String = when {
+    key.startsWith(Favorites.APP) -> state.editTiles.firstOrNull { it.packageName == key.removePrefix(Favorites.APP) }?.label
+    key.startsWith(Favorites.INPUT) -> state.inputs.firstOrNull { it.id == key.removePrefix(Favorites.INPUT) }?.label
+    key.startsWith(Favorites.TELIK) ->
+        TvHomeEntry.entries.firstOrNull { it.name == key.removePrefix(Favorites.TELIK) }?.let { telikCardText(it, state.telik).first }
+    else -> null
+} ?: key
+
 /** A menu row: all rows of a menu have one width. */
 @Composable
 private fun MenuButton(label: String, fancy: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) =
@@ -563,14 +586,6 @@ private fun ModalMenu(title: String, fancy: Boolean, content: @Composable (Modif
             content(Modifier.focusRequester(first))
         }
     }
-}
-
-@Composable
-private fun EditPanel(fancy: Boolean, modifier: Modifier, content: @Composable () -> Unit) {
-    Row(
-        modifier.glassPanel(RoundedCornerShape(20.dp), fancy).horizontalScroll(rememberScrollState()).padding(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) { content() }
 }
 
 @Composable
