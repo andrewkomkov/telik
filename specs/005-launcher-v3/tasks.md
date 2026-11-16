@@ -32,8 +32,9 @@
 
 ## Phase 3: Recent, new and installs (US3, P2)
 
-- [ ] T030 [US3] Add the Recent row from `LaunchLog`, and from `UsageStatsManager` when usage access is granted.
-- [ ] T031 [US3] Add the "New" and "Updated" badges. Add unit tests.
+- [x] T030 [US3] Add the Recent row from `LaunchLog`. Add unit tests.
+- [ ] T034 [US3] With usage access, add the apps from `UsageStatsManager` to the Recent row. Do T002 first.
+- [x] T031 [US3] Add the "New" and "Updated" badges. Add unit tests.
 - [ ] T032 [US3] Add the install progress tile.
 - [ ] T033 [US3] Check on the TV: install an app from Google Play and watch the tile.
 

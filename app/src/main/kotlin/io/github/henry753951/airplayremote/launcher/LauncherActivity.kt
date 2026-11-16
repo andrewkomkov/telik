@@ -248,8 +248,15 @@ class LauncherActivity : ComponentActivity() {
             favorites, apps.mapTo(HashSet()) { it.packageName }, state.inputs.mapTo(HashSet()) { it.id },
             TvHomeEntry.entries.mapTo(HashSet()) { it.name },
         )
-        val shown = own.ifEmpty { Favorites.suggested(launches, tiles.mapTo(HashSet()) { it.packageName }) }
+        val visible = tiles.mapTo(HashSet()) { it.packageName }
+        val shown = own.ifEmpty { Favorites.suggested(launches, visible) }
+        val now = System.currentTimeMillis()
+        val lastLaunch = launches.associate { it.packageName to it.lastMillis }
         state = state.copy(
+            recent = Recent.pick(launches, visible, shown.filter { it.startsWith(Favorites.APP) }.mapTo(HashSet()) { it.removePrefix(Favorites.APP) }),
+            badges = apps.mapNotNull { a ->
+                Recent.badge(a.installedMillis, a.updatedMillis, lastLaunch[a.packageName], now)?.let { a.packageName to it }
+            }.toMap(),
             tiles = tiles,
             editTiles = TileLayout.arrange(apps, layout, includeHidden = true),
             hidden = layout.hidden,

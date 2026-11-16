@@ -20,6 +20,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.CompositingStrategy
 import io.github.henry753951.airplayremote.launcher.Ambient
+import io.github.henry753951.airplayremote.launcher.Recent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.layout.onPlaced
@@ -142,6 +143,9 @@ data class HomeState(
     val nowPlayingHint: Boolean = false,
     /** Package of the app menu that a long OK opened. */
     val appMenu: String? = null,
+    /** 005 US3: packages of the Recent row, last used first. */
+    val recent: List<String> = emptyList(),
+    val badges: Map<String, Recent.Badge> = emptyMap(),
 )
 
 
@@ -321,7 +325,7 @@ internal fun HomeScreen(
                                 when {
                                     key.startsWith(Favorites.APP) -> byPackage[key.removePrefix(Favorites.APP)]?.let { app ->
                                         AppTileView(
-                                            app, dim = false, selected = selected, fancy = fancy, modifier = firstMod().then(back),
+                                            app, dim = false, selected = selected, fancy = fancy, badge = null, modifier = firstMod().then(back),
                                             onFocused = focusOn,
                                             onClick = { if (state.editingFavorite != null) onEditFavorite(key) else onLaunch(app) },
                                             onLongClick = { origin = tag; onAppMenu(app.packageName) },
@@ -340,12 +344,31 @@ internal fun HomeScreen(
                         }
                     }
 
-                    // Rows 1 and down: all apps in a grid of five columns (HIG: 320 pt tiles, 40 pt gaps).
+                    // Row 1: Recent (US3), only outside edit mode and only when there is something to show.
+                    val recentApps = if (editing == null) state.recent.mapNotNull { byPackage[it] } else emptyList()
+                    val gridStart = if (recentApps.isEmpty()) 1 else 2
+                    if (recentApps.isNotEmpty()) {
+                        RowTitle(stringResource(R.string.home_recent_title))
+                        TileRow(1, rowTops, onRowFocus) {
+                            recentApps.forEach { app ->
+                                val tag = "recent:" + app.packageName
+                                AppTileView(
+                                    app, dim = false, selected = false, fancy = fancy, badge = null,
+                                    modifier = firstMod().then(if (origin == tag) Modifier.focusRequester(originFocus) else Modifier),
+                                    onFocused = focusOn,
+                                    onClick = { onLaunch(app) },
+                                    onLongClick = { origin = tag; onAppMenu(app.packageName) },
+                                )
+                            }
+                        }
+                    }
+
+                    // Then all apps in a grid of five columns (HIG: 320 pt tiles, 40 pt gaps).
                     RowTitle(stringResource(R.string.home_apps_title))
                     val gridLines = gridTiles.chunked(Columns)
                     val gridRows = gridLines.size
                     gridLines.forEachIndexed { r, line ->
-                        TileRow(1 + r, rowTops, onRowFocus, scrollable = false) {
+                        TileRow(gridStart + r, rowTops, onRowFocus, scrollable = false) {
                             line.forEach { app ->
                                 val moving = editing == app.packageName
                                 AppTileView(
@@ -353,6 +376,7 @@ internal fun HomeScreen(
                                     dim = editing != null && app.packageName in state.hidden,
                                     selected = moving,
                                     fancy = fancy,
+                                    badge = state.badges[app.packageName],
                                     modifier = firstMod().then(if (moving) moveMod(app.packageName) else Modifier)
                                         .then(if (origin == "app:" + app.packageName) Modifier.focusRequester(originFocus) else Modifier),
                                     onFocused = focusOn,
@@ -365,7 +389,7 @@ internal fun HomeScreen(
                     // Last row: Telik, under the apps, as the user asked. Its state shows in the title area on focus.
                     if (editing == null) {
                         RowTitle(stringResource(R.string.tv_home_title))
-                        TileRow(1 + gridRows, rowTops, onRowFocus) {
+                        TileRow(gridStart + gridRows, rowTops, onRowFocus) {
                             TvHomeEntry.entries.forEach { entry ->
                                 val (title, subtitle, active) = telikCardText(entry, state.telik)
                                 TelikTile(entry, title, subtitle, active, fancy, firstMod(), focusOn, { onToggleFavorite(Favorites.TELIK + entry.name) }) {
@@ -465,6 +489,7 @@ private val ShelfHeight = 124.dp
 private val RowPivot = 40.dp
 private val TileShape = RoundedCornerShape(10.dp)
 private val ActiveDot = Color(0xFF34C759)
+private val BadgeBlue = Color(0xFF0A84FF)
 
 /** tvOS text styles (Medium weight) at 0.5 dp per pt. */
 private object TvType {
@@ -584,8 +609,7 @@ private fun Backdrop(info: FocusInfo?, np: NowPlaying?, fancy: Boolean) {
 
 /** Fades the Top Shelf art to the left (title) and to the bottom (rows). */
 private fun Modifier.shelfFade(fancy: Boolean): Modifier =
-    graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen; alpha = 0.8f }
-        .then(if (fancy) Modifier.blur(2.dp) else Modifier)
+    graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen; alpha = if (fancy) 0.8f else 0.6f }
         .drawWithContent {
             drawContent()
             drawRect(Brush.horizontalGradient(0f to Color.Transparent, 0.55f to Color.Black), blendMode = BlendMode.DstIn)
@@ -694,6 +718,7 @@ private fun AppTileView(
     dim: Boolean,
     selected: Boolean,
     fancy: Boolean,
+    badge: Recent.Badge?,
     modifier: Modifier,
     onFocused: (FocusInfo) -> Unit,
     onClick: () -> Unit,
@@ -732,10 +757,20 @@ private fun AppTileView(
                 } else {
                     Text(app.label, color = Color.White, fontSize = TvType.Body, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
+                if (badge != null) TileBadge(badge, Modifier.align(Alignment.TopEnd))
             }
         }
         FocusLabel(app.label, focused)
     }
+}
+
+@Composable
+private fun TileBadge(badge: Recent.Badge, modifier: Modifier) {
+    Text(
+        stringResource(if (badge == Recent.Badge.NEW) R.string.home_badge_new else R.string.home_badge_updated),
+        modifier.padding(6.dp).background(BadgeBlue, RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 1.dp),
+        color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1,
+    )
 }
 
 @Composable

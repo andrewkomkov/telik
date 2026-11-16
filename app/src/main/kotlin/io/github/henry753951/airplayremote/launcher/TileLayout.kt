@@ -1,7 +1,13 @@
 package io.github.henry753951.airplayremote.launcher
 
 /** One launchable app. */
-data class AppTile(val packageName: String, val label: String, val activity: String)
+data class AppTile(
+    val packageName: String,
+    val label: String,
+    val activity: String,
+    val installedMillis: Long = 0,
+    val updatedMillis: Long = 0,
+)
 
 /** Order and hidden flags as stored on the TV. */
 data class HomeLayout(val order: List<String> = emptyList(), val hidden: Set<String> = emptySet())

@@ -2,7 +2,7 @@
 
 **Feature Branch**: `feat/launcher-v3`
 **Created**: 2026-11-03
-**Status**: In progress. Stories 1, 2, 7 and 8 and the app menu have code. The checks on the TV are open.
+**Status**: In progress. Stories 1, 2, 7, 8, the app menu and the basic form of story 3 have code. The checks on the TV are open.
 **Input**: The user asked for launcher version 3: favorites and a better integration with the installed apps, as far as the Android TV API allows.
 
 <!-- ASD-STE100 deviation: the section headings and the Given/When/Then scenarios follow the
@@ -141,6 +141,7 @@ The user selected three changes: a Top Shelf as on tvOS, a backdrop that takes t
 - Two media sessions are active. The card shows the session that played last.
 - The user denies `READ_TV_LISTINGS`. Story 5 stays off, and Telik does not ask again on each start.
 - The app list changes while edit mode is open. Edit mode keeps the focus on the same app.
+- An app in the Favorites row does not show again in the Recent row.
 
 ## Requirements *(mandatory)*
 
