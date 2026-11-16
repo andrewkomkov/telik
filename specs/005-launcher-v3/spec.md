@@ -2,7 +2,7 @@
 
 **Feature Branch**: `feat/launcher-v3`
 **Created**: 2026-11-03
-**Status**: Draft. Planned, no code.
+**Status**: In progress. Stories 1, 2, 7 and 8 and the app menu have code. The checks on the TV are open.
 **Input**: The user asked for launcher version 3: favorites and a better integration with the installed apps, as far as the Android TV API allows.
 
 <!-- ASD-STE100 deviation: the section headings and the Given/When/Then scenarios follow the
@@ -117,6 +117,24 @@ The user asked for a Home screen that looks like Apple TV and follows the Apple 
 
 ---
 
+### User Story 8 - A richer Home screen (Priority: P1)
+
+The user found the Home screen of v3 too plain on 2026-11-16: a flat dark backdrop, an empty top half and flat tiles with a white frame.
+The user selected three changes: a Top Shelf as on tvOS, a backdrop that takes the color of the item in focus, and tiles with depth.
+
+**Why this priority**: The Home screen is the only Telik interface that the user sees each day.
+
+**Independent Test**: Move the focus from app to app. The backdrop changes color with each app, the top half shows the art of the item in focus, and the focused tile has no white frame.
+
+**Acceptance Scenarios**:
+
+1. **Given** an app in focus, **When** the focus stays, **Then** the backdrop glows in the main color of its banner or icon.
+2. **Given** an item in focus or a media session, **When** the screen shows it, **Then** the top right of the screen shows its art large, and the art fades to the title on the left.
+3. **Given** a tile in focus with effects on, **When** the screen shows it, **Then** the tile grows, casts a shadow in its own color and shows a light sweep, and it has no white frame.
+4. **Given** effects off or slow frames, **When** the screen shows a focused tile, **Then** the plain white frame shows as before.
+
+---
+
 ### Edge Cases
 
 - A favorite is an HDMI input that the TV no longer reports. The entry stays hidden until the input comes back.
@@ -146,6 +164,9 @@ The user asked for a Home screen that looks like Apple TV and follows the Apple 
 - **FR-014**: Only the tile in focus MUST show its label. A focused tile MUST grow only into the gap.
 - **FR-015**: The row of the Telik entries MUST sit under the app grid. The user asked for this on 2026-11-03.
 - **FR-016**: The clock MUST stay on one line. When the top bar is too wide, the top bar scrolls.
+- **FR-019**: Telik MUST find the main color of each tile art on the TV, without an image library, and MUST NOT find it on the main thread.
+- **FR-020**: The backdrop MUST glow in the color of the item in focus and MUST change color with an animation of 400 ms or more. The Top Shelf MUST show the art of the item in focus, or of the media that plays, in the top right.
+- **FR-021**: With effects on, a focused tile MUST show depth (growth, a colored shadow, a light sweep) and no white frame. With effects off, the white frame stays.
 
 ### Key Entities
 

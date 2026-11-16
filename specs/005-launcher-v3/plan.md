@@ -16,6 +16,7 @@
 - `launcher/Installs.kt`: `PackageInstaller.SessionCallback` for the progress tile.
 - `launcher/Groups.kt`: category to group, with user overrides in DataStore.
 - `launcher/TvContent.kt`: `TvContract` reads behind `READ_TV_LISTINGS`.
+- `launcher/Ambient.kt` (US8): the main color of tile art from a 24 x 14 pixel sample. `BannerCache` keeps it with the art.
 - `launcher/ui/HomeScreen.kt`: rows in this order: shortcuts, now playing, favorites, Telik cards, recent, apps with the group filter.
 
 ## Pure logic with unit tests
@@ -24,6 +25,7 @@
 - "New" and "Updated" badges from install times and the launch record.
 - Merge of the listener list (the same rule as `AccessibilityRestore.merged`).
 - Category to group.
+- Main color of tile art (US8): hue buckets weighted by saturation and brightness. Gray, white and black pixels do not count.
 
 ## Performance
 
