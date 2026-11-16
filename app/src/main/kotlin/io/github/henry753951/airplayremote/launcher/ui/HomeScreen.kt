@@ -11,6 +11,17 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
+import io.github.henry753951.airplayremote.launcher.Ambient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalContext
@@ -504,38 +515,84 @@ private fun TileRow(
     }
 }
 
-/** Full-screen blurred art of the item in focus, under a dark scrim, as on Apple TV. */
+/**
+ * Backdrop (US8): a glow in the main color of the item in focus, and its art large in the top
+ * right (the Top Shelf), faded toward the title and the rows.
+ */
 @Composable
 private fun Backdrop(info: FocusInfo?, np: NowPlaying?, fancy: Boolean) {
-    Box(Modifier.fillMaxSize()) {
-        val npArt = np?.art
-        Crossfade(targetState = npArt ?: info?.pkg ?: info?.entry, animationSpec = tween(450), label = "backdrop") { key ->
-            val blur = if (fancy) Modifier.blur(48.dp) else Modifier
+    val npArt = np?.art
+    val npColor by produceState<Int?>(null, npArt) {
+        value = npArt?.let { withContext(Dispatchers.Default) { BannerCache.mainColor(it) } }
+    }
+    val pkg = info?.pkg
+    val activity = info?.activity
+    val appColor = if (pkg != null && activity != null) rememberArt(pkg, activity).value?.color else null
+    val target = when {
+        npArt != null -> npColor?.let { Color(it) }
+        pkg != null -> appColor?.let { Color(it) }
+        else -> info?.entry?.accent()?.first()
+    } ?: IdleGlow
+    val glow by animateColorAsState(target, tween(if (fancy) 600 else 0), label = "glow")
+
+    Box(
+        Modifier.fillMaxSize().drawBehind {
+            drawRect(
+                Brush.radialGradient(
+                    listOf(glow.copy(alpha = 0.55f), glow.copy(alpha = 0.18f), Color.Transparent),
+                    center = Offset(size.width * 0.8f, size.height * 0.1f), radius = size.width * 0.8f,
+                ),
+            )
+            drawRect(
+                Brush.radialGradient(
+                    listOf(glow.copy(alpha = 0.22f), Color.Transparent),
+                    center = Offset(size.width * 0.05f, size.height * 1.05f), radius = size.width * 0.6f,
+                ),
+            )
+        },
+    ) {
+        Crossfade(
+            targetState = npArt ?: pkg ?: info?.entry, animationSpec = tween(450), label = "shelf",
+            modifier = Modifier.align(Alignment.TopEnd).fillMaxWidth(0.68f).fillMaxHeight(0.78f),
+        ) { key ->
+            val shelf = Modifier.fillMaxSize().shelfFade(fancy)
             when {
                 key is android.graphics.Bitmap -> {
                     val image = remember(key) { key.asImageBitmap() }
-                    Image(image, null, Modifier.fillMaxSize().then(blur).graphicsLayer { alpha = 0.55f }, contentScale = ContentScale.Crop)
+                    Image(image, null, shelf, contentScale = ContentScale.Crop)
                 }
-                key is String && info?.activity != null -> {
-                    val art by rememberArt(key, info.activity)
-                    art?.let {
-                        Image(it.image, null, Modifier.fillMaxSize().then(blur).graphicsLayer { alpha = 0.4f }, contentScale = ContentScale.Crop)
-                    }
+                key is String && activity != null -> {
+                    val hero by rememberHero(key, activity)
+                    hero?.let { Image(it, null, shelf, contentScale = ContentScale.Crop) }
                 }
-                key is TvHomeEntry -> Box(
-                    Modifier.fillMaxSize().graphicsLayer { alpha = 0.35f }.background(Brush.linearGradient(key.accent())),
-                )
+                key is TvHomeEntry -> Box(shelf.background(Brush.linearGradient(key.accent())), contentAlignment = Alignment.Center) {
+                    Box(Modifier.padding(start = 120.dp).graphicsLayer { scaleX = 4f; scaleY = 4f; alpha = 0.9f }) { TelikGlyph(key) }
+                }
                 else -> Box(Modifier.fillMaxSize())
             }
         }
-        // Scrim: the text stays readable on any art.
+        // Scrim: white text stays readable on any art.
         Box(
             Modifier.fillMaxSize().background(
-                Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.35f), Color.Black.copy(alpha = 0.7f), Color.Black.copy(alpha = 0.9f))),
+                Brush.verticalGradient(
+                    0f to Color.Black.copy(alpha = 0.2f), 0.45f to Color.Black.copy(alpha = 0.45f), 1f to Color.Black.copy(alpha = 0.85f),
+                ),
             ),
         )
     }
 }
+
+/** Fades the Top Shelf art to the left (title) and to the bottom (rows). */
+private fun Modifier.shelfFade(fancy: Boolean): Modifier =
+    graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen; alpha = 0.8f }
+        .then(if (fancy) Modifier.blur(2.dp) else Modifier)
+        .drawWithContent {
+            drawContent()
+            drawRect(Brush.horizontalGradient(0f to Color.Transparent, 0.55f to Color.Black), blendMode = BlendMode.DstIn)
+            drawRect(Brush.verticalGradient(0.35f to Color.Black, 1f to Color.Transparent), blendMode = BlendMode.DstIn)
+        }
+
+private val IdleGlow = Color(0xFF2B4C7E)
 
 @Composable
 private fun FocusTitle(focus: FocusInfo?, isDefault: Boolean, telik: TelikStatus) {
@@ -653,10 +710,16 @@ private fun AppTileView(
             onClick = onClick,
             onLongClick = onLongClick,
             grow = FocusGrow,
+            glow = art?.color?.let { Color(it) } ?: Color.Black,
         ) {
             val a = art
+            val face = when {
+                a?.isBanner == true -> Brush.linearGradient(listOf(Color.Black, Color.Black))
+                a?.color != null -> Brush.linearGradient(listOf(Color(Ambient.shade(a.color, 0.42f)), Color(Ambient.shade(a.color, 0.22f))))
+                else -> Brush.linearGradient(listOf(Color.White.copy(alpha = 0.16f), Color.White.copy(alpha = 0.08f)))
+            }
             Box(
-                Modifier.fillMaxSize().background(if (a?.isBanner == true) Color.Black else Color.White.copy(alpha = 0.12f))
+                Modifier.fillMaxSize().background(face)
                     .graphicsLayer { alpha = if (dim) 0.35f else 1f },
                 contentAlignment = Alignment.Center,
             ) {
@@ -705,7 +768,10 @@ private fun TelikTile(
 ) {
     var focused by remember { mutableStateOf(false) }
     Column(Modifier.onFocusChanged { focused = it.hasFocus }, horizontalAlignment = Alignment.CenterHorizontally) {
-        FocusTile(fancy, modifier.size(TileW, TileH), false, { onFocused(FocusInfo(title, subtitle, entry = entry)) }, onClick, onLongClick, grow = FocusGrow) {
+        FocusTile(
+            fancy, modifier.size(TileW, TileH), false, { onFocused(FocusInfo(title, subtitle, entry = entry)) }, onClick, onLongClick,
+            grow = FocusGrow, glow = entry.accent().last(),
+        ) {
             Box(Modifier.fillMaxSize().background(Brush.linearGradient(entry.accent())), contentAlignment = Alignment.Center) {
                 Box(Modifier.graphicsLayer { scaleX = 1.2f; scaleY = 1.2f }) { TelikGlyph(entry) }
                 if (active) {
@@ -897,9 +963,15 @@ private fun FocusTile(
     grow: Float = 1.14f,
     // A shadow shows through translucent glass as a dark band, so glass tiles go without it.
     shadow: Boolean = true,
+    glow: Color = Color.Black,
     content: @Composable () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
+    // The light sweep passes once on each focus. It is read only in the draw phase (FR-018).
+    val sweep = remember { Animatable(1f) }
+    LaunchedEffect(focused, fancy) {
+        if (focused && fancy) { sweep.snapTo(0f); sweep.animateTo(1f, tween(900, easing = FastOutSlowInEasing)) }
+    }
     var longDone by remember { mutableStateOf(false) }
     // A key up counts only after a key down on this tile. After a long OK opens a menu, the key up
     // goes to the first menu item, and it must not press that item.
@@ -914,7 +986,9 @@ private fun FocusTile(
                     scaleX = s; scaleY = s
                     rotationX = -3f * t
                     cameraDistance = 16f * density
-                    shadowElevation = if (shadow) 24f * t else 0f
+                    shadowElevation = if (shadow) 36f * t else 0f
+                    ambientShadowColor = glow
+                    spotShadowColor = glow
                     shape = TileShape
                     clip = false
                 }
@@ -949,22 +1023,32 @@ private fun FocusTile(
             .clip(TileShape)
             .drawWithContent {
                 drawContent()
-                if (t > 0f) {
-                    if (fancy) {
-                        // light sweep across the face
+                if (t > 0f && fancy) {
+                    // Depth without a frame (US8): a soft top highlight and one sweep of light.
+                    drawRect(Brush.verticalGradient(0f to Color.White.copy(alpha = 0.16f * t), 0.45f to Color.Transparent))
+                    val p = sweep.value
+                    if (p < 1f) {
+                        val x = -size.width + p * size.width * 3f
                         drawRect(
                             Brush.linearGradient(
-                                listOf(Color.Transparent, Color.White.copy(alpha = 0.22f * t), Color.Transparent),
-                                start = androidx.compose.ui.geometry.Offset(0f, 0f),
-                                end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                                listOf(Color.Transparent, Color.White.copy(alpha = 0.28f * t), Color.Transparent),
+                                start = Offset(x, 0f), end = Offset(x + size.width * 0.6f, size.height),
                             ),
                         )
                     }
-                    // plain frame, also the fallback look
+                    if (selected) {
+                        drawRoundRect(
+                            Color(0xFF5AC8FA),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4.dp.toPx()),
+                        )
+                    }
+                } else if (t > 0f) {
+                    // Plain look (effects off or slow frames): the white frame.
                     drawRoundRect(
                         Color.White.copy(alpha = t),
                         cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()),
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = (if (fancy) 2.dp else 4.dp).toPx()),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4.dp.toPx()),
                     )
                 } else if (selected) {
                     drawRoundRect(
@@ -975,10 +1059,4 @@ private fun FocusTile(
                 }
             },
     ) { content() }
-}
-
-/** Stable color per package for apps without a banner. */
-private fun tileColor(pkg: String): Color {
-    val h = (pkg.hashCode().toLong() and 0xFFFFFFFFL) % 360
-    return Color.hsv(h.toFloat(), 0.45f, 0.35f)
 }
