@@ -360,4 +360,10 @@
     <string name="setting_shortcuts_example">在「捷徑」中加入「取得 URL 的內容」，方法 POST，標頭 Authorization: Bearer 加上權杖。範例：%1$s。其他路徑：/v1/input?hdmi=1、/v1/message?text=…、/v1/key?name=pause。</string>
     <string name="setting_shortcuts_renew">新權杖</string>
     <string name="setting_shortcuts_renew_desc">舊權杖將失效。</string>
+    <string name="tv_album">iCloud 共享相簿</string>
+    <string name="tv_album_desc">螢幕保護程式會在影片之間顯示其中的照片。請在 iPhone「照片」中為相簿開啟「公開網站」。</string>
+    <string name="tv_album_set">已設定</string>
+    <string name="tv_album_none">無</string>
+    <string name="tv_album_hint">透過 Apple TV 遙控器用 iPhone 鍵盤貼上連結。留空即關閉。</string>
+    <string name="tv_album_error">這不是 iCloud 共享相簿連結。</string>
 </resources>

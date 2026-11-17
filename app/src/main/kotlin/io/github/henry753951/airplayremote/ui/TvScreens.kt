@@ -1007,7 +1007,79 @@ private fun powerItems(viewModel: MainViewModel): List<TvItem> {
     ),
     toggle(viewModel, Prefs.KEEP_SCREEN_ON, R.string.setting_keep_screen_on, R.string.setting_keep_screen_on_desc),
     toggle(viewModel, Prefs.AUTO_START, R.string.setting_auto_start, R.string.setting_auto_start_desc),
-)
+) + albumItems()
+}
+
+/** 006 US5: the link of an iCloud shared album for the screensaver. The link stays on the TV. */
+@Composable
+private fun albumItems(): List<TvItem> {
+    val ctx = LocalContext.current
+    var link by remember { mutableStateOf(io.github.henry753951.airplayremote.screensaver.ScreensaverStore.albumLink(ctx)) }
+    var editing by remember { mutableStateOf(false) }
+    if (editing) {
+        TvAlbumDialog(
+            initial = link.orEmpty(),
+            onSave = {
+                io.github.henry753951.airplayremote.screensaver.ScreensaverStore.setAlbumLink(ctx, it)
+                link = io.github.henry753951.airplayremote.screensaver.ScreensaverStore.albumLink(ctx)
+                editing = false
+            },
+            onDismiss = { editing = false },
+        )
+    }
+    return listOf(
+        TvItem(
+            stringResource(R.string.tv_album), stringResource(R.string.tv_album_desc),
+            value = stringResource(if (link != null) R.string.tv_album_set else R.string.tv_album_none),
+            onClick = { editing = true },
+        ),
+    )
+}
+
+@Composable
+private fun TvAlbumDialog(initial: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+    var text by remember { mutableStateOf(initial) }
+    val fieldFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { fieldFocus.requestFocusUntilLanded() }
+    val valid = text.isBlank() || io.github.henry753951.airplayremote.screensaver.SharedAlbum.token(text) != null
+    val save = { if (valid) onSave(text.trim()) }
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            Modifier
+                .widthIn(min = 460.dp, max = 680.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(TvTile)
+                .padding(32.dp)
+        ) {
+            Text(stringResource(R.string.tv_album), color = TvText, fontSize = 24.sp, fontWeight = FontWeight.Light)
+            Spacer(Modifier.height(20.dp))
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it.take(300) },
+                singleLine = true,
+                isError = !valid,
+                placeholder = { Text("https://www.icloud.com/sharedalbum/#…", color = TvMuted) },
+                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 18.sp, color = TvText),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { save() }),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = TvText, unfocusedBorderColor = Color(0x55FFFFFF), cursorColor = TvText,
+                    errorBorderColor = TvError
+                ),
+                modifier = Modifier.fillMaxWidth().focusRequester(fieldFocus)
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                stringResource(if (valid) R.string.tv_album_hint else R.string.tv_album_error),
+                color = if (valid) TvMuted else TvError, fontSize = 15.sp,
+            )
+            Spacer(Modifier.height(24.dp))
+            Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TvPill(stringResource(R.string.tv_cancel), onDismiss)
+                TvPill(stringResource(R.string.tv_save), { save() }, enabled = valid)
+            }
+        }
+    }
 }
 
 @Composable

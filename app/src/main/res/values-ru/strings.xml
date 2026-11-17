@@ -392,4 +392,10 @@
     <string name="setting_shortcuts_example">В «Быстрых командах» добавьте «Получить содержимое URL», метод POST, заголовок Authorization: Bearer и токен. Пример: %1$s. Другие адреса: /v1/input?hdmi=1, /v1/message?text=…, /v1/key?name=pause.</string>
     <string name="setting_shortcuts_renew">Новый токен</string>
     <string name="setting_shortcuts_renew_desc">Старый токен перестанет работать.</string>
+    <string name="tv_album">Общий альбом iCloud</string>
+    <string name="tv_album_desc">Заставка показывает его фото между видео. В «Фото» на iPhone у альбома должен быть включён «Общедоступный веб-сайт».</string>
+    <string name="tv_album_set">Задан</string>
+    <string name="tv_album_none">Нет</string>
+    <string name="tv_album_hint">Вставьте ссылку с клавиатуры iPhone через пульт Apple TV. Пустое поле выключает альбом.</string>
+    <string name="tv_album_error">Это не ссылка на общий альбом iCloud.</string>
 </resources>

@@ -392,4 +392,10 @@
     <string name="setting_shortcuts_example">In Shortcuts, add “Get Contents of URL”, method POST, header Authorization: Bearer and the token. Example: %1$s. Other paths: /v1/input?hdmi=1, /v1/message?text=…, /v1/key?name=pause.</string>
     <string name="setting_shortcuts_renew">New token</string>
     <string name="setting_shortcuts_renew_desc">The old token stops working.</string>
+    <string name="tv_album">iCloud shared album</string>
+    <string name="tv_album_desc">The screensaver shows its photos between the videos. The album needs Public Website on in Photos on the iPhone.</string>
+    <string name="tv_album_set">Set</string>
+    <string name="tv_album_none">None</string>
+    <string name="tv_album_hint">Paste the link with the iPhone keyboard from the Apple TV remote. Leave empty to turn off.</string>
+    <string name="tv_album_error">This is not an iCloud shared album link.</string>
 </resources>

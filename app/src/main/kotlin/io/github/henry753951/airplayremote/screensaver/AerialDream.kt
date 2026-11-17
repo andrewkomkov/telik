@@ -9,6 +9,7 @@ import android.view.Gravity
 import android.view.SurfaceView
 import android.view.View
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.TextClock
 import android.widget.TextView
 import androidx.media3.common.MediaItem
@@ -36,6 +37,10 @@ class AerialDream : DreamService() {
     private lateinit var place: TextView
     private var queue: List<Aerial> = emptyList()
     private var index = 0
+    /** 006 US5: photos of the shared album, shown in breaks between the videos. */
+    private lateinit var photo: ImageView
+    private var photos: List<String> = emptyList()
+    private var photoIndex = 0
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -46,6 +51,8 @@ class AerialDream : DreamService() {
         // A SurfaceView goes to a hardware video layer at the panel size (4K), past the 1080p UI and the GPU.
         video = SurfaceView(this)
         root.addView(video, FrameLayout.LayoutParams(-1, -1))
+        photo = ImageView(this).apply { scaleType = ImageView.ScaleType.CENTER_CROP; visibility = View.GONE }
+        root.addView(photo, FrameLayout.LayoutParams(-1, -1))
         cover = View(this).apply { setBackgroundColor(Color.BLACK) }
         root.addView(cover, FrameLayout.LayoutParams(-1, -1))
         val clock = TextClock(this).apply {
@@ -74,8 +81,15 @@ class AerialDream : DreamService() {
         scope = s
         s.launch {
             val list = withContext(Dispatchers.IO) { runCatching { AerialCatalog.load(applicationContext) }.getOrDefault(emptyList()) }
-            Log.i(TAG, "aerial videos: ${list.size}")
-            if (list.isEmpty()) return@launch
+            photos = withContext(Dispatchers.IO) {
+                ScreensaverStore.albumLink(applicationContext)?.let { SharedAlbum.load(it) }.orEmpty()
+            }.shuffled()
+            Log.i(TAG, "aerial videos: ${list.size}, album photos: ${photos.size}")
+            if (list.isEmpty()) {
+                // Without the videos, the album alone; without both, the clock alone.
+                if (photos.isNotEmpty()) showPhotos(Int.MAX_VALUE)
+                return@launch
+            }
             queue = list.shuffled()
             index = 0
             player = ExoPlayer.Builder(this@AerialDream).build().apply {
@@ -116,8 +130,34 @@ class AerialDream : DreamService() {
 
     private fun next() {
         index++
-        cover.animate().alpha(1f).setDuration(FADE_MS).withEndAction { play() }.start()
         place.animate().alpha(0f).setDuration(FADE_MS).start()
+        cover.animate().alpha(1f).setDuration(FADE_MS).withEndAction {
+            if (photos.isNotEmpty()) showPhotos(PHOTOS_PER_BREAK) else play()
+        }.start()
+    }
+
+    /** Shows [count] album photos, 10 seconds each, then the next video. */
+    private fun showPhotos(count: Int) {
+        val s = scope ?: return
+        val url = photos[photoIndex++ % photos.size]
+        s.launch {
+            val bmp = withContext(Dispatchers.IO) {
+                io.github.henry753951.airplayremote.launcher.ui.PosterCache.loadLarge(applicationContext, url)
+            }
+            if (bmp != null) {
+                photo.setImageBitmap(bmp)
+                photo.visibility = View.VISIBLE
+                cover.animate().alpha(0f).setDuration(FADE_MS).start()
+            }
+            kotlinx.coroutines.delay(if (bmp != null) PHOTO_MS else 0L)
+            cover.animate().alpha(1f).setDuration(FADE_MS).withEndAction {
+                when {
+                    count > 1 -> showPhotos(count - 1)
+                    player != null -> { photo.visibility = View.GONE; photo.setImageDrawable(null); play() }
+                    else -> showPhotos(Int.MAX_VALUE)
+                }
+            }.start()
+        }
     }
 
     override fun onDreamingStopped() {
@@ -132,5 +172,7 @@ class AerialDream : DreamService() {
     private companion object {
         const val TAG = "AerialDream"
         const val FADE_MS = 900L
+        const val PHOTO_MS = 10_000L
+        const val PHOTOS_PER_BREAK = 6
     }
 }
