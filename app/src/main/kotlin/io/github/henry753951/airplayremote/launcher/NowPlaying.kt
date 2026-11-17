@@ -30,6 +30,9 @@ data class NowPlaying(
     val canNext: Boolean,
     /** `PlaybackState` actions, for the media buttons of the iPhone remote (006 US2). */
     val actions: Long = 0L,
+    /** 008: the length and the position at the time of the update, in ms. */
+    val durationMs: Long = 0L,
+    val positionMs: Long = 0L,
 )
 
 class NowPlayingWatcher(private val context: Context) {
@@ -75,6 +78,16 @@ class NowPlayingWatcher(private val context: Context) {
 
     fun next() { active()?.transportControls?.skipToNext() }
 
+    /** 008: skip by [seconds] from the current position, by a seek of the active session. */
+    fun skipBy(seconds: Double) {
+        val c = active() ?: return
+        val s = c.playbackState ?: return
+        val since = android.os.SystemClock.elapsedRealtime() - s.lastPositionUpdateTime
+        val now = s.position + if (s.state == PlaybackState.STATE_PLAYING) (since * s.playbackSpeed).toLong() else 0L
+        val max = c.metadata?.getLong(MediaMetadata.METADATA_KEY_DURATION)?.takeIf { it > 0 } ?: Long.MAX_VALUE
+        c.transportControls.seekTo((now + (seconds * 1000).toLong()).coerceIn(0L, max))
+    }
+
     private fun watch(list: List<MediaController>) {
         controllers.forEach { it.unregisterCallback(callback) }
         controllers = list
@@ -103,6 +116,12 @@ class NowPlayingWatcher(private val context: Context) {
             playing = c.playbackState?.state == PlaybackState.STATE_PLAYING,
             canNext = (c.playbackState?.actions ?: 0L) and PlaybackState.ACTION_SKIP_TO_NEXT != 0L,
             actions = c.playbackState?.actions ?: 0L,
+            durationMs = m.getLong(MediaMetadata.METADATA_KEY_DURATION),
+            positionMs = c.playbackState?.let { s ->
+                // The position of the last update, moved on by the time since, at the playback speed.
+                val since = android.os.SystemClock.elapsedRealtime() - s.lastPositionUpdateTime
+                (s.position + if (s.state == PlaybackState.STATE_PLAYING) (since * s.playbackSpeed).toLong() else 0L).coerceAtLeast(0L)
+            } ?: 0L,
         )
     }
 

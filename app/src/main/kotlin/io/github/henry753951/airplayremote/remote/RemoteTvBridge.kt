@@ -45,10 +45,24 @@ class RemoteTvBridge(private val context: Context) {
         media.start()
         scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).also { s ->
             s.launch {
-                media.current
-                    .map { np -> MediaFlags.of(np?.actions ?: 0L, np != null) }
+                // An app with no media session, as kino.watch, still gets the media panel while it is
+                // in front: its buttons go as keys (see mediaKey).
+                kotlinx.coroutines.flow.combine(media.current, RemoteState.foreground) { np, front ->
+                    MediaFlags.of(np?.actions ?: 0L, np != null || isPlayer(front))
+                }
                     .distinctUntilChanged()
                     .collect { RemoteNative.nativeSetMedia(it) }
+            }
+            // 008: the now playing card. The art goes as a small JPEG, made off the main thread.
+            s.launch {
+                media.current.collect { np ->
+                    if (np == null) {
+                        RemoteNative.nativeSetNowPlaying(null, null, null, 0, 0, false, null)
+                        return@collect
+                    }
+                    val jpeg = np.art?.let { art -> kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { jpeg(art) } }
+                    RemoteNative.nativeSetNowPlaying(np.title, np.subtitle, np.packageName, np.durationMs, np.positionMs, np.playing, jpeg)
+                }
             }
         }
     }
@@ -59,7 +73,17 @@ class RemoteTvBridge(private val context: Context) {
         runCatching { launcherApps.unregisterCallback(appsChanged) }
         media.stop()
         RemoteNative.nativeSetMedia(MediaFlags.VOLUME)
+        RemoteNative.nativeSetNowPlaying(null, null, null, 0, 0, false, null)
     }
+
+    private fun jpeg(art: android.graphics.Bitmap): ByteArray? = runCatching {
+        val scale = minOf(1f, 600f / maxOf(art.width, art.height))
+        val small = if (scale < 1f) android.graphics.Bitmap.createScaledBitmap(art, (art.width * scale).toInt(), (art.height * scale).toInt(), true) else art
+        java.io.ByteArrayOutputStream().use { out ->
+            small.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, out)
+            out.toByteArray()
+        }
+    }.getOrNull()
 
     /** The apps of the Home screen: the TV launcher category, one entry for each package. */
     private fun launchable(): List<Pair<String, String>> {
@@ -93,7 +117,26 @@ class RemoteTvBridge(private val context: Context) {
      * Play, pause, next and previous from the iPhone. The audio service gives the key to the
      * active media session, so the bridge needs no session access for the commands.
      */
+    /** True for an app in front that is not a Home screen: it may play media with no session. */
+    private fun isPlayer(pkg: String?): Boolean {
+        if (pkg == null || pkg == context.packageName || pkg == "com.android.systemui") return false
+        val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        return context.packageManager.queryIntentActivities(home, 0).none { it.activityInfo.packageName == pkg }
+    }
+
     fun mediaKey(name: String): Boolean {
+        val hasSession = media.current.value != null
+        if (name.startsWith("media_skip:")) {
+            val seconds = name.removePrefix("media_skip:").toDoubleOrNull() ?: return true
+            // With no session, the arrows: most TV players skip on them.
+            if (hasSession) main.post { media.skipBy(seconds) }
+            else io.github.henry753951.airplayremote.remote.input.KeyDispatcher.dispatchButton(if (seconds > 0) "right" else "left")
+            return true
+        }
+        if (!hasSession && (name == "media_play" || name == "media_pause")) {
+            io.github.henry753951.airplayremote.remote.input.KeyDispatcher.dispatchButton("select")
+            return true
+        }
         val code = when (name) {
             "media_play" -> KeyEvent.KEYCODE_MEDIA_PLAY
             "media_pause" -> KeyEvent.KEYCODE_MEDIA_PAUSE

@@ -14,11 +14,16 @@ object MediaFlags {
     const val FAST_FORWARD = 0x0010L
     const val REWIND = 0x0020L
     const val VOLUME = 0x0100L
+    /** 008: the -10 s and +10 s buttons. The iOS remote shows its media panel only with them. */
+    const val SKIP_FORWARD = 0x0200L
+    const val SKIP_BACKWARD = 0x0400L
 
     /** Volume only without a session. Play and pause always with one: many apps do not declare them. */
     fun of(actions: Long, hasSession: Boolean): Long {
         if (!hasSession) return VOLUME
         var f = VOLUME or PLAY or PAUSE
+        // Telik skips by a seek of the session, so any session can skip.
+        f = f or SKIP_FORWARD or SKIP_BACKWARD
         if (actions and PlaybackState.ACTION_SKIP_TO_NEXT != 0L) f = f or NEXT
         if (actions and PlaybackState.ACTION_SKIP_TO_PREVIOUS != 0L) f = f or PREVIOUS
         if (actions and PlaybackState.ACTION_FAST_FORWARD != 0L) f = f or FAST_FORWARD

@@ -342,3 +342,47 @@ pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_
 ) {
     atv_core::tv_state::set_media_flags(flags as u64);
 }
+
+/// 008: what plays on the TV, for the now playing card of the iOS remote. A null title clears it.
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_RemoteNative_nativeSetNowPlaying(
+    mut env: JNIEnv,
+    _class: JClass,
+    title: JString,
+    subtitle: JString,
+    bundle: JString,
+    duration_ms: jni::sys::jlong,
+    position_ms: jni::sys::jlong,
+    playing: jboolean,
+    jpeg: JByteArray,
+) {
+    if title.is_null() {
+        atv_core::now_playing::set(None);
+        return;
+    }
+    let read = |env: &mut JNIEnv, s: &JString| -> String {
+        if s.is_null() { String::new() } else { env.get_string(s).map(Into::into).unwrap_or_default() }
+    };
+    let np = atv_core::now_playing::NowPlaying {
+        title: read(&mut env, &title),
+        subtitle: read(&mut env, &subtitle),
+        bundle: read(&mut env, &bundle),
+        duration_s: duration_ms.max(0) as f64 / 1000.0,
+        elapsed_s: position_ms.max(0) as f64 / 1000.0,
+        playing: playing != JNI_FALSE,
+        jpeg: if jpeg.is_null() { None } else { env.convert_byte_array(&jpeg).ok().filter(|b| !b.is_empty()) },
+    };
+    atv_core::now_playing::set(Some(np));
+}
+
+/// 008: the AirPlay `deviceid` of this TV for `rpMRtID`. Call it before the server starts.
+#[no_mangle]
+pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_RemoteNative_nativeSetAirPlayId(
+    mut env: JNIEnv,
+    _class: JClass,
+    id: JString,
+) {
+    let id: Option<String> = if id.is_null() { None } else { env.get_string(&id).map(Into::into).ok() };
+    atv_core::tv_state::set_airplay_id(id);
+}

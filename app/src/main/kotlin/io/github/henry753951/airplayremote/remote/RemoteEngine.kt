@@ -81,6 +81,11 @@ class RemoteEngine(
                 setReferenceCounted(false); acquire()
             }
             val id = RemoteIdentityStore.getDeviceId(this)
+            // 008: tie the remote to the AirPlay receiver: the same deviceid as AirPlay announces.
+            val airplay = io.github.henry753951.airplayremote.runtime.AirPlayIdentity(
+                getSharedPreferences(io.github.henry753951.airplayremote.Prefs.NAME, MODE_PRIVATE),
+            ).hardwareAddress()
+            RemoteNative.nativeSetAirPlayId(airplay.joinToString(":") { "%02X".format(it) })
             val ok = RemoteNative.nativeStartServer(identity.first, RemoteIdentityStore.getPairingPin(this), id,
                 RemoteIdentityStore.getServerIdentifier(this, id), ip, this, RemoteIdentityStore.getPrivateKey(this),
                 createDeviceProtectedStorageContext().filesDir.absolutePath)
@@ -202,6 +207,11 @@ class RemoteEngine(
             else -> null
         }
         Log.i("RemoteEngine", if (name == null) "Event: $kind" else "Event: $kind $name")
+        // 008 T002: the requests of the iOS remote that Telik does not answer yet, in full. They carry
+        // no user data: names of events, ids of the phone and flags. Typed text never comes here.
+        if (name != null && (name.startsWith("Fetch") || name == "_interest" || name == "MediaControlCommand" || name == "_mcc")) {
+            Log.i("RemoteProbe", "$name ${detail.take(1500)}")
+        }
     }
 
     fun close() {

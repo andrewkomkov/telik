@@ -34,5 +34,11 @@ object RemoteNative {
     external fun nativeSetApps(ids: Array<String>, names: Array<String>)
     /** Spec 006 US2: the media control flags of the active media session. */
     external fun nativeSetMedia(flags: Long)
+    /** Spec 008: the AirPlay deviceid of this TV, for `rpMRtID` in the companion TXT. */
+    external fun nativeSetAirPlayId(id: String?)
+    /** Spec 008: the now playing card of the iOS remote. A null title clears it. */
+    external fun nativeSetNowPlaying(
+        title: String?, subtitle: String?, bundle: String?, durationMs: Long, positionMs: Long, playing: Boolean, jpeg: ByteArray?,
+    )
     external fun nativeAdvertiseHomeKit(name: String, ip: String, port: Int, txt: String): Boolean
 }

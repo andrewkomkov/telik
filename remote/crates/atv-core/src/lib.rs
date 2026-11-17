@@ -25,6 +25,7 @@ pub mod settings;
 pub mod srp;
 pub mod tlv;
 pub mod tv_state;
+pub mod now_playing;
 
 pub use delegate::{AtvDelegate, EventKind, TouchPhase, TrackpadMode};
 pub use error::{Error, Result};

@@ -10,7 +10,10 @@ class MediaFlagsTest {
     }
 
     @Test fun playAndPauseWithAnySession() {
-        assertEquals(MediaFlags.VOLUME or MediaFlags.PLAY or MediaFlags.PAUSE, MediaFlags.of(0, hasSession = true))
+        assertEquals(
+            MediaFlags.VOLUME or MediaFlags.PLAY or MediaFlags.PAUSE or MediaFlags.SKIP_FORWARD or MediaFlags.SKIP_BACKWARD,
+            MediaFlags.of(0, hasSession = true),
+        )
     }
 
     @Test fun skipAndSeekFollowTheActions() {
@@ -19,7 +22,7 @@ class MediaFlagsTest {
         val f = MediaFlags.of(actions, hasSession = true)
         assertEquals(
             MediaFlags.VOLUME or MediaFlags.PLAY or MediaFlags.PAUSE or MediaFlags.NEXT or MediaFlags.PREVIOUS or
-                MediaFlags.FAST_FORWARD or MediaFlags.REWIND,
+                MediaFlags.FAST_FORWARD or MediaFlags.REWIND or MediaFlags.SKIP_FORWARD or MediaFlags.SKIP_BACKWARD,
             f,
         )
     }
