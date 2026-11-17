@@ -100,6 +100,21 @@ data class PreviewItem(
 object AppPreviews {
     const val PER_APP = 8
 
+    /**
+     * Programs for the shelf of each app. An app with no preview programs, as Apple TV on the test
+     * TV, gets its Watch Next items instead.
+     */
+    fun withWatchNext(previews: Map<String, List<PreviewItem>>, watchNext: List<WatchNextItem>): Map<String, List<PreviewItem>> {
+        val extra = watchNext.filter { it.packageName !in previews && !it.artUri.isNullOrBlank() }
+            .groupBy { it.packageName }
+            .mapValues { (_, list) ->
+                list.take(PER_APP).map { w ->
+                    PreviewItem(w.packageName, listOfNotNull(w.title, w.episodeTitle).joinToString(" · "), w.artUri, w.intentUri, 0)
+                }
+            }
+        return previews + extra
+    }
+
     fun pick(items: List<PreviewItem>, installed: Set<String>): Map<String, List<PreviewItem>> =
         items.filter { it.packageName in installed && !it.artUri.isNullOrBlank() && it.title.isNotBlank() }
             .groupBy { it.packageName }

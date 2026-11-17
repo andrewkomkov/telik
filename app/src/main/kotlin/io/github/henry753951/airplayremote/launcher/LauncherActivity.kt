@@ -271,7 +271,10 @@ class LauncherActivity : ComponentActivity() {
         val lastLaunch = launches.associate { it.packageName to it.lastMillis }
         state = state.copy(
             continueWatching = ContinueWatching.pick(watchNext, apps.mapTo(HashSet()) { it.packageName }),
-            previews = AppPreviews.pick(previewItems, apps.mapTo(HashSet()) { it.packageName }),
+            previews = AppPreviews.withWatchNext(
+                AppPreviews.pick(previewItems, apps.mapTo(HashSet()) { it.packageName }),
+                ContinueWatching.pick(watchNext, apps.mapTo(HashSet()) { it.packageName }),
+            ),
             recent = Recent.pick(launches, visible, shown.filter { it.startsWith(Favorites.APP) }.mapTo(HashSet()) { it.removePrefix(Favorites.APP) }),
             badges = apps.mapNotNull { a ->
                 Recent.badge(a.installedMillis, a.updatedMillis, lastLaunch[a.packageName], now)?.let { a.packageName to it }

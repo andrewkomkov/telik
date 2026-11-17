@@ -62,6 +62,19 @@ class AppPreviewsTest {
         assertEquals(listOf("Shown", "Hidden"), out["yt"]!!.map { it.title })
     }
 
+    @Test fun watchNextFillsAppsWithoutPrograms() {
+        val previews = mapOf("yt" to listOf(p("yt", "Rec", 1)))
+        val wn = listOf(
+            WatchNextItem(1, "tv", "Show", "Pilot", null, null, "https://x/a.jpg", "intent:#Intent;end", 5, 0, 0),
+            WatchNextItem(2, "yt", "Other", null, null, null, "https://x/b.jpg", "intent:#Intent;end", 4, 0, 0),
+            WatchNextItem(3, "nf", "No art", null, null, null, null, "intent:#Intent;end", 3, 0, 0),
+        )
+        val out = AppPreviews.withWatchNext(previews, wn)
+        assertEquals(listOf("Rec"), out["yt"]!!.map { it.title })
+        assertEquals(listOf("Show · Pilot"), out["tv"]!!.map { it.title })
+        assertEquals(null, out["nf"])
+    }
+
     @Test fun keepsTheLimit() {
         val out = AppPreviews.pick((1..20).map { p("yt", "T$it", it) }, setOf("yt"))
         assertEquals(AppPreviews.PER_APP, out["yt"]!!.size)
