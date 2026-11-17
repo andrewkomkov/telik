@@ -818,16 +818,18 @@ private fun ModalMenu(title: String, fancy: Boolean, content: @Composable (Modif
 
 @Composable
 private fun PermissionHint(text: String, fancy: Boolean, onAllow: () -> Unit, onDismiss: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().glassPanel(TileShape, fancy).padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Text(
-            text, Modifier.weight(1f), color = Color.White, fontSize = TvType.Body,
-            maxLines = 2, overflow = TextOverflow.Ellipsis,
-        )
-        ActionButton(stringResource(R.string.btn_allow), fancy, onClick = onAllow)
+    // The text part is the Allow button: it spans the row, so Up from any tile below lands on it.
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        FocusTile(fancy, Modifier.weight(1f), false, {}, onAllow, null, grow = 1.02f, shadow = false) {
+            Row(
+                Modifier.fillMaxWidth().glassPanel(TileShape, fancy).padding(horizontal = 20.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Text(text, Modifier.weight(1f), color = Color.White, fontSize = TvType.Body, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(stringResource(R.string.btn_allow) + " ›", color = Color.White, fontSize = TvType.Body, fontWeight = FontWeight.Medium, maxLines = 1)
+            }
+        }
         ActionButton(stringResource(R.string.home_np_not_now), fancy, onClick = onDismiss)
     }
 }

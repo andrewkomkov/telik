@@ -33,6 +33,12 @@ without root.
 | Preview programs | kino.watch 55, Prime Video 20, YouTube 15, Netflix 15, Google recommendations 11 |
 | Watch Next | kino.watch 10, YouTube 9, Apple TV 5 |
 
+## Browsable channels under Google TV (T058, 2026-11-17)
+
+On the test TV, only the kino.watch channel is browsable. The channels of YouTube, Netflix and Prime Video are not,
+and Google TV has no screen to change it. The Top Shelf takes the programs of all channels, with the browsable ones first.
+A program that the user removed (`browsable=0` on the program) stays out.
+
 ## Probe of app categories (T040, 2026-11-17)
 
 `ApplicationInfo.category` of the 15 launchable apps on the test TV: 12 undefined (-1), 2 productivity (7), 1 game (0).

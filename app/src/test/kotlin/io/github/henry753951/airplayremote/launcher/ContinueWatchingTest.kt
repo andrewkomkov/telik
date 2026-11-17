@@ -56,6 +56,12 @@ class AppPreviewsTest {
         assertEquals(listOf("Show"), out["yt"]!!.map { it.title })
     }
 
+    @Test fun shownChannelsFirst() {
+        val hidden = p("yt", "Hidden", 99).copy(channelShown = false)
+        val out = AppPreviews.pick(listOf(hidden, p("yt", "Shown", 1)), setOf("yt"))
+        assertEquals(listOf("Shown", "Hidden"), out["yt"]!!.map { it.title })
+    }
+
     @Test fun keepsTheLimit() {
         val out = AppPreviews.pick((1..20).map { p("yt", "T$it", it) }, setOf("yt"))
         assertEquals(AppPreviews.PER_APP, out["yt"]!!.size)

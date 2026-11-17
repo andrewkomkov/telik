@@ -86,7 +86,15 @@ object ContinueWatching {
 }
 
 /** One preview program of an app channel (005 T058): what the Top Shelf shows for a focused app. */
-data class PreviewItem(val packageName: String, val title: String, val artUri: String?, val intentUri: String?, val weight: Int)
+data class PreviewItem(
+    val packageName: String,
+    val title: String,
+    val artUri: String?,
+    val intentUri: String?,
+    val weight: Int,
+    /** The channel shows on the stock Home screen. Google TV has no screen to show or hide a channel. */
+    val channelShown: Boolean = true,
+)
 
 /** Preview programs of browsable channels, best weight first, at most [PER_APP] for each app. */
 object AppPreviews {
@@ -95,13 +103,17 @@ object AppPreviews {
     fun pick(items: List<PreviewItem>, installed: Set<String>): Map<String, List<PreviewItem>> =
         items.filter { it.packageName in installed && !it.artUri.isNullOrBlank() && it.title.isNotBlank() }
             .groupBy { it.packageName }
-            .mapValues { (_, list) -> list.sortedByDescending { it.weight }.distinctBy { it.title.trim().lowercase() }.take(PER_APP) }
+            .mapValues { (_, list) ->
+                list.sortedWith(compareByDescending<PreviewItem> { it.channelShown }.thenByDescending { it.weight })
+                    .distinctBy { it.title.trim().lowercase() }.take(PER_APP)
+            }
 
     fun read(context: Context): List<PreviewItem> {
         if (!TvListings.granted(context)) return emptyList()
         val cr = context.contentResolver
         return try {
-            // Programs of a channel that the user hid stay out.
+            // Programs of a shown channel come first. Google TV leaves the channels of most apps
+            // not browsable and has no screen to change it, so the others also count.
             val browsable = HashSet<Long>()
             cr.query(
                 android.media.tv.TvContract.Channels.CONTENT_URI,
@@ -122,7 +134,7 @@ object AppPreviews {
                 val out = ArrayList<PreviewItem>()
                 fun str(i: Int) = if (c.isNull(i)) null else c.getString(i)
                 while (c.moveToNext()) {
-                    if (c.getLong(0) !in browsable) continue
+                    // A program that the user removed stays out.
                     if (!c.isNull(7) && c.getInt(7) == 0) continue
                     out += PreviewItem(
                         packageName = str(1) ?: continue,
@@ -131,6 +143,7 @@ object AppPreviews {
                         artUri = str(3) ?: str(4),
                         intentUri = str(5),
                         weight = if (c.isNull(6)) 0 else c.getInt(6),
+                        channelShown = c.getLong(0) in browsable,
                     )
                 }
                 out
