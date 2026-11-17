@@ -33,6 +33,11 @@ without root.
 | Preview programs | kino.watch 55, Prime Video 20, YouTube 15, Netflix 15, Google recommendations 11 |
 | Watch Next | kino.watch 10, YouTube 9, Apple TV 5 |
 
+## Probe of app categories (T040, 2026-11-17)
+
+`ApplicationInfo.category` of the 15 launchable apps on the test TV: 12 undefined (-1), 2 productivity (7), 1 game (0).
+Groups by the declared category would put almost all apps in one group. Groups need the user to set them by hand.
+
 ## Not possible for a third-party Home app
 
 - The "For you" rows of Google TV come from Google servers and are private to the maker launcher.
