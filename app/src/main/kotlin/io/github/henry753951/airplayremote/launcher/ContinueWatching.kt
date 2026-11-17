@@ -75,6 +75,10 @@ object ContinueWatching {
                         durationMillis = if (c.isNull(11)) 0 else c.getLong(11),
                     )
                 }
+                // Counts for each app, no titles (FR-012): items, items with no link, items with no art.
+                out.groupBy { it.packageName }.forEach { (pkg, l) ->
+                    Log.i("ContinueWatching", "$pkg: ${l.size} items, ${l.count { it.intentUri.isNullOrBlank() }} no link, ${l.count { it.artUri.isNullOrBlank() }} no art")
+                }
                 out
             } ?: emptyList()
         } catch (e: Exception) {
