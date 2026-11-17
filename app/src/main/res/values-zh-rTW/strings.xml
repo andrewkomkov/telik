@@ -371,4 +371,7 @@
     <string name="tv_weather_city_auto">依時區</string>
     <string name="tv_weather_city_hint">城市名稱，例如 Novi Sad。留空則使用時區城市。</string>
     <string name="home_weather_today">今天</string>
+    <string name="tv_language">Telik 語言</string>
+    <string name="tv_language_desc">Telik 可使用與電視不同的語言。</string>
+    <string name="tv_language_system">與電視相同</string>
 </resources>

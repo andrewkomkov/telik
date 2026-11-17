@@ -403,4 +403,7 @@
     <string name="tv_weather_city_auto">По часовому поясу</string>
     <string name="tv_weather_city_hint">Название города, например Нови-Сад. Пустое поле: город часового пояса.</string>
     <string name="home_weather_today">Сегодня</string>
+    <string name="tv_language">Язык Телика</string>
+    <string name="tv_language_desc">Телик может говорить на другом языке, чем телевизор.</string>
+    <string name="tv_language_system">Как у телевизора</string>
 </resources>

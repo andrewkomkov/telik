@@ -164,6 +164,8 @@ tasks.named("preBuild") { dependsOn(checkRemoteLibrary) }
 android {
     androidResources {
         localeFilters += listOf("en", "ru", "zh-rTW")
+        // 007 US2: the per-app language list of the system comes from the resources.
+        generateLocaleConfig = true
     }
     packaging {
         resources {

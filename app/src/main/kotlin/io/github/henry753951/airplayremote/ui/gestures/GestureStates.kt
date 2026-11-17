@@ -167,7 +167,8 @@ class ServerVolumeState(private val context: Context) {
                 if (intent.action == VolumeBroadcast.ACTION) sync()
             }
         }
-        context.registerReceiver(receiver, IntentFilter(VolumeBroadcast.ACTION))
+        // A system broadcast: NOT_EXPORTED still gets it, and other apps cannot send it here (007 FR-004).
+        androidx.core.content.ContextCompat.registerReceiver(context, receiver, IntentFilter(VolumeBroadcast.ACTION), androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
         onDispose { context.unregisterReceiver(receiver) }
     }
 

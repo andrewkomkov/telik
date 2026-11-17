@@ -50,7 +50,7 @@ class WeatherTest {
     }
 
     @Test fun fahrenheitOnlyWhereUsed() {
-        assertTrue(Weather.fahrenheit(Locale.US))
-        assertFalse(Weather.fahrenheit(Locale.Builder().setLanguage("ru").setRegion("RS").build()))
+        assertTrue(Weather.fahrenheitByCountry(Locale.US))
+        assertFalse(Weather.fahrenheitByCountry(Locale.Builder().setLanguage("ru").setRegion("RS").build()))
     }
 }

@@ -85,8 +85,13 @@ object Weather {
         return WeatherNow(c.getDouble("temperature_2m"), c.optInt("weather_code", -1), c.optInt("is_day", 1) == 1)
     }
 
+    /** The unit of the regional preferences of the TV (007 FR-003), else of the country. */
+    fun fahrenheit(): Boolean = runCatching {
+        androidx.core.text.util.LocalePreferences.getTemperatureUnit() == androidx.core.text.util.LocalePreferences.TemperatureUnit.FAHRENHEIT
+    }.getOrElse { fahrenheitByCountry(Locale.getDefault()) }
+
     /** Fahrenheit only for the regions that use it. */
-    fun fahrenheit(locale: Locale = Locale.getDefault()): Boolean = locale.country in setOf("US", "LR", "MM", "BS", "BZ", "KY", "PW")
+    fun fahrenheitByCountry(locale: Locale): Boolean = locale.country in setOf("US", "LR", "MM", "BS", "BZ", "KY", "PW")
 
     /** The city of the settings (`Prefs.WEATHER_CITY`), or null for the time zone city. */
     fun cityName(context: Context): String? =
