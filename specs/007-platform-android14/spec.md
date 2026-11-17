@@ -79,4 +79,5 @@ Telik follows the rules of Android 14 for its target SDK, so nothing stops witho
 
 ## Assumptions
 
-- Out of scope here: app widgets on the Home screen (a separate story), edge to edge (not on Android 14), the predictive back animation of the system (a developer option on Android 14).
+- Out of scope: app widgets on the Home screen. The probe of 2026-11-17 found no widget provider on the test TV: `dumpsys appwidget` lists no providers, and no receiver handles `APPWIDGET_UPDATE`. A widget host would show an empty list.
+- Also out of scope: edge to edge (not on Android 14), the predictive back animation of the system (a developer option on Android 14).
