@@ -1,0 +1,7 @@
+The Home screen shows what you watch: Continue watching, with the progress, and the programs of the focused app above the rows.
+The weather is next to the clock. Move the focus to it for 5 days.
+The Telik screensaver plays the aerial videos of Apple TV in 4K, with the clock and the weather, and the photos of an iCloud shared album.
+The iPhone remote lists the apps of the TV and shows play, pause and skip.
+HomeKit lists the HDMI inputs and has a switch that shows a message on the TV.
+Siri Shortcuts can open apps, select inputs and show messages (off by default).
+New: the language of Telik, an install progress tile, app shortcuts in the app menu, and a faster Home screen.

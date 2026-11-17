@@ -51,7 +51,7 @@ Out of scope: the user removed US4 on 2026-11-17 ("не делай группы"
 - [x] T055 [US5] Add `PosterCache`: load the art of a program from a `content:` or `https:` link off the main thread, at the card size, with a memory limit and its main color. The Top Shelf loads a 1280x720 version. For YouTube, it asks for `maxresdefault.jpg` first.
 - [x] T056 [US5] Add the "Continue watching" row with art, a progress bar, the title in the title area and the art in the Top Shelf. OK opens the `INTENT_URI` of the item.
 - [x] T057 [US5] Ask for `READ_TV_LISTINGS` on the Home screen, as for notification access, with "Not now".
-- [ ] T058 [US5] Show the preview programs of the focused app in the Top Shelf (scenario 1).
+- [x] T058 [US5] Show the preview programs of the focused app in the Top Shelf (scenario 1).
 - [ ] T059 [US5] Check on the TV with screenshots and `gfxinfo`.
 - [x] T051 [US6] Add uninstall, the system screen of the app and the app shortcuts to the edit menu.
 - [x] T053 [US6] Add the app menu for a long OK. It has these items: open, stop, favorites, move, hide, the system screen, uninstall. Stop runs `am force-stop` through the adb port of the TV. Without the adb port, the system screen opens.
@@ -59,4 +59,4 @@ Out of scope: the user removed US4 on 2026-11-17 ("не делай группы"
 
 ## Release
 
-- [ ] T060 Add changelog files for English and Russian, bump the version to 3.0.0 and release.
+- [x] T060 Add changelog files for English and Russian, bump the version to 3.0.0 and release.
