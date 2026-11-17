@@ -58,7 +58,7 @@ class HeadphonesController private constructor(context: Context) {
 
     private fun start() {
         prefs.registerOnSharedPreferenceChangeListener(prefListener)
-        app.registerReceiver(screenReceiver, IntentFilter(Intent.ACTION_SCREEN_ON))
+        app.registerReceiver(screenReceiver, IntentFilter(Intent.ACTION_SCREEN_ON), Context.RECEIVER_NOT_EXPORTED)
         worker.post { onSettingChanged() }
     }
 

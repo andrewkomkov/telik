@@ -830,7 +830,31 @@ private fun generalItems(viewModel: MainViewModel, onRename: () -> Unit): List<T
             }
         ),
         toggle(viewModel, Prefs.ALLOW_NEW_CONN, R.string.setting_allow_new_conn, R.string.setting_allow_new_conn_desc),
-    ) + cityItems(viewModel)
+    ) + languageItems() + cityItems(viewModel)
+}
+
+/** 007 US2: the language of Telik apart from the TV language. The system recreates the screens. */
+@Composable
+private fun languageItems(): List<TvItem> {
+    val ctx = LocalContext.current
+    val lm = ctx.getSystemService(android.app.LocaleManager::class.java)
+    val current = lm.applicationLocales.takeIf { !it.isEmpty }?.get(0)?.toLanguageTag() ?: ""
+    val choices = listOf(
+        "" to stringResource(R.string.tv_language_system),
+        "en" to "English",
+        "ru" to "Русский",
+        "zh-TW" to "繁體中文",
+    )
+    val key = choices.firstOrNull { it.first.isNotEmpty() && current.startsWith(it.first) }?.first ?: ""
+    return listOf(
+        TvItem(
+            stringResource(R.string.tv_language), stringResource(R.string.tv_language_desc),
+            choices = choices, selected = key,
+            onPick = { tag ->
+                lm.applicationLocales = if (tag.isEmpty()) android.os.LocaleList.getEmptyLocaleList() else android.os.LocaleList.forLanguageTags(tag)
+            },
+        ),
+    )
 }
 
 /** 006 US9: the city for the weather. Empty: the city of the time zone. */

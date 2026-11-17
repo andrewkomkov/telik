@@ -44,7 +44,7 @@ class AppRepository(private val context: Context) {
             addAction(Intent.ACTION_PACKAGE_CHANGED)
             addDataScheme("package")
         }
-        context.registerReceiver(receiver, filter)
+        context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
         trySend(Unit)
         awaitClose { context.unregisterReceiver(receiver) }
     }.conflate().map { load() }.flowOn(Dispatchers.IO)

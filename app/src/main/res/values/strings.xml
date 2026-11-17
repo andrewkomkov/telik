@@ -403,4 +403,7 @@
     <string name="tv_weather_city_auto">From the time zone</string>
     <string name="tv_weather_city_hint">A city name, for example Novi Sad. Leave empty for the city of the time zone.</string>
     <string name="home_weather_today">Today</string>
+    <string name="tv_language">Language of Telik</string>
+    <string name="tv_language_desc">Telik can use another language than the TV.</string>
+    <string name="tv_language_system">As the TV</string>
 </resources>
