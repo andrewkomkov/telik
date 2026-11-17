@@ -3,15 +3,15 @@ Categories:
   - System
 License: GPL-3.0-only
 AuthorName: Andrew Komkov
-WebSite: https://andrewkomkov.github.io/telik/
-SourceCode: https://github.com/andrewkomkov/telik
-IssueTracker: https://github.com/andrewkomkov/telik/issues
-Changelog: https://github.com/andrewkomkov/telik/releases
+WebSite: https://telikapp.github.io/
+SourceCode: https://github.com/telikapp/telik
+IssueTracker: https://github.com/telikapp/telik/issues
+Changelog: https://github.com/telikapp/telik/releases
 
 AutoName: Telik
 
 RepoType: git
-Repo: https://github.com/andrewkomkov/telik.git
+Repo: https://github.com/telikapp/telik.git
 
 Builds:
   - versionName: 3.1.0

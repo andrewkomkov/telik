@@ -1,14 +1,14 @@
-<p align="center"><img src="site/assets/mascot.svg" width="120" alt="Маскот Телика"></p>
+<p align="center"><img src="https://telikapp.github.io/assets/mascot.svg" width="120" alt="Маскот Телика"></p>
 
 # Телик
 
 Управление Android TV через встроенный пульт Apple TV на iPhone. Телик работает на самом телевизоре:
 не нужны приставка Apple TV, Homebridge, сервер и приложения на iPhone.
 
-[Сайт](https://andrewkomkov.github.io/telik/ru/) · [English](README.md) ·
-[Скачать](https://github.com/andrewkomkov/telik/releases/latest)
+[Сайт](https://telikapp.github.io/ru/) · [English](README.md) ·
+[Скачать](https://github.com/telikapp/telik/releases/latest)
 
-![Главный экран Телика](site/assets/home-ru.jpg)
+![Главный экран Телика](https://telikapp.github.io/assets/og-ru.jpg)
 
 ## Возможности
 
@@ -45,11 +45,11 @@
 
 1. Установите Телик на Android TV 13+ одним из способов:
    - Откройте прямую ссылку на телевизоре, например в приложении Downloader:
-     `https://github.com/andrewkomkov/telik/releases/latest/download/telik-armv7.apk`
-   - Скачайте `telik-*-armv7.apk` со страницы [Releases](https://github.com/andrewkomkov/telik/releases/latest).
+     `https://github.com/telikapp/telik/releases/latest/download/telik-armv7.apk`
+   - Скачайте `telik-*-armv7.apk` со страницы [Releases](https://github.com/telikapp/telik/releases/latest).
    - Добавьте Телик в [Obtainium](https://github.com/ImranR98/Obtainium). Он сам ставит обновления из Releases.
 
-     [<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="54">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/andrewkomkov/telik)
+     [<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="54">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/telikapp/telik)
 2. Откройте Телик и разрешите доступ к специальным возможностям. Он нужен, чтобы нажимать кнопки
    пульта и получать текст с клавиатуры.
 3. На iPhone откройте Пункт управления, нажмите значок пульта, выберите «Телик» и введите код с

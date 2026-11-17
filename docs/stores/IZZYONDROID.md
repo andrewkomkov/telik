@@ -20,9 +20,9 @@ Telik (dev.telik.tv)
 ```
 Name: Telik
 Package: dev.telik.tv
-Source: https://github.com/andrewkomkov/telik
+Source: https://github.com/telikapp/telik
 License: GPL-3.0-only
-APK: https://github.com/andrewkomkov/telik/releases (asset telik-*-armv7.apk, signed with the release key of the project)
+APK: https://github.com/telikapp/telik/releases (asset telik-*-armv7.apk, signed with the release key of the project)
 Size: about 11 MB
 Device: Android TV 13 or newer (minSdk 33), armeabi-v7a
 
@@ -30,7 +30,7 @@ Telik makes an Android TV work with the iPhone: the Apple TV Remote in the Contr
 AirPlay mirroring and audio, and a TV tile in Apple Home. It can also be the TV Home screen.
 
 Fastlane metadata: fastlane/metadata/android (en-US, ru), with TV screenshots.
-Privacy: no analytics, no ads, no account. Policy: https://andrewkomkov.github.io/telik/privacy.html
+Privacy: no analytics, no ads, no account. Policy: https://telikapp.github.io/privacy.html
 
 Notes for the review:
 - No proprietary libraries and no Google Play services.

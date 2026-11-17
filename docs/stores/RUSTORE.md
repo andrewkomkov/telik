@@ -20,9 +20,9 @@ The developer needs a RuStore developer account. A person or a self-employed per
 | Category | Инструменты |
 | Age rating | 0+ |
 | Price | Free |
-| Privacy policy | https://andrewkomkov.github.io/telik/ru/privacy.html |
-| Website | https://andrewkomkov.github.io/telik/ru/ |
-| Support | https://github.com/andrewkomkov/telik/issues |
+| Privacy policy | https://telikapp.github.io/ru/privacy.html |
+| Website | https://telikapp.github.io/ru/ |
+| Support | https://github.com/telikapp/telik/issues |
 | Screenshots | `fastlane/metadata/android/en-US/images/tvScreenshots/` (1920x1080) |
 | Short description | Copy `fastlane/metadata/android/ru/short_description.txt` |
 | Full description | Copy `fastlane/metadata/android/ru/full_description.txt` |
