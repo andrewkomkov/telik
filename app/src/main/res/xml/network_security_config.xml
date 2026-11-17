@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Same as android:usesCleartextTraffic="true", which Android ignores once this file exists:
+         the local AirPlay and remote endpoints use plain HTTP on the LAN. -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <!-- 006 US4: the aerial list and videos chain to Apple Root CA (SHA-256 B0B1730E...F024).
+         The Android trust store does not have it. The extra anchor is for this one host only. -->
+    <domain-config>
+        <domain includeSubdomains="false">sylvan.apple.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/apple_root_ca" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

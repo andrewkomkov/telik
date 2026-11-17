@@ -384,4 +384,23 @@
     <string name="home_listings_hint">Allow access to TV listings, and Telik shows what you watch in YouTube, Apple TV and other apps.</string>
     <string name="home_installing_title">Installing</string>
     <string name="home_installing_progress">Installing: %1$d%%</string>
+    <string name="dream_name">Telik aerials</string>
+    <string name="section_shortcuts">Siri Shortcuts</string>
+    <string name="setting_shortcuts">Commands from Shortcuts</string>
+    <string name="setting_shortcuts_desc">The Shortcuts app on the iPhone opens apps, selects HDMI inputs, shows messages and controls media on the TV. Off by default.</string>
+    <string name="setting_shortcuts_token">Token</string>
+    <string name="setting_shortcuts_example">In Shortcuts, add “Get Contents of URL”, method POST, header Authorization: Bearer and the token. Example: %1$s. Other paths: /v1/input?hdmi=1, /v1/message?text=…, /v1/key?name=pause.</string>
+    <string name="setting_shortcuts_renew">New token</string>
+    <string name="setting_shortcuts_renew_desc">The old token stops working.</string>
+    <string name="tv_album">iCloud shared album</string>
+    <string name="tv_album_desc">The screensaver shows its photos between the videos. The album needs Public Website on in Photos on the iPhone.</string>
+    <string name="tv_album_set">Set</string>
+    <string name="tv_album_none">None</string>
+    <string name="tv_album_hint">Paste the link with the iPhone keyboard from the Apple TV remote. Leave empty to turn off.</string>
+    <string name="tv_album_error">This is not an iCloud shared album link.</string>
+    <string name="tv_weather_city">Weather city</string>
+    <string name="tv_weather_city_desc">The weather next to the clock on the Home screen and in the screensaver.</string>
+    <string name="tv_weather_city_auto">From the time zone</string>
+    <string name="tv_weather_city_hint">A city name, for example Novi Sad. Leave empty for the city of the time zone.</string>
+    <string name="home_weather_today">Today</string>
 </resources>

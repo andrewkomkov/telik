@@ -30,5 +30,9 @@ object RemoteNative {
     external fun nativeStopServer()
     external fun nativeIsRunning(): Boolean
     external fun nativeSetTextFocus(focused: Boolean, text: String)
+    /** Spec 006 US1: the launchable apps for the iPhone remote. */
+    external fun nativeSetApps(ids: Array<String>, names: Array<String>)
+    /** Spec 006 US2: the media control flags of the active media session. */
+    external fun nativeSetMedia(flags: Long)
     external fun nativeAdvertiseHomeKit(name: String, ip: String, port: Int, txt: String): Boolean
 }

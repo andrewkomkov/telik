@@ -38,6 +38,7 @@ class RemoteEngine(
     private var attempts = 0
     private val retry = Runnable { refresh() }
     private val clearPairing = Runnable { RemoteState.mutablePin.value = null }
+    private val tv = RemoteTvBridge(this)
     private val callback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) { scheduleRefresh() }
         override fun onLost(network: Network) { scheduleRefresh() }
@@ -53,10 +54,12 @@ class RemoteEngine(
     fun start() {
         if (closed) return
         enabled = true
+        tv.start()
         scheduleRefresh()
     }
     fun stop() {
         enabled = false
+        tv.stop()
         worker.post { stopNative() }
     }
     private fun refresh() {
@@ -112,6 +115,7 @@ class RemoteEngine(
     override fun onButton(name: String) {
         if (!enabled || closed) return
         Log.i("RemoteEngine", "Button: $name")
+        if (tv.mediaKey(name)) return
         if (!handlePowerButton(name)) KeyDispatcher.dispatchButton(name)
     }
 
@@ -168,6 +172,7 @@ class RemoteEngine(
                 RemoteState.mutablePin.value = null
             }
             "MouseClick" -> RemoteAccessibilityService.instance?.handleMouseClick()
+            "LaunchApp" -> tv.launch(detail)
             "TextInsert" -> main.post {
                 android.util.Log.i("AtvText", "insert: ${detail.length} chars")
                 RemoteAccessibilityService.instance?.insertText(detail)
@@ -202,6 +207,7 @@ class RemoteEngine(
     fun close() {
         closed = true
         enabled = false
+        tv.stop()
         try { cm.unregisterNetworkCallback(callback) } catch (_: IllegalArgumentException) {}
         worker.post { stopNative(); thread.quitSafely() }
     }

@@ -830,6 +830,36 @@ private fun generalItems(viewModel: MainViewModel, onRename: () -> Unit): List<T
             }
         ),
         toggle(viewModel, Prefs.ALLOW_NEW_CONN, R.string.setting_allow_new_conn, R.string.setting_allow_new_conn_desc),
+    ) + cityItems(viewModel)
+}
+
+/** 006 US9: the city for the weather. Empty: the city of the time zone. */
+@Composable
+private fun cityItems(viewModel: MainViewModel): List<TvItem> {
+    val city by viewModel.pref(Prefs.WEATHER_CITY).collectAsState()
+    var editing by remember { mutableStateOf(false) }
+    if (editing) {
+        TvTextDialog(
+            title = stringResource(R.string.tv_weather_city),
+            placeholder = io.github.henry753951.airplayremote.weather.Weather.zoneCity(java.util.TimeZone.getDefault().id).orEmpty(),
+            hint = stringResource(R.string.tv_weather_city_hint),
+            error = "",
+            valid = { it.length <= 80 },
+            initial = city,
+            onSave = {
+                viewModel.set(Prefs.WEATHER_CITY, it)
+                io.github.henry753951.airplayremote.weather.Weather.forget()
+                editing = false
+            },
+            onDismiss = { editing = false },
+        )
+    }
+    return listOf(
+        TvItem(
+            stringResource(R.string.tv_weather_city), stringResource(R.string.tv_weather_city_desc),
+            value = city.ifBlank { stringResource(R.string.tv_weather_city_auto) },
+            onClick = { editing = true },
+        ),
     )
 }
 
@@ -964,6 +994,29 @@ private fun remoteItems(viewModel: MainViewModel): List<TvItem> {
             stringResource(R.string.tv_remote_dpad), stringResource(R.string.tv_remote_dpad_short),
             detail = stringResource(R.string.tv_remote_dpad_desc)
         ),
+    ) + shortcutItems(viewModel)
+}
+
+/** Spec 006 US7: Siri Shortcuts. The token shows only while the endpoint is on. */
+@Composable
+private fun shortcutItems(viewModel: MainViewModel): List<TvItem> {
+    val ctx = LocalContext.current
+    val on by viewModel.pref(Prefs.SHORTCUTS_ENABLED).collectAsState()
+    val toggleItem = toggle(viewModel, Prefs.SHORTCUTS_ENABLED, R.string.setting_shortcuts, R.string.setting_shortcuts_desc)
+    if (!on) return listOf(toggleItem)
+    var token by remember { mutableStateOf(io.github.henry753951.airplayremote.shortcuts.ShortcutToken.get(ctx)) }
+    val ip = remember { io.github.henry753951.airplayremote.platform.LocalNetworkAddress.get(ctx) ?: "TV" }
+    val example = "http://$ip:${io.github.henry753951.airplayremote.shortcuts.ShortcutApi.PORT}/v1/open?app=com.google.android.youtube.tv"
+    return listOf(
+        toggleItem,
+        TvItem(
+            stringResource(R.string.setting_shortcuts_token), token,
+            detail = stringResource(R.string.setting_shortcuts_example, example),
+        ),
+        TvItem(
+            stringResource(R.string.setting_shortcuts_renew), stringResource(R.string.setting_shortcuts_renew_desc),
+            onClick = { token = io.github.henry753951.airplayremote.shortcuts.ShortcutToken.renew(ctx) },
+        ),
     )
 }
 
@@ -984,7 +1037,93 @@ private fun powerItems(viewModel: MainViewModel): List<TvItem> {
     ),
     toggle(viewModel, Prefs.KEEP_SCREEN_ON, R.string.setting_keep_screen_on, R.string.setting_keep_screen_on_desc),
     toggle(viewModel, Prefs.AUTO_START, R.string.setting_auto_start, R.string.setting_auto_start_desc),
-)
+) + albumItems()
+}
+
+/** 006 US5: the link of an iCloud shared album for the screensaver. The link stays on the TV. */
+@Composable
+private fun albumItems(): List<TvItem> {
+    val ctx = LocalContext.current
+    var link by remember { mutableStateOf(io.github.henry753951.airplayremote.screensaver.ScreensaverStore.albumLink(ctx)) }
+    var editing by remember { mutableStateOf(false) }
+    if (editing) {
+        TvTextDialog(
+            title = stringResource(R.string.tv_album),
+            placeholder = "https://www.icloud.com/sharedalbum/#…",
+            hint = stringResource(R.string.tv_album_hint),
+            error = stringResource(R.string.tv_album_error),
+            valid = { it.isBlank() || io.github.henry753951.airplayremote.screensaver.SharedAlbum.token(it) != null },
+            initial = link.orEmpty(),
+            onSave = {
+                io.github.henry753951.airplayremote.screensaver.ScreensaverStore.setAlbumLink(ctx, it)
+                link = io.github.henry753951.airplayremote.screensaver.ScreensaverStore.albumLink(ctx)
+                editing = false
+            },
+            onDismiss = { editing = false },
+        )
+    }
+    return listOf(
+        TvItem(
+            stringResource(R.string.tv_album), stringResource(R.string.tv_album_desc),
+            value = stringResource(if (link != null) R.string.tv_album_set else R.string.tv_album_none),
+            onClick = { editing = true },
+        ),
+    )
+}
+
+@Composable
+private fun TvTextDialog(
+    title: String,
+    placeholder: String,
+    hint: String,
+    error: String,
+    valid: (String) -> Boolean,
+    initial: String,
+    onSave: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var text by remember { mutableStateOf(initial) }
+    val fieldFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { fieldFocus.requestFocusUntilLanded() }
+    val ok = valid(text)
+    val save = { if (ok) onSave(text.trim()) }
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            Modifier
+                .widthIn(min = 460.dp, max = 680.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(TvTile)
+                .padding(32.dp)
+        ) {
+            Text(title, color = TvText, fontSize = 24.sp, fontWeight = FontWeight.Light)
+            Spacer(Modifier.height(20.dp))
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it.take(300) },
+                singleLine = true,
+                isError = !ok,
+                placeholder = { Text(placeholder, color = TvMuted) },
+                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 18.sp, color = TvText),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { save() }),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = TvText, unfocusedBorderColor = Color(0x55FFFFFF), cursorColor = TvText,
+                    errorBorderColor = TvError
+                ),
+                modifier = Modifier.fillMaxWidth().focusRequester(fieldFocus)
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                if (ok) hint else error,
+                color = if (ok) TvMuted else TvError, fontSize = 15.sp,
+            )
+            Spacer(Modifier.height(24.dp))
+            Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TvPill(stringResource(R.string.tv_cancel), onDismiss)
+                TvPill(stringResource(R.string.tv_save), { save() }, enabled = ok)
+            }
+        }
+    }
 }
 
 @Composable

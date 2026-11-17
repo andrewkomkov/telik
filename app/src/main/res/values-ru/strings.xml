@@ -384,4 +384,23 @@
     <string name="home_listings_hint">Разрешите доступ к телепрограммам, и Телик покажет, что вы смотрите в YouTube, Apple TV и других приложениях.</string>
     <string name="home_installing_title">Устанавливается</string>
     <string name="home_installing_progress">Установка: %1$d%%</string>
+    <string name="dream_name">Телик: виды Земли</string>
+    <string name="section_shortcuts">Быстрые команды Siri</string>
+    <string name="setting_shortcuts">Команды из «Быстрых команд»</string>
+    <string name="setting_shortcuts_desc">Приложение «Быстрые команды» на iPhone открывает приложения, переключает HDMI, показывает сообщения и управляет воспроизведением на телевизоре. По умолчанию выключено.</string>
+    <string name="setting_shortcuts_token">Токен</string>
+    <string name="setting_shortcuts_example">В «Быстрых командах» добавьте «Получить содержимое URL», метод POST, заголовок Authorization: Bearer и токен. Пример: %1$s. Другие адреса: /v1/input?hdmi=1, /v1/message?text=…, /v1/key?name=pause.</string>
+    <string name="setting_shortcuts_renew">Новый токен</string>
+    <string name="setting_shortcuts_renew_desc">Старый токен перестанет работать.</string>
+    <string name="tv_album">Общий альбом iCloud</string>
+    <string name="tv_album_desc">Заставка показывает его фото между видео. В «Фото» на iPhone у альбома должен быть включён «Общедоступный веб-сайт».</string>
+    <string name="tv_album_set">Задан</string>
+    <string name="tv_album_none">Нет</string>
+    <string name="tv_album_hint">Вставьте ссылку с клавиатуры iPhone через пульт Apple TV. Пустое поле выключает альбом.</string>
+    <string name="tv_album_error">Это не ссылка на общий альбом iCloud.</string>
+    <string name="tv_weather_city">Город для погоды</string>
+    <string name="tv_weather_city_desc">Погода рядом с часами на главном экране и в заставке.</string>
+    <string name="tv_weather_city_auto">По часовому поясу</string>
+    <string name="tv_weather_city_hint">Название города, например Нови-Сад. Пустое поле: город часового пояса.</string>
+    <string name="home_weather_today">Сегодня</string>
 </resources>

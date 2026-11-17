@@ -677,6 +677,7 @@ async fn handle_companion(
     let timeout_deadline = session.timeout_deadline();
     let mut disconnect_reason = "peer_closed".to_string();
     let mut text_focus = crate::text_input::subscribe();
+    let mut media_flags = crate::tv_state::subscribe();
 
     const MAX_FRAME_LENGTH: usize = 2 * 1024 * 1024; // 2MB protection against malformed frames
 
@@ -698,6 +699,16 @@ async fn handle_companion(
                     disconnect_reason = format!("error:{e}");
                     break;
                 }
+            }
+            flags = media_flags.recv() => {
+                // The media buttons of the iPhone follow the TV (spec 006 US2).
+                if flags.is_ok() && session.is_established() {
+                    if let Err(e) = session.push_media_state(None).await {
+                        disconnect_reason = format!("error:{e}");
+                        break;
+                    }
+                }
+                continue;
             }
             event = text_focus.recv() => {
                 if let Ok(event) = event {

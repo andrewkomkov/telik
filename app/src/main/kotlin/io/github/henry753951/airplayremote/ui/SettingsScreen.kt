@@ -57,6 +57,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
     val usbOnly by viewModel.pref(Prefs.USB_ONLY).collectAsState()
     val autoStart by viewModel.pref(Prefs.AUTO_START).collectAsState()
     val bootAutoStart by viewModel.pref(Prefs.BOOT_AUTO_START).collectAsState()
+    val shortcutsOn by viewModel.pref(Prefs.SHORTCUTS_ENABLED).collectAsState()
     val runInBackground by viewModel.pref(Prefs.RUN_IN_BACKGROUND).collectAsState()
     val serverPort by viewModel.pref(Prefs.SERVER_PORT).collectAsState()
     val audioLatencyMs by viewModel.pref(Prefs.AUDIO_LATENCY_MS).collectAsState()
@@ -175,6 +176,8 @@ fun SettingsScreen(viewModel: MainViewModel) {
                 Switch(checked = autoLaunch, onCheckedChange = null)
             }
         )
+
+        ShortcutsSection(shortcutsOn) { viewModel.set(Prefs.SHORTCUTS_ENABLED, it) }
 
         SectionHeader(stringResource(R.string.section_display))
 
@@ -725,6 +728,39 @@ private fun <T> SettingSegmented(
                 Text(summary)
             }
         }
+    )
+}
+
+/** Spec 006 US7: Siri Shortcuts. The token shows only while the endpoint is on. */
+@Composable
+private fun ShortcutsSection(on: Boolean, onChange: (Boolean) -> Unit) {
+    val ctx = LocalContext.current
+    SectionHeader(stringResource(R.string.section_shortcuts))
+    SettingSwitch(
+        title = stringResource(R.string.setting_shortcuts),
+        description = stringResource(R.string.setting_shortcuts_desc),
+        checked = on,
+        onCheckedChange = onChange,
+    )
+    if (!on) return
+    var token by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(io.github.henry753951.airplayremote.shortcuts.ShortcutToken.get(ctx)) }
+    val ip = androidx.compose.runtime.remember { io.github.henry753951.airplayremote.platform.LocalNetworkAddress.get(ctx) ?: "TV" }
+    val port = io.github.henry753951.airplayremote.shortcuts.ShortcutApi.PORT
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.setting_shortcuts_token)) },
+        supportingContent = {
+            Text(
+                token + "\n\n" + stringResource(R.string.setting_shortcuts_example, "http://$ip:$port/v1/open?app=com.google.android.youtube.tv"),
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+            )
+        },
+    )
+    ListItem(
+        modifier = Modifier.dpadFocus(RectangleShape).toggleable(value = false, role = Role.Button, onValueChange = {
+            token = io.github.henry753951.airplayremote.shortcuts.ShortcutToken.renew(ctx)
+        }),
+        headlineContent = { Text(stringResource(R.string.setting_shortcuts_renew)) },
+        supportingContent = { Text(stringResource(R.string.setting_shortcuts_renew_desc)) },
     )
 }
 

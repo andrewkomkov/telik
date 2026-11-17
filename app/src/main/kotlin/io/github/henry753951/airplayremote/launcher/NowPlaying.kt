@@ -28,6 +28,8 @@ data class NowPlaying(
     val art: Bitmap?,
     val playing: Boolean,
     val canNext: Boolean,
+    /** `PlaybackState` actions, for the media buttons of the iPhone remote (006 US2). */
+    val actions: Long = 0L,
 )
 
 class NowPlayingWatcher(private val context: Context) {
@@ -100,6 +102,7 @@ class NowPlayingWatcher(private val context: Context) {
                 ?: m.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON),
             playing = c.playbackState?.state == PlaybackState.STATE_PLAYING,
             canNext = (c.playbackState?.actions ?: 0L) and PlaybackState.ACTION_SKIP_TO_NEXT != 0L,
+            actions = c.playbackState?.actions ?: 0L,
         )
     }
 
