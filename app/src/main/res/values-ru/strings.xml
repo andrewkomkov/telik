@@ -356,6 +356,9 @@
     <string name="home_fav_title">Избранное</string>
     <string name="home_apps_title">Приложения</string>
     <string name="home_recent_title">Недавние</string>
+    <string name="home_cw_title">Продолжить просмотр</string>
+    <string name="home_cw_episode">Сезон %1$s, серия %2$s</string>
+    <string name="home_cw_episode_only">Серия %1$s</string>
     <string name="home_badge_new">Новое</string>
     <string name="home_badge_updated">Обновлено</string>
     <string name="home_move_hint">Двигайте стрелками. Нажмите OK, когда закончите.</string>

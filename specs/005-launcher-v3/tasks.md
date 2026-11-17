@@ -49,7 +49,12 @@
 
 ## Phase 5: Content and app actions (US5, US6, P3)
 
-- [ ] T050 [US5] Only if T001 finds rows: add the shelf and the "Continue watching" row from `TvContract`.
+- [x] T054 [US5] Add `ContinueWatching`: read `WatchNextPrograms`, keep the items of installed apps, sort them by the last use and remove duplicates. Add unit tests.
+- [x] T055 [US5] Add `PosterCache`: load the art of a program from a `content:` or `https:` link off the main thread, at the card size, with a memory limit and its main color. The Top Shelf loads a 1280x720 version. For YouTube, it asks for `maxresdefault.jpg` first.
+- [x] T056 [US5] Add the "Continue watching" row with art, a progress bar, the title in the title area and the art in the Top Shelf. OK opens the `INTENT_URI` of the item.
+- [ ] T057 [US5] Ask for `READ_TV_LISTINGS` on the Home screen, as for notification access, with "Not now".
+- [ ] T058 [US5] Show the preview programs of the focused app in the Top Shelf (scenario 1).
+- [ ] T059 [US5] Check on the TV with screenshots and `gfxinfo`.
 - [ ] T051 [US6] Add uninstall, the system screen of the app and the app shortcuts to the edit menu.
 - [x] T053 [US6] Add the app menu for a long OK. It has these items: open, stop, favorites, move, hide, the system screen, uninstall. Stop runs `am force-stop` through the adb port of the TV. Without the adb port, the system screen opens.
 - [ ] T052 Check on the TV: the Home screen opens in 1 second or less with all rows (SC-003).

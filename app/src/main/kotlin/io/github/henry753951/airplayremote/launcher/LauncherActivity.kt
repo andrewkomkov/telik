@@ -55,6 +55,7 @@ class LauncherActivity : ComponentActivity() {
     private var apps: List<AppTile> = emptyList()
     private var favorites: List<String> = emptyList()
     private var launches: List<Launch> = emptyList()
+    private var watchNext: List<WatchNextItem> = emptyList()
     private lateinit var nowPlaying: NowPlayingWatcher
 
     private val roleRequest = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -105,6 +106,7 @@ class LauncherActivity : ComponentActivity() {
                 state = state,
                 onFirstFrame = guard::onFirstFrame,
                 onLaunch = ::launchApp,
+                onWatchNext = ::openWatchNext,
                 onTelik = { openTelikPage(MainActivity.PAGE_SETTINGS) },
                 onTelikEntry = ::openTelikEntry,
                 onAttention = ::fixAttention,
@@ -226,8 +228,11 @@ class LauncherActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         if (::store.isInitialized) refreshDefault()
-        // T001 probe: counts only, off the main thread.
-        lifecycleScope.launch(Dispatchers.IO) { TvListings.log(applicationContext) }
+        // US5: Watch Next can change while another app is open, so read it on each return.
+        lifecycleScope.launch {
+            val items = withContext(Dispatchers.IO) { ContinueWatching.read(applicationContext) }
+            if (items != watchNext) { watchNext = items; rebuild() }
+        }
     }
 
     // Home pressed while Home is open: leave edit mode and go back to the first tile.
@@ -255,6 +260,7 @@ class LauncherActivity : ComponentActivity() {
         val now = System.currentTimeMillis()
         val lastLaunch = launches.associate { it.packageName to it.lastMillis }
         state = state.copy(
+            continueWatching = ContinueWatching.pick(watchNext, apps.mapTo(HashSet()) { it.packageName }),
             recent = Recent.pick(launches, visible, shown.filter { it.startsWith(Favorites.APP) }.mapTo(HashSet()) { it.removePrefix(Favorites.APP) }),
             badges = apps.mapNotNull { a ->
                 Recent.badge(a.installedMillis, a.updatedMillis, lastLaunch[a.packageName], now)?.let { a.packageName to it }
@@ -288,6 +294,24 @@ class LauncherActivity : ComponentActivity() {
             .addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
         open(intent)
+    }
+
+    /**
+     * Opens a Watch Next program in its app (US5). The link comes from another app, so it may only
+     * open that app: a link to another package opens the app of the program instead.
+     */
+    private fun openWatchNext(item: WatchNextItem) {
+        lifecycleScope.launch { store.recordLaunch(item.packageName, System.currentTimeMillis()) }
+        val link = runCatching { Intent.parseUri(item.intentUri, Intent.URI_INTENT_SCHEME) }.getOrNull()
+        val target = link?.component?.packageName ?: link?.`package`
+        if (link != null && (target == null || target == item.packageName)) {
+            link.selector = null
+            if (target == null) link.`package` = item.packageName
+            link.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            if (runCatching { startActivity(link) }.isSuccess) return
+        }
+        apps.firstOrNull { it.packageName == item.packageName }?.let(::launchApp)
+            ?: Toast.makeText(this, R.string.home_cannot_open, Toast.LENGTH_SHORT).show()
     }
 
     /** Force stop through the adb port of the TV, as for the headphones. Without it, the app screen of the system. */

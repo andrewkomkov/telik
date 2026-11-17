@@ -12,10 +12,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.animation.animateColorAsState
+import io.github.henry753951.airplayremote.launcher.WatchNextItem
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.runtime.snapshotFlow
@@ -152,6 +154,8 @@ data class HomeState(
     /** 005 US3: packages of the Recent row, last used first. */
     val recent: List<String> = emptyList(),
     val badges: Map<String, Recent.Badge> = emptyMap(),
+    /** 005 US5: Watch Next programs of other apps, last used first. */
+    val continueWatching: List<WatchNextItem> = emptyList(),
 )
 
 
@@ -161,6 +165,7 @@ internal fun HomeScreen(
     state: HomeState,
     onFirstFrame: () -> Unit,
     onLaunch: (AppTile) -> Unit,
+    onWatchNext: (WatchNextItem) -> Unit,
     onTelik: () -> Unit,
     onTelikEntry: (TvHomeEntry) -> Unit,
     onAttention: (Attention) -> Unit,
@@ -356,12 +361,24 @@ internal fun HomeScreen(
                         }
                     }
 
-                    // Row 1: Recent (US3), only outside edit mode and only when there is something to show.
+                    // Row 1: Continue watching (US5), Watch Next of other apps.
+                    val watching = if (editing == null) state.continueWatching else emptyList()
+                    val recentIndex = if (watching.isEmpty()) 1 else 2
+                    if (watching.isNotEmpty()) {
+                        RowTitle(stringResource(R.string.home_cw_title))
+                        TileRow(1, rowTops, onRowFocus) {
+                            watching.forEach { item ->
+                                WatchNextCard(item, fancy, firstMod(), focusOn) { onWatchNext(item) }
+                            }
+                        }
+                    }
+
+                    // Then Recent (US3), only outside edit mode and only when there is something to show.
                     val recentApps = if (editing == null) state.recent.mapNotNull { byPackage[it] } else emptyList()
-                    val gridStart = if (recentApps.isEmpty()) 1 else 2
+                    val gridStart = if (recentApps.isEmpty()) recentIndex else recentIndex + 1
                     if (recentApps.isNotEmpty()) {
                         RowTitle(stringResource(R.string.home_recent_title))
-                        TileRow(1, rowTops, onRowFocus) {
+                        TileRow(recentIndex, rowTops, onRowFocus) {
                             recentApps.forEach { app ->
                                 val tag = "recent:" + app.packageName
                                 AppTileView(
@@ -514,7 +531,18 @@ private object TvType {
 }
 
 /** What the item in focus shows in the title area and the backdrop. */
-private data class FocusInfo(val title: String, val subtitle: String, val pkg: String? = null, val activity: String? = null, val entry: TvHomeEntry? = null)
+private data class FocusInfo(
+    val title: String,
+    val subtitle: String,
+    val pkg: String? = null,
+    val activity: String? = null,
+    val entry: TvHomeEntry? = null,
+    /** Art of a focused program (US5): the Top Shelf shows it large. */
+    val art: android.graphics.Bitmap? = null,
+    val artColor: Int? = null,
+    /** Link of the art, for the large version in the Top Shelf. */
+    val artUri: String? = null,
+)
 
 @OptIn(ExperimentalFoundationApi::class)
 private val NoVerticalBringIntoView = object : BringIntoViewSpec {
@@ -561,15 +589,20 @@ private fun TileRow(
 @Composable
 private fun Backdrop(infoState: State<FocusInfo?>, np: NowPlaying?, fancy: Boolean, scroll: ScrollState) {
     val info = infoState.value
-    val npArt = np?.art
-    val npColor by produceState<Int?>(null, npArt) {
-        value = npArt?.let { withContext(Dispatchers.Default) { BannerCache.mainColor(it) } }
+    val playing = np?.art
+    val npColor by produceState<Int?>(null, playing) {
+        value = playing?.let { withContext(Dispatchers.Default) { BannerCache.mainColor(it) } }
     }
+    // The art of a focused program wins over the art of the media that plays. Its large version
+    // replaces the card-size one when it arrives.
+    val large = rememberLargePoster(info?.artUri)
+    val npArt = info?.art?.let { large ?: it } ?: playing
     val pkg = info?.pkg
     val activity = info?.activity
     val appColor = if (pkg != null && activity != null) rememberArt(pkg, activity).value?.color else null
     val target = when {
-        npArt != null -> npColor?.let { Color(it) }
+        info?.art != null -> info.artColor?.let { Color(it) }
+        playing != null -> npColor?.let { Color(it) }
         pkg != null -> appColor?.let { Color(it) }
         else -> info?.entry?.accent()?.first()
     } ?: IdleGlow
@@ -587,50 +620,68 @@ private fun Backdrop(infoState: State<FocusInfo?>, np: NowPlaying?, fancy: Boole
             )
         },
     ) {
-        if (npArt != null) {
+        // The fade and the scrim are baked into one bitmap off the main thread, so each frame draws
+        // one plain bitmap: the masked shader cost the GPU of the test TV ~110 ms a frame.
+        // The value carries its source: produceState keeps the old value when the key changes.
+        val bakedState = produceState<Pair<android.graphics.Bitmap, ImageBitmap>?>(npArt?.let { a -> ShelfBake.peek(a)?.let { a to it } }, npArt) {
+            value = npArt?.let { art -> art to (ShelfBake.peek(art) ?: withContext(Dispatchers.Default) { ShelfBake.bake(art) }) }
+        }
+        bakedState.value?.takeIf { it.first === npArt }?.second?.let { image ->
             Box(
-                Modifier.align(Alignment.TopEnd).fillMaxWidth(0.68f).fillMaxHeight(0.78f).drawWithCache {
-                    val brush = ShaderBrush(shelfShader(npArt, size.width, size.height))
+                Modifier.align(Alignment.TopEnd).fillMaxWidth(0.68f).fillMaxHeight(0.78f).drawBehind {
                     val fadeRange = ShelfHeight.toPx()
-                    onDrawBehind {
-                        // The art goes away as the rows scroll up. The scroll is read in the draw phase only.
-                        val a = shelfAlpha * (1f - scroll.value / fadeRange).coerceIn(0f, 1f)
-                        if (a > 0f) drawRect(brush, alpha = a)
+                    // The art goes away as the rows scroll up. The scroll is read in the draw phase only.
+                    val a = shelfAlpha * (1f - scroll.value / fadeRange).coerceIn(0f, 1f)
+                    if (a > 0f) {
+                        drawImage(
+                            image, dstSize = androidx.compose.ui.unit.IntSize(size.width.toInt(), size.height.toInt()),
+                            alpha = a, filterQuality = androidx.compose.ui.graphics.FilterQuality.Low,
+                        )
                     }
                 },
-            )
-        }
-        // Scrim over media art only: white text stays readable on any art.
-        if (npArt != null) {
-            Box(
-                Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(0f to Color.Black.copy(alpha = 0.2f), 0.45f to Color.Black.copy(alpha = 0.45f), 1f to Color.Transparent),
-                ),
             )
         }
     }
 }
 
 /**
- * The art, cropped to fill w x h, faded to the left (title) and to the bottom (rows). The fade is a
- * DST_IN mask inside one shader, so the draw needs no offscreen layer (FR-022).
+ * The Top Shelf art (US5, US8), cropped to the shelf shape and faded to the left (title) and to
+ * the bottom (rows). It is made once for each art, on a background thread, in a software canvas.
  */
-private fun shelfShader(art: android.graphics.Bitmap, w: Float, h: Float): android.graphics.Shader {
-    val clamp = android.graphics.Shader.TileMode.CLAMP
-    val image = android.graphics.BitmapShader(art, clamp, clamp)
-    val s = maxOf(w / art.width, h / art.height)
-    image.setLocalMatrix(
-        android.graphics.Matrix().apply {
+private object ShelfBake {
+    private const val W = 1306 // the shelf box in px: 0.68 of 1920 by 0.78 of 1080
+    private const val H = 842
+    private val cache = object : android.util.LruCache<android.graphics.Bitmap, ImageBitmap>(3) {}
+
+    fun peek(art: android.graphics.Bitmap?): ImageBitmap? = art?.let { cache.get(it) }
+
+    fun bake(art: android.graphics.Bitmap): ImageBitmap {
+        val out = android.graphics.Bitmap.createBitmap(W, H, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(out)
+        val s = maxOf(W.toFloat() / art.width, H.toFloat() / art.height)
+        val m = android.graphics.Matrix().apply {
             setScale(s, s)
-            postTranslate((w - art.width * s) / 2f, (h - art.height * s) / 2f)
-        },
-    )
-    val black = android.graphics.Color.BLACK
-    val clear = android.graphics.Color.TRANSPARENT
-    val left = android.graphics.LinearGradient(0f, 0f, w * 0.55f, 0f, clear, black, clamp)
-    val bottom = android.graphics.LinearGradient(0f, h * 0.35f, 0f, h, black, clear, clamp)
-    val dstIn = android.graphics.BlendMode.DST_IN
-    return android.graphics.ComposeShader(android.graphics.ComposeShader(image, left, dstIn), bottom, dstIn)
+            postTranslate((W - art.width * s) / 2f, (H - art.height * s) / 2f)
+        }
+        canvas.drawBitmap(art, m, android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG))
+        val clamp = android.graphics.Shader.TileMode.CLAMP
+        val black = android.graphics.Color.BLACK
+        val clear = android.graphics.Color.TRANSPARENT
+        val mask = android.graphics.Paint().apply { blendMode = android.graphics.BlendMode.DST_IN }
+        mask.shader = android.graphics.LinearGradient(0f, 0f, W * 0.55f, 0f, clear, black, clamp)
+        canvas.drawRect(0f, 0f, W.toFloat(), H.toFloat(), mask)
+        mask.shader = android.graphics.LinearGradient(0f, H * 0.35f, 0f, H.toFloat(), black, clear, clamp)
+        canvas.drawRect(0f, 0f, W.toFloat(), H.toFloat(), mask)
+        // The scrim, darker to the bottom, on the art only: white text stays readable.
+        val scrim = android.graphics.Paint().apply {
+            blendMode = android.graphics.BlendMode.SRC_ATOP
+            shader = android.graphics.LinearGradient(
+                0f, 0f, 0f, H.toFloat(), intArrayOf(0x33000000, 0x73000000, 0xB3000000.toInt()), floatArrayOf(0f, 0.55f, 1f), clamp,
+            )
+        }
+        canvas.drawRect(0f, 0f, W.toFloat(), H.toFloat(), scrim)
+        return out.asImageBitmap().also { cache.put(art, it) }
+    }
 }
 
 private val IdleGlow = Color(0xFF2B4C7E)
@@ -724,6 +775,50 @@ private fun NowPlayingHint(fancy: Boolean, onAllow: () -> Unit, onDismiss: () ->
 }
 
 /** Label under a tile: only the tile in focus shows it (Apple TV Home screen). */
+/** A Watch Next card (US5): the art, the progress, and the title in the title area on focus. */
+@Composable
+private fun WatchNextCard(item: WatchNextItem, fancy: Boolean, modifier: Modifier, onFocused: (FocusInfo) -> Unit, onClick: () -> Unit) {
+    val poster by rememberPoster(item.artUri)
+    val appLabel = rememberAppLabel(item.packageName)
+    val episode = when {
+        item.season != null && item.episode != null -> stringResource(R.string.home_cw_episode, item.season, item.episode)
+        item.episode != null -> stringResource(R.string.home_cw_episode_only, item.episode)
+        else -> null
+    }
+    val subtitle = listOfNotNull(episode, item.episodeTitle, appLabel).joinToString(" · ")
+    val p = poster
+    FocusTile(
+        fancy, modifier.size(TileW, TileH), false,
+        { onFocused(FocusInfo(item.title, subtitle, art = p?.bitmap, artColor = p?.color, artUri = item.artUri)) },
+        onClick, null, grow = FocusGrow,
+        glow = p?.color?.let { Color(it) } ?: Color.Black,
+    ) {
+        Box(Modifier.fillMaxSize().background(Color(0xFF1C1F26))) {
+            if (p != null) {
+                val image = remember(p) { p.bitmap.asImageBitmap() }
+                Image(image, item.title, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            } else {
+                Text(
+                    item.title, Modifier.align(Alignment.Center).padding(12.dp), color = Color.White, fontSize = TvType.Body,
+                    maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+            }
+            item.progress?.let { f ->
+                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(4.dp).background(Color.White.copy(alpha = 0.25f)))
+                Box(Modifier.align(Alignment.BottomStart).fillMaxWidth(f).height(4.dp).background(Color.White))
+            }
+        }
+    }
+}
+
+@Composable
+private fun rememberAppLabel(pkg: String): String? {
+    val ctx = LocalContext.current
+    return remember(pkg) {
+        runCatching { ctx.packageManager.getApplicationLabel(ctx.packageManager.getApplicationInfo(pkg, 0)).toString() }.getOrNull()
+    }
+}
+
 @Composable
 private fun FocusLabel(text: String, visible: Boolean) {
     // With the large title on screen, the name shows once: there, not under the tile.

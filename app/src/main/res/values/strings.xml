@@ -356,6 +356,9 @@
     <string name="home_fav_title">Favorites</string>
     <string name="home_apps_title">Apps</string>
     <string name="home_recent_title">Recent</string>
+    <string name="home_cw_title">Continue watching</string>
+    <string name="home_cw_episode">S%1$s E%2$s</string>
+    <string name="home_cw_episode_only">E%1$s</string>
     <string name="home_badge_new">New</string>
     <string name="home_badge_updated">Updated</string>
     <string name="home_move_hint">Move with the arrows. Press OK when done.</string>

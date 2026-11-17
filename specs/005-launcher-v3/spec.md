@@ -76,18 +76,20 @@ The user filters the app row by category: all, video, music, games, tools. The g
 
 ---
 
-### User Story 5 - Content from apps (Priority: P3)
+### User Story 5 - Content from apps (Priority: P1)
 
 When the focused app publishes channels or Watch Next items to Android TV, the shelf above the app row shows them. OK opens the item in the app.
 
-**Why this priority**: It depends on the apps and on a permission, and the probe (T001) can show that the apps publish nothing under Google TV.
+**Why this priority**: The probe of 2026-11-17 (T001) found Watch Next items of three apps and preview programs of five apps. The user asked for a launcher on the level of the current platform.
 
 **Independent Test**: Grant `READ_TV_LISTINGS`. Focus an app that publishes a channel. The shelf shows its items.
 
 **Acceptance Scenarios**:
 
 1. **Given** the permission and an app with preview programs, **When** the focus stays 300 ms, **Then** the shelf shows them.
-2. **Given** Watch Next items, **When** the Home screen opens, **Then** a "Continue watching" row shows them.
+2. **Given** Watch Next items, **When** the Home screen opens, **Then** a "Continue watching" row shows them under the Favorites row. Each card shows the art and the progress. The last item that the user watched is first.
+4. **Given** a focused Watch Next card, **When** the screen shows it, **Then** the title area shows the title and the episode, and the Top Shelf shows the art large.
+5. **Given** a Watch Next card, **When** the user presses OK, **Then** the item opens in its app. When the link of the item fails, the app opens.
 3. **Given** no permission or no items, **When** the Home screen opens, **Then** no empty row shows.
 
 ---
