@@ -52,27 +52,6 @@ object BannerCache {
         }
     }
 
-    private val heroes = HashMap<String, ImageBitmap>()
-
-    fun peekHero(pkg: String): ImageBitmap? = synchronized(heroes) { heroes[pkg] }
-
-    /** The banner at twice the tile size, for the Top Shelf (US8). Null for an app without a banner. */
-    fun loadHero(context: Context, pkg: String, activity: String): ImageBitmap? {
-        peekHero(pkg)?.let { return it }
-        val pm = context.packageManager
-        return try {
-            val banner = pm.getActivityBanner(ComponentName(pkg, activity)) ?: pm.getApplicationBanner(pkg) ?: return null
-            val image = banner.toBitmap(W * 2, H * 2).asImageBitmap()
-            synchronized(heroes) {
-                if (heroes.size >= 8) heroes.remove(heroes.keys.first())
-                heroes[pkg] = image
-            }
-            image
-        } catch (_: Exception) {
-            null
-        }
-    }
-
     fun mainColor(bmp: Bitmap): Int? {
         val small = Bitmap.createScaledBitmap(bmp, 24, 14, true)
         val px = IntArray(24 * 14)
@@ -87,13 +66,5 @@ fun rememberArt(pkg: String, activity: String): State<BannerCache.Art?> {
     val ctx = LocalContext.current.applicationContext
     return produceState(BannerCache.peek(pkg), pkg, activity) {
         if (value == null) value = withContext(Dispatchers.IO) { BannerCache.load(ctx, pkg, activity) }
-    }
-}
-
-@Composable
-fun rememberHero(pkg: String, activity: String): State<ImageBitmap?> {
-    val ctx = LocalContext.current.applicationContext
-    return produceState(BannerCache.peekHero(pkg), pkg, activity) {
-        if (value == null) value = withContext(Dispatchers.IO) { BannerCache.loadHero(ctx, pkg, activity) }
     }
 }

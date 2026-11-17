@@ -1,6 +1,5 @@
 package io.github.henry753951.airplayremote.launcher.ui
 
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.BringIntoViewSpec
@@ -13,12 +12,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.animation.animateColorAsState
+import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.State
+import androidx.compose.foundation.ScrollState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.CompositingStrategy
 import io.github.henry753951.airplayremote.launcher.Ambient
 import io.github.henry753951.airplayremote.launcher.Recent
 import kotlinx.coroutines.Dispatchers
@@ -184,24 +187,28 @@ internal fun HomeScreen(
 ) = AirPlayTheme {
     // Frame watch (FR-012): slow frames while focus moves switch the effects to plain.
     var slow by remember { mutableStateOf(false) }
-    var focusStamp by remember { mutableIntStateOf(0) }
+    // Read only in snapshotFlow and in callbacks: a focus change does not recompose this scope (FR-022).
+    val focusStamp = remember { mutableIntStateOf(0) }
     val fancy = state.glass && !slow
 
     LaunchedEffect(Unit) { withFrameNanos { }; onFirstFrame() }
-    LaunchedEffect(focusStamp) {
-        if (focusStamp == 0 || slow) return@LaunchedEffect
-        var last = 0L
-        var sum = 0L
-        var n = 0
-        withTimeoutOrNull(300) {
-            while (true) {
-                withFrameNanos { t ->
-                    if (last != 0L && t - last < 100_000_000L) { sum += t - last; n++ }
-                    last = t
+    LaunchedEffect(Unit) {
+        snapshotFlow { focusStamp.intValue }.collectLatest { stamp ->
+            if (stamp == 0 || slow) return@collectLatest
+            var last = 0L
+            var sum = 0L
+            var n = 0
+            // The loop asks for each frame, so each gap is one frame, also a long one.
+            withTimeoutOrNull(500) {
+                while (true) {
+                    withFrameNanos { t ->
+                        if (last != 0L) { sum += t - last; n++ }
+                        last = t
+                    }
                 }
             }
+            if (n >= 3 && sum / n > 40_000_000L) slow = true
         }
-        if (n >= 4 && sum / n > 33_000_000L) slow = true
     }
 
     val editing = state.editing
@@ -224,9 +231,9 @@ internal fun HomeScreen(
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     // The item in focus drives the backdrop and the title area, as on the Apple TV Home screen.
-    var info by remember { mutableStateOf<FocusInfo?>(null) }
-    val focusOn: (FocusInfo) -> Unit = { i -> info = i; focusStamp++ }
-    val pillFocus: () -> Unit = { info = null; focusStamp++ }
+    val info = remember { mutableStateOf<FocusInfo?>(null) }
+    val focusOn: (FocusInfo) -> Unit = remember { { i -> info.value = i; focusStamp.intValue++ } }
+    val pillFocus: () -> Unit = remember { { info.value = null; focusStamp.intValue++ } }
 
     // Rows scroll as a whole (HIG: never half a row). The top rows keep the page at the top; a
     // lower row moves up to a fixed place under the safe area.
@@ -256,7 +263,7 @@ internal fun HomeScreen(
     LaunchedEffect(pending) { if (pending == null) attention = null else { delay(ATTENTION_DELAY_MS); attention = pending } }
 
     Box(Modifier.fillMaxSize().background(Color(0xFF0B0D12)).onPreviewKeyEvent { userMoved = true; false }) {
-        Backdrop(info, state.nowPlaying, fancy)
+        Backdrop(info, state.nowPlaying, fancy, scroll)
 
         val defaultSpec = LocalBringIntoViewSpec.current
         CompositionLocalProvider(LocalBringIntoViewSpec provides NoVerticalBringIntoView) {
@@ -293,7 +300,7 @@ internal fun HomeScreen(
                         val np = state.nowPlaying
                         when {
                             a != null -> AttentionRow(a, fancy) { onAttention(a) }
-                            np != null -> NowPlayingCard(np, fancy, { focusStamp++; onRowFocus(-1) }, onNowPlaying, onPlayPause, onNext)
+                            np != null -> NowPlayingCard(np, fancy, { focusStamp.intValue++; onRowFocus(-1) }, onNowPlaying, onPlayPause, onNext)
                             state.nowPlayingHint -> NowPlayingHint(fancy, onAllowNowPlaying, onDismissNowPlaying)
                             else -> FocusTitle(info, state.isDefault, state.telik)
                         }
@@ -541,11 +548,13 @@ private fun TileRow(
 }
 
 /**
- * Backdrop (US8): a glow in the main color of the item in focus, and its art large in the top
- * right (the Top Shelf), faded toward the title and the rows.
+ * Backdrop (US8): a glow in the main color of the item in focus, and the art of the media that
+ * plays large in the top right (the Top Shelf). It reads the focus here, so a focus change
+ * recomposes only this function (FR-022).
  */
 @Composable
-private fun Backdrop(info: FocusInfo?, np: NowPlaying?, fancy: Boolean) {
+private fun Backdrop(infoState: State<FocusInfo?>, np: NowPlaying?, fancy: Boolean, scroll: ScrollState) {
+    val info = infoState.value
     val npArt = np?.art
     val npColor by produceState<Int?>(null, npArt) {
         value = npArt?.let { withContext(Dispatchers.Default) { BannerCache.mainColor(it) } }
@@ -559,6 +568,7 @@ private fun Backdrop(info: FocusInfo?, np: NowPlaying?, fancy: Boolean) {
         else -> info?.entry?.accent()?.first()
     } ?: IdleGlow
     val glow by animateColorAsState(target, tween(if (fancy) 600 else 0), label = "glow")
+    val shelfAlpha = if (fancy) 0.8f else 0.6f
 
     Box(
         Modifier.fillMaxSize().drawBehind {
@@ -576,25 +586,18 @@ private fun Backdrop(info: FocusInfo?, np: NowPlaying?, fancy: Boolean) {
             )
         },
     ) {
-        Crossfade(
-            targetState = npArt ?: pkg ?: info?.entry, animationSpec = tween(450), label = "shelf",
-            modifier = Modifier.align(Alignment.TopEnd).fillMaxWidth(0.68f).fillMaxHeight(0.78f),
-        ) { key ->
-            val shelf = Modifier.fillMaxSize().shelfFade(fancy)
-            when {
-                key is android.graphics.Bitmap -> {
-                    val image = remember(key) { key.asImageBitmap() }
-                    Image(image, null, shelf, contentScale = ContentScale.Crop)
-                }
-                key is String && activity != null -> {
-                    val hero by rememberHero(key, activity)
-                    hero?.let { Image(it, null, shelf, contentScale = ContentScale.Crop) }
-                }
-                key is TvHomeEntry -> Box(shelf.background(Brush.linearGradient(key.accent())), contentAlignment = Alignment.Center) {
-                    Box(Modifier.padding(start = 120.dp).graphicsLayer { scaleX = 4f; scaleY = 4f; alpha = 0.9f }) { TelikGlyph(key) }
-                }
-                else -> Box(Modifier.fillMaxSize())
-            }
+        if (npArt != null) {
+            Box(
+                Modifier.align(Alignment.TopEnd).fillMaxWidth(0.68f).fillMaxHeight(0.78f).drawWithCache {
+                    val brush = ShaderBrush(shelfShader(npArt, size.width, size.height))
+                    val fadeRange = ShelfHeight.toPx()
+                    onDrawBehind {
+                        // The art goes away as the rows scroll up. The scroll is read in the draw phase only.
+                        val a = shelfAlpha * (1f - scroll.value / fadeRange).coerceIn(0f, 1f)
+                        if (a > 0f) drawRect(brush, alpha = a)
+                    }
+                },
+            )
         }
         // Scrim: white text stays readable on any art.
         Box(
@@ -607,19 +610,33 @@ private fun Backdrop(info: FocusInfo?, np: NowPlaying?, fancy: Boolean) {
     }
 }
 
-/** Fades the Top Shelf art to the left (title) and to the bottom (rows). */
-private fun Modifier.shelfFade(fancy: Boolean): Modifier =
-    graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen; alpha = if (fancy) 0.8f else 0.6f }
-        .drawWithContent {
-            drawContent()
-            drawRect(Brush.horizontalGradient(0f to Color.Transparent, 0.55f to Color.Black), blendMode = BlendMode.DstIn)
-            drawRect(Brush.verticalGradient(0.35f to Color.Black, 1f to Color.Transparent), blendMode = BlendMode.DstIn)
-        }
+/**
+ * The art, cropped to fill w x h, faded to the left (title) and to the bottom (rows). The fade is a
+ * DST_IN mask inside one shader, so the draw needs no offscreen layer (FR-022).
+ */
+private fun shelfShader(art: android.graphics.Bitmap, w: Float, h: Float): android.graphics.Shader {
+    val clamp = android.graphics.Shader.TileMode.CLAMP
+    val image = android.graphics.BitmapShader(art, clamp, clamp)
+    val s = maxOf(w / art.width, h / art.height)
+    image.setLocalMatrix(
+        android.graphics.Matrix().apply {
+            setScale(s, s)
+            postTranslate((w - art.width * s) / 2f, (h - art.height * s) / 2f)
+        },
+    )
+    val black = android.graphics.Color.BLACK
+    val clear = android.graphics.Color.TRANSPARENT
+    val left = android.graphics.LinearGradient(0f, 0f, w * 0.55f, 0f, clear, black, clamp)
+    val bottom = android.graphics.LinearGradient(0f, h * 0.35f, 0f, h, black, clear, clamp)
+    val dstIn = android.graphics.BlendMode.DST_IN
+    return android.graphics.ComposeShader(android.graphics.ComposeShader(image, left, dstIn), bottom, dstIn)
+}
 
 private val IdleGlow = Color(0xFF2B4C7E)
 
 @Composable
-private fun FocusTitle(focus: FocusInfo?, isDefault: Boolean, telik: TelikStatus) {
+private fun FocusTitle(focusState: State<FocusInfo?>, isDefault: Boolean, telik: TelikStatus) {
+    val focus = focusState.value
     // A Telik entry shows its live state, not the state at the moment of the focus.
     val info = focus?.entry?.let { e -> telikCardText(e, telik).let { (t, sub, _) -> focus.copy(title = t, subtitle = sub) } } ?: focus
     Column(Modifier.padding(bottom = 4.dp)) {
@@ -1021,7 +1038,7 @@ private fun FocusTile(
                     scaleX = s; scaleY = s
                     rotationX = -3f * t
                     cameraDistance = 16f * density
-                    shadowElevation = if (shadow) 36f * t else 0f
+                    shadowElevation = if (shadow) 24f * t else 0f
                     ambientShadowColor = glow
                     spotShadowColor = glow
                     shape = TileShape

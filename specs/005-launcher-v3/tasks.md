@@ -22,12 +22,14 @@
 ## Phase 2b: Layout by the tvOS guidelines (US7, P1)
 
 - [x] T025 [US7] Rework `HomeScreen.kt` with the HIG safe area, the five-column grid, the tvOS text styles, labels on focus only, the focus backdrop and whole-row scroll.
-- [ ] T026 [US7, US8] Check on the TV with screenshots: no cut rows, five columns, labels on focus only, the backdrop color, the Top Shelf art and the focus without a frame.
+- [ ] T026 [US7, US8] Check on the TV with screenshots: no cut rows, five columns, labels on focus only, the backdrop color, the Top Shelf art of the media and the focus without a frame.
 
 ## Phase 2c: A richer Home screen (US8, P1)
 
 - [x] T027 [US8] Add `Ambient`: the main color of tile art from a small pixel sample, off the main thread, kept in `BannerCache`. Add unit tests.
 - [x] T028 [US8] Add the colored glow to the backdrop and the large art of the Top Shelf in the top right.
+- [x] T035 [US8] Speed: the focus state is read only in `Backdrop` and `FocusTitle`, the Top Shelf has no offscreen layer and shows only media art, and the frame watch counts long frames (FR-022).
+- [ ] T036 [US8] Check on the TV with `dumpsys gfxinfo`: fewer janky frames than build v3f (66% janky, 89 ms median on 2026-11-17).
 - [x] T029 [US8] Rework the focus of `FocusTile`: no frame with effects on, a shadow in the tile color, a light sweep that passes once. Apps without a banner get a tile in their icon color.
 
 ## Phase 3: Recent, new and installs (US3, P2)

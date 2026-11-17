@@ -124,12 +124,12 @@ The user selected three changes: a Top Shelf as on tvOS, a backdrop that takes t
 
 **Why this priority**: The Home screen is the only Telik interface that the user sees each day.
 
-**Independent Test**: Move the focus from app to app. The backdrop changes color with each app, the top half shows the art of the item in focus, and the focused tile has no white frame.
+**Independent Test**: Move the focus from app to app. The backdrop changes color with each app, and the focused tile has no white frame. With media that plays, the top half shows its art.
 
 **Acceptance Scenarios**:
 
 1. **Given** an app in focus, **When** the focus stays, **Then** the backdrop glows in the main color of its banner or icon.
-2. **Given** an item in focus or a media session, **When** the screen shows it, **Then** the top right of the screen shows its art large, and the art fades to the title on the left.
+2. **Given** a media session with art, **When** the screen shows it at the top, **Then** the top right of the screen shows the art large, and the art fades to the title on the left. An app in focus shows no large art: the TV check of 2026-11-17 showed that a large logo banner looks like a watermark behind the rows.
 3. **Given** a tile in focus with effects on, **When** the screen shows it, **Then** the tile grows, casts a shadow in its own color and shows a light sweep, and it has no white frame.
 4. **Given** effects off or slow frames, **When** the screen shows a focused tile, **Then** the plain white frame shows as before.
 
@@ -166,7 +166,8 @@ The user selected three changes: a Top Shelf as on tvOS, a backdrop that takes t
 - **FR-015**: The row of the Telik entries MUST sit under the app grid. The user asked for this on 2026-11-03.
 - **FR-016**: The clock MUST stay on one line. When the top bar is too wide, the top bar scrolls.
 - **FR-019**: Telik MUST find the main color of each tile art on the TV, without an image library, and MUST NOT find it on the main thread.
-- **FR-020**: The backdrop MUST glow in the color of the item in focus and MUST change color with an animation of 400 ms or more. The Top Shelf MUST show the art of the item in focus, or of the media that plays, in the top right.
+- **FR-020**: The backdrop MUST glow in the color of the item in focus and MUST change color with an animation of 400 ms or more. The Top Shelf MUST show the art of the media that plays in the top right, and MUST hide it when the rows scroll up.
+- **FR-022**: A focus change MUST recompose only the backdrop and the title, not the rows. The backdrop MUST NOT use an offscreen layer. The frame watch MUST count frames of any length, so that a TV with frames of 100 ms or more also gets the plain look.
 - **FR-021**: With effects on, a focused tile MUST show depth (growth, a colored shadow, a light sweep) and no white frame. With effects off, the white frame stays.
 
 ### Key Entities
