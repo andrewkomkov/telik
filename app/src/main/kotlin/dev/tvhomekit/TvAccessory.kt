@@ -3,6 +3,9 @@ package dev.tvhomekit
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.content.Intent
+import android.media.tv.TvContract
+import android.media.tv.TvInputInfo
+import android.media.tv.TvInputManager
 import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
@@ -29,6 +32,11 @@ private const val VOLUME = 23
 private const val VOLUME_TYPE = 24
 private const val VOLUME_SELECTOR = 25
 private const val TV_SERVICE = 9
+private const val MESSAGE = 30
+private const val MESSAGE_ON = 31
+private const val MESSAGE_NAME = 32
+private const val HDMI_PREFIX = "hdmi:"
+private const val MESSAGE_MS = 8_000L
 
 /** Телевизор глазами HomeKit: питание, входы-приложения, пульт и громкость. */
 class TvAccessory internal constructor(context: Context, private val store: Store) {
@@ -64,6 +72,15 @@ class TvAccessory internal constructor(context: Context, private val store: Stor
             inputs[id] = app.first
             labels[id] = app.second
         }
+        // Входы HDMI после приложений (спека 006, US6): Дом и Siri переключают их как на Apple TV.
+        val tv = context.getSystemService(TvInputManager::class.java)
+        runCatching { tv.tvInputList }.getOrDefault(emptyList())
+            .filter { it.isPassthroughInput && it.type == TvInputInfo.TYPE_HDMI }
+            .forEach { info ->
+                val id = store.inputId(HDMI_PREFIX + info.id)
+                inputs[id] = HDMI_PREFIX + info.id
+                labels[id] = cleanLabel(info.loadLabel(context), "HDMI")
+            }
     }
 
     private fun cleanLabel(label: CharSequence, fallback: String): String {
@@ -71,7 +88,8 @@ class TvAccessory internal constructor(context: Context, private val store: Stor
         return clean.ifEmpty { fallback }
     }
 
-    internal fun fingerprint() = inputs.toString()
+    // v2: входы HDMI и выключатель сообщения. Новый отпечаток заставляет iPhone перечитать базу.
+    internal fun fingerprint() = "v2" + inputs.toString()
 
     internal fun database(): HapDatabase {
         val inputServices = labels.entries.map { (id, label) -> inputService(id, label) }
@@ -89,7 +107,7 @@ class TvAccessory internal constructor(context: Context, private val store: Stor
             primary = true,
             linked = listOf(speaker.iid) + inputServices.map { it.iid },
         )
-        return HapDatabase(listOf(information(), protocolInformation(), television, speaker) + inputServices)
+        return HapDatabase(listOf(information(), protocolInformation(), television, speaker, messageService()) + inputServices)
     }
 
     private fun information() = HapService(
@@ -131,13 +149,50 @@ class TvAccessory internal constructor(context: Context, private val store: Stor
             "D9",
             listOf(
                 Characteristic(base + 1, "E3", "string", PR_PW_EV, { store.name("input$id", label) }, { store.setName("input$id", it.toString()) }),
-                Characteristic(base + 2, "DB", "uint8", PR_EV, { if (id == HOME_INPUT) 1 else 10 }),
+                // InputSourceType: 1 главный экран, 3 HDMI, 10 приложение.
+                Characteristic(base + 2, "DB", "uint8", PR_EV, { inputType(id) }),
                 Characteristic(base + 3, "D6", "uint8", PR_PW_EV, { 1 }, {}),
                 Characteristic(base + 4, "135", "uint8", PR_EV, { 0 }),
                 Characteristic(base + 5, "E6", "uint32", listOf("pr"), { id }),
                 Characteristic(base + 6, "23", "string", listOf("pr"), { label }),
             ),
         )
+    }
+
+    private fun inputType(id: Int): Int = when {
+        id == HOME_INPUT -> 1
+        inputs[id]?.startsWith(HDMI_PREFIX) == true -> 3
+        else -> 10
+    }
+
+    // Выключатель «Сообщение Телика» (спека 006, US6): автоматизация Дома включает его, телевизор
+    // показывает баннер с его именем из приложения Дом и сам выключает его.
+    @Volatile
+    private var messageOn = false
+
+    private fun messageService() = HapService(
+        MESSAGE,
+        "49",
+        listOf(
+            Characteristic(MESSAGE_ON, "25", "bool", PR_PW_EV, { messageOn }, { if (toBoolean(it)) showMessage() }),
+            Characteristic(MESSAGE_NAME, "E3", "string", PR_PW_EV, { messageText() }, { store.setName("message", it.toString()) }),
+            Characteristic(MESSAGE_NAME + 1, "23", "string", listOf("pr"), { "Telik message" }),
+        ),
+    )
+
+    private fun messageText() = store.name("message", "Сообщение Телика")
+
+    private fun showMessage() {
+        messageOn = true
+        notifier(MESSAGE_ON)
+        main.post {
+            if (!power.isInteractive) wakeScreen()
+            MessageBanner.show(context, messageText(), MESSAGE_MS)
+        }
+        main.postDelayed({
+            messageOn = false
+            notifier(MESSAGE_ON)
+        }, MESSAGE_MS)
     }
 
     val isAsleep: Boolean get() = !power.isInteractive
@@ -170,7 +225,14 @@ class TvAccessory internal constructor(context: Context, private val store: Stor
             if (id == HOME_INPUT) {
                 global(AccessibilityService.GLOBAL_ACTION_HOME)
             } else {
-                inputs[id]?.let(::launch)
+                inputs[id]?.let { target ->
+                    if (target.startsWith(HDMI_PREFIX)) {
+                        val uri = TvContract.buildChannelUriForPassthroughInput(target.removePrefix(HDMI_PREFIX))
+                        startActivity(Intent(Intent.ACTION_VIEW, uri))
+                    } else {
+                        launch(target)
+                    }
+                }
             }
             currentInput = id
             notifier(ACTIVE_INPUT)
