@@ -202,6 +202,11 @@ class RemoteEngine(
             else -> null
         }
         Log.i("RemoteEngine", if (name == null) "Event: $kind" else "Event: $kind $name")
+        // 008 T002: the requests of the iOS remote that Telik does not answer yet, in full. They carry
+        // no user data: names of events, ids of the phone and flags. Typed text never comes here.
+        if (name != null && (name.startsWith("Fetch") || name == "_interest")) {
+            Log.i("RemoteProbe", "$name ${detail.take(1500)}")
+        }
     }
 
     fun close() {

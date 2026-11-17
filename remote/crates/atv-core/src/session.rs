@@ -121,6 +121,8 @@ pub struct CompanionSession {
     volume: f64,
     muted: bool,
     system_status: u64,
+    /// 008: the phone registered for NowPlayingInfo, so it gets a push on each change.
+    now_playing_interest: bool,
     display_power_on: bool,
     inspector: Arc<InspectorHub>,
     registry: Arc<Mutex<DeviceRegistry>>,
@@ -186,6 +188,7 @@ impl CompanionSession {
             volume: initial_volume,
             muted: initial_muted,
             system_status: 3, // Awake
+            now_playing_interest: false,
             display_power_on: true,
             inspector,
             registry,
@@ -353,6 +356,25 @@ impl CompanionSession {
                 "_mcF",
                 Value::Int(tv_state::media_flags()),
             )])),
+        )
+        .await
+    }
+
+    /// 008: the now playing card, as an archive of TVRCNowPlayingInfo in `NowPlayingInfoKey`.
+    pub async fn push_now_playing(&mut self) -> Result<()> {
+        if !self.now_playing_interest {
+            return Ok(());
+        }
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs_f64())
+            .unwrap_or(0.0);
+        let np = crate::now_playing::current();
+        let archive = crate::now_playing::archive(np.as_ref(), now);
+        self.send_event(
+            "NowPlayingInfo",
+            None,
+            Some(Value::dict(vec![Value::kv("NowPlayingInfoKey", Value::Bytes(archive))])),
         )
         .await
     }
@@ -863,7 +885,17 @@ impl CompanionSession {
                                 .await?;
                             }
                             "NowPlayingInfo" => {
-                                self.send_event(&event_name, xid, None).await?;
+                                // 008: iOS reads the card only from this pushed event.
+                                self.now_playing_interest = true;
+                                self.push_now_playing().await?;
+                            }
+                            "SupportedActions" => {
+                                self.send_event(
+                                    &event_name,
+                                    None,
+                                    Some(Value::dict(vec![Value::kv("GuideSupportedKey", Value::Bool(false))])),
+                                )
+                                .await?;
                             }
                             "SystemStatus" | "TVSystemStatus" => {
                                 self.send_event(

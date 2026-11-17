@@ -50,6 +50,17 @@ class RemoteTvBridge(private val context: Context) {
                     .distinctUntilChanged()
                     .collect { RemoteNative.nativeSetMedia(it) }
             }
+            // 008: the now playing card. The art goes as a small JPEG, made off the main thread.
+            s.launch {
+                media.current.collect { np ->
+                    if (np == null) {
+                        RemoteNative.nativeSetNowPlaying(null, null, null, 0, 0, false, null)
+                        return@collect
+                    }
+                    val jpeg = np.art?.let { art -> kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { jpeg(art) } }
+                    RemoteNative.nativeSetNowPlaying(np.title, np.subtitle, np.packageName, np.durationMs, np.positionMs, np.playing, jpeg)
+                }
+            }
         }
     }
 
@@ -59,7 +70,17 @@ class RemoteTvBridge(private val context: Context) {
         runCatching { launcherApps.unregisterCallback(appsChanged) }
         media.stop()
         RemoteNative.nativeSetMedia(MediaFlags.VOLUME)
+        RemoteNative.nativeSetNowPlaying(null, null, null, 0, 0, false, null)
     }
+
+    private fun jpeg(art: android.graphics.Bitmap): ByteArray? = runCatching {
+        val scale = minOf(1f, 600f / maxOf(art.width, art.height))
+        val small = if (scale < 1f) android.graphics.Bitmap.createScaledBitmap(art, (art.width * scale).toInt(), (art.height * scale).toInt(), true) else art
+        java.io.ByteArrayOutputStream().use { out ->
+            small.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, out)
+            out.toByteArray()
+        }
+    }.getOrNull()
 
     /** The apps of the Home screen: the TV launcher category, one entry for each package. */
     private fun launchable(): List<Pair<String, String>> {
