@@ -366,4 +366,8 @@
     <string name="tv_album_none">無</string>
     <string name="tv_album_hint">透過 Apple TV 遙控器用 iPhone 鍵盤貼上連結。留空即關閉。</string>
     <string name="tv_album_error">這不是 iCloud 共享相簿連結。</string>
+    <string name="tv_weather_city">天氣城市</string>
+    <string name="tv_weather_city_desc">主畫面與螢幕保護程式中時鐘旁的天氣。</string>
+    <string name="tv_weather_city_auto">依時區</string>
+    <string name="tv_weather_city_hint">城市名稱，例如 Novi Sad。留空則使用時區城市。</string>
 </resources>

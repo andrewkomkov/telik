@@ -35,6 +35,7 @@ class AerialDream : DreamService() {
     /** Black cover over the video: a SurfaceView is a hardware layer and does not fade itself. */
     private lateinit var cover: View
     private lateinit var place: TextView
+    private lateinit var weather: TextView
     private var queue: List<Aerial> = emptyList()
     private var index = 0
     /** 006 US5: photos of the shared album, shown in breaks between the videos. */
@@ -63,7 +64,21 @@ class AerialDream : DreamService() {
             typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
             setShadowLayer(12f, 0f, 2f, 0x99000000.toInt())
         }
-        root.addView(clock, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, 54, 80, 0) })
+        // The clock and the weather under it, both to the right edge.
+        val corner = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            gravity = Gravity.END
+        }
+        corner.addView(clock)
+        // 006 US9: the weather under the clock, as on Apple TV.
+        weather = TextView(this).apply {
+            setTextColor(Color.WHITE)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            setShadowLayer(10f, 0f, 2f, 0x99000000.toInt())
+        }
+        corner.addView(weather)
+        root.addView(corner, FrameLayout.LayoutParams(-2, -2, Gravity.TOP or Gravity.END).apply { setMargins(0, 54, 80, 0) })
         place = TextView(this).apply {
             setTextColor(Color.WHITE)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
@@ -79,6 +94,13 @@ class AerialDream : DreamService() {
         super.onDreamingStarted()
         val s = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         scope = s
+        s.launch {
+            while (true) {
+                val w = withContext(Dispatchers.IO) { io.github.henry753951.airplayremote.weather.Weather.now(applicationContext) }
+                weather.text = w?.text(io.github.henry753951.airplayremote.weather.Weather.fahrenheit()).orEmpty()
+                kotlinx.coroutines.delay(15 * 60_000L)
+            }
+        }
         s.launch {
             val list = withContext(Dispatchers.IO) { runCatching { AerialCatalog.load(applicationContext) }.getOrDefault(emptyList()) }
             photos = withContext(Dispatchers.IO) {

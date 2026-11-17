@@ -36,6 +36,13 @@
 
 Out of scope: the user removed US8 on 2026-11-17. T050 and T051 are not done.
 
+## Phase 6b: Weather (US9, P2)
+
+- [x] T055 [US9] Add `Weather`: the city from the settings or from the time zone, the geocoding and the current weather of Open-Meteo, a cache of 30 minutes. Add unit tests for the parsers.
+- [x] T056 [US9] Show the weather under the clock of the screensaver and next to the clock of the Home screen.
+- [x] T057 [US9] Add the city to the TV settings.
+- [ ] T058 [US9] Check on the TV.
+
 ## Phase 7: Release
 
 - [ ] T060 Add changelog files in English and Russian in `fastlane/metadata/android/`.

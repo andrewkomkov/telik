@@ -398,4 +398,8 @@
     <string name="tv_album_none">Нет</string>
     <string name="tv_album_hint">Вставьте ссылку с клавиатуры iPhone через пульт Apple TV. Пустое поле выключает альбом.</string>
     <string name="tv_album_error">Это не ссылка на общий альбом iCloud.</string>
+    <string name="tv_weather_city">Город для погоды</string>
+    <string name="tv_weather_city_desc">Погода рядом с часами на главном экране и в заставке.</string>
+    <string name="tv_weather_city_auto">По часовому поясу</string>
+    <string name="tv_weather_city_hint">Название города, например Нови-Сад. Пустое поле: город часового пояса.</string>
 </resources>

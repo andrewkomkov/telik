@@ -153,6 +153,22 @@ The user selects two or more AirPlay speakers in Telik. The sound of the TV play
 2. **Given** the delay setting, **When** the user changes it, **Then** the sound moves against the picture by that time.
 3. **Given** one speaker goes away, **When** the others still play, **Then** the sound does not stop on them.
 
+### User Story 9 - Weather next to the clock (Priority: P2)
+
+The screensaver shows the weather under the clock, as on Apple TV. The Home screen shows it next to the clock.
+The user asked for the weather "in a natural place" and then in the screensaver overlay on 2026-11-17.
+
+**Why this priority**: The user asked for it twice.
+
+**Independent Test**: Start the screensaver. The weather symbol and the temperature show under the clock.
+
+**Acceptance Scenarios**:
+
+1. **Given** the network, **When** the screensaver or the Home screen shows, **Then** the temperature and a weather symbol show next to the clock.
+2. **Given** no city in the settings, **When** Telik gets the weather, **Then** it uses the city of the time zone of the TV.
+3. **Given** a city in the settings, **When** Telik gets the weather, **Then** it uses that city.
+4. **Given** no network, **When** the screens show, **Then** the clock shows alone.
+
 ### Edge Cases
 
 - The iPhone remote asks for the app list before Telik has read the apps. Telik reads them at that time.
@@ -176,6 +192,7 @@ The user selects two or more AirPlay speakers in Telik. The sound of the TV play
 - **FR-010**: The Shortcuts API MUST be off by default. It MUST need a random token of 128 bits or more, made on the TV.
 - **FR-011**: The Shortcuts API MUST allow only these actions: open an app, select an input, show a message, the media keys.
 - **FR-012**: All text MUST exist in English, Russian and Traditional Chinese.
+- **FR-014**: The weather MUST come from Open-Meteo, with no key and no account. Telik MUST send only the coordinates of the city, not the IP location or other data. It MUST ask at most once in 30 minutes.
 - **FR-013**: Logs MUST NOT hold the album link, the token or media titles (principle III).
 
 ### Key Entities

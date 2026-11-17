@@ -398,4 +398,8 @@
     <string name="tv_album_none">None</string>
     <string name="tv_album_hint">Paste the link with the iPhone keyboard from the Apple TV remote. Leave empty to turn off.</string>
     <string name="tv_album_error">This is not an iCloud shared album link.</string>
+    <string name="tv_weather_city">Weather city</string>
+    <string name="tv_weather_city_desc">The weather next to the clock on the Home screen and in the screensaver.</string>
+    <string name="tv_weather_city_auto">From the time zone</string>
+    <string name="tv_weather_city_hint">A city name, for example Novi Sad. Leave empty for the city of the time zone.</string>
 </resources>

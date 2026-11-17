@@ -776,9 +776,21 @@ private fun Clock() {
         }
     }
     val text = remember(now) { android.text.format.DateFormat.getTimeFormat(ctx).format(java.util.Date(now)) }
-    Text(text, color = Color.White, fontSize = TvType.Headline, fontWeight = FontWeight.Medium,
-        maxLines = 1, softWrap = false,
-    )
+    // 006 US9: the weather next to the clock. The cache keeps Open-Meteo to one call in 30 minutes.
+    var weather by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(now / (10 * 60_000L)) {
+        weather = withContext(Dispatchers.IO) {
+            io.github.henry753951.airplayremote.weather.Weather.now(ctx)?.text(io.github.henry753951.airplayremote.weather.Weather.fahrenheit())
+        }
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        weather?.let {
+            Text(it, color = Color.White.copy(alpha = 0.8f), fontSize = TvType.Headline, maxLines = 1, softWrap = false)
+        }
+        Text(text, color = Color.White, fontSize = TvType.Headline, fontWeight = FontWeight.Medium,
+            maxLines = 1, softWrap = false,
+        )
+    }
 }
 
 /** The name of a favorite for the title of its menu. */

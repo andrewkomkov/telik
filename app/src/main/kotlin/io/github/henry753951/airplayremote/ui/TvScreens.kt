@@ -830,6 +830,36 @@ private fun generalItems(viewModel: MainViewModel, onRename: () -> Unit): List<T
             }
         ),
         toggle(viewModel, Prefs.ALLOW_NEW_CONN, R.string.setting_allow_new_conn, R.string.setting_allow_new_conn_desc),
+    ) + cityItems(viewModel)
+}
+
+/** 006 US9: the city for the weather. Empty: the city of the time zone. */
+@Composable
+private fun cityItems(viewModel: MainViewModel): List<TvItem> {
+    val city by viewModel.pref(Prefs.WEATHER_CITY).collectAsState()
+    var editing by remember { mutableStateOf(false) }
+    if (editing) {
+        TvTextDialog(
+            title = stringResource(R.string.tv_weather_city),
+            placeholder = io.github.henry753951.airplayremote.weather.Weather.zoneCity(java.util.TimeZone.getDefault().id).orEmpty(),
+            hint = stringResource(R.string.tv_weather_city_hint),
+            error = "",
+            valid = { it.length <= 80 },
+            initial = city,
+            onSave = {
+                viewModel.set(Prefs.WEATHER_CITY, it)
+                io.github.henry753951.airplayremote.weather.Weather.forget()
+                editing = false
+            },
+            onDismiss = { editing = false },
+        )
+    }
+    return listOf(
+        TvItem(
+            stringResource(R.string.tv_weather_city), stringResource(R.string.tv_weather_city_desc),
+            value = city.ifBlank { stringResource(R.string.tv_weather_city_auto) },
+            onClick = { editing = true },
+        ),
     )
 }
 
@@ -1017,7 +1047,12 @@ private fun albumItems(): List<TvItem> {
     var link by remember { mutableStateOf(io.github.henry753951.airplayremote.screensaver.ScreensaverStore.albumLink(ctx)) }
     var editing by remember { mutableStateOf(false) }
     if (editing) {
-        TvAlbumDialog(
+        TvTextDialog(
+            title = stringResource(R.string.tv_album),
+            placeholder = "https://www.icloud.com/sharedalbum/#…",
+            hint = stringResource(R.string.tv_album_hint),
+            error = stringResource(R.string.tv_album_error),
+            valid = { it.isBlank() || io.github.henry753951.airplayremote.screensaver.SharedAlbum.token(it) != null },
             initial = link.orEmpty(),
             onSave = {
                 io.github.henry753951.airplayremote.screensaver.ScreensaverStore.setAlbumLink(ctx, it)
@@ -1037,12 +1072,21 @@ private fun albumItems(): List<TvItem> {
 }
 
 @Composable
-private fun TvAlbumDialog(initial: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+private fun TvTextDialog(
+    title: String,
+    placeholder: String,
+    hint: String,
+    error: String,
+    valid: (String) -> Boolean,
+    initial: String,
+    onSave: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
     var text by remember { mutableStateOf(initial) }
     val fieldFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { fieldFocus.requestFocusUntilLanded() }
-    val valid = text.isBlank() || io.github.henry753951.airplayremote.screensaver.SharedAlbum.token(text) != null
-    val save = { if (valid) onSave(text.trim()) }
+    val ok = valid(text)
+    val save = { if (ok) onSave(text.trim()) }
     Dialog(onDismissRequest = onDismiss) {
         Column(
             Modifier
@@ -1051,14 +1095,14 @@ private fun TvAlbumDialog(initial: String, onSave: (String) -> Unit, onDismiss: 
                 .background(TvTile)
                 .padding(32.dp)
         ) {
-            Text(stringResource(R.string.tv_album), color = TvText, fontSize = 24.sp, fontWeight = FontWeight.Light)
+            Text(title, color = TvText, fontSize = 24.sp, fontWeight = FontWeight.Light)
             Spacer(Modifier.height(20.dp))
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it.take(300) },
                 singleLine = true,
-                isError = !valid,
-                placeholder = { Text("https://www.icloud.com/sharedalbum/#…", color = TvMuted) },
+                isError = !ok,
+                placeholder = { Text(placeholder, color = TvMuted) },
                 textStyle = androidx.compose.ui.text.TextStyle(fontSize = 18.sp, color = TvText),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { save() }),
@@ -1070,13 +1114,13 @@ private fun TvAlbumDialog(initial: String, onSave: (String) -> Unit, onDismiss: 
             )
             Spacer(Modifier.height(10.dp))
             Text(
-                stringResource(if (valid) R.string.tv_album_hint else R.string.tv_album_error),
-                color = if (valid) TvMuted else TvError, fontSize = 15.sp,
+                if (ok) hint else error,
+                color = if (ok) TvMuted else TvError, fontSize = 15.sp,
             )
             Spacer(Modifier.height(24.dp))
             Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 TvPill(stringResource(R.string.tv_cancel), onDismiss)
-                TvPill(stringResource(R.string.tv_save), { save() }, enabled = valid)
+                TvPill(stringResource(R.string.tv_save), { save() }, enabled = ok)
             }
         }
     }

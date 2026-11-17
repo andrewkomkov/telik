@@ -120,4 +120,6 @@ object Prefs {
     val HEADPHONES_AUTO_CONNECT = bool("headphones_auto_connect", false)
     /** Spec 006 US7: the Siri Shortcuts endpoint. Off by default (FR-010). */
     val SHORTCUTS_ENABLED = bool("shortcuts_enabled", false)
+    /** Spec 006 US9: the city for the weather. Empty: the city of the time zone. */
+    val WEATHER_CITY = str("weather_city", "") { it.length <= 80 && it.none(Char::isISOControl) }
 }
