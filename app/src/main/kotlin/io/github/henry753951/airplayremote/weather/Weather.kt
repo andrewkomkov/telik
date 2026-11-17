@@ -33,6 +33,19 @@ data class WeatherNow(val temperatureC: Double, val code: Int, val isDay: Boolea
 
 data class City(val name: String, val latitude: Double, val longitude: Double)
 
+/** One day of the forecast (006 T059). [date] is the local date, as `2026-11-17`. */
+data class DayForecast(val date: String, val code: Int, val maxC: Double, val minC: Double) {
+    val symbol: String get() = WeatherNow(maxC, code, isDay = true).symbol
+
+    fun range(fahrenheit: Boolean): String {
+        fun t(c: Double) = (if (fahrenheit) c * 9 / 5 + 32 else c).roundToInt()
+        return "${t(maxC)}° / ${t(minC)}°"
+    }
+}
+
+/** The weather now and the days ahead, from one request. */
+data class WeatherReport(val now: WeatherNow, val days: List<DayForecast>)
+
 /**
  * Open-Meteo, with no key and no account (FR-014). Telik sends only the city name for the geocoding
  * and the coordinates for the weather, at most once in 30 minutes.
@@ -42,7 +55,7 @@ object Weather {
     private const val MAX_AGE_MS = 30 * 60 * 1000L
     private const val FILE = "weather"
 
-    @Volatile private var cached: Pair<Long, WeatherNow>? = null
+    @Volatile private var cached: Pair<Long, WeatherReport>? = null
 
     /** `Europe/Belgrade` → `Belgrade`, `America/New_York` → `New York`. */
     fun zoneCity(zoneId: String): String? = zoneId.substringAfterLast('/', "").replace('_', ' ').ifBlank { null }
@@ -51,6 +64,19 @@ object Weather {
         val r = JSONObject(json).optJSONArray("results")?.optJSONObject(0) ?: return null
         if (!r.has("latitude") || !r.has("longitude")) return null
         return City(r.optString("name"), r.getDouble("latitude"), r.getDouble("longitude"))
+    }
+
+    /** The `daily` part: parallel arrays of dates, codes, highs and lows. Days with a gap stay out. */
+    fun parseDays(json: String): List<DayForecast> {
+        val d = JSONObject(json).optJSONObject("daily") ?: return emptyList()
+        val dates = d.optJSONArray("time") ?: return emptyList()
+        val codes = d.optJSONArray("weather_code")
+        val max = d.optJSONArray("temperature_2m_max")
+        val min = d.optJSONArray("temperature_2m_min")
+        return (0 until dates.length()).mapNotNull { i ->
+            if (max == null || min == null || max.isNull(i) || min.isNull(i)) return@mapNotNull null
+            DayForecast(dates.optString(i), codes?.optInt(i, -1) ?: -1, max.getDouble(i), min.getDouble(i))
+        }
     }
 
     fun parseNow(json: String): WeatherNow? {
@@ -71,7 +97,10 @@ object Weather {
     fun forget() { cached = null }
 
     /** The weather now, from the cache when it is younger than 30 minutes. Null without network. */
-    fun now(context: Context): WeatherNow? {
+    fun now(context: Context): WeatherNow? = report(context)?.now
+
+    /** The weather now and 5 days, from the cache when it is younger than 30 minutes. */
+    fun report(context: Context): WeatherReport? {
         cached?.let { (at, w) -> if (System.currentTimeMillis() - at < MAX_AGE_MS) return w }
         return runCatching {
             val city = city(context)
@@ -80,9 +109,12 @@ object Weather {
                 return null
             }
             val url = "https://api.open-meteo.com/v1/forecast?latitude=${city.latitude}&longitude=${city.longitude}" +
-                "&current=temperature_2m,weather_code,is_day&timezone=auto"
-            parseNow(get(url)).also { Log.i(TAG, if (it == null) "no weather in the answer" else "weather code ${it.code}") }
-                ?.also { cached = System.currentTimeMillis() to it }
+                "&current=temperature_2m,weather_code,is_day" +
+                "&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=5&timezone=auto"
+            val answer = get(url)
+            val now = parseNow(answer)
+            Log.i(TAG, if (now == null) "no weather in the answer" else "weather code ${now.code}")
+            now?.let { WeatherReport(it, parseDays(answer)) }?.also { cached = System.currentTimeMillis() to it }
         }.onFailure { Log.w(TAG, "weather failed: ${it.javaClass.simpleName}") }.getOrNull()
     }
 

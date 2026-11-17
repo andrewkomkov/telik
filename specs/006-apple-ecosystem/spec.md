@@ -168,6 +168,7 @@ The user asked for the weather "in a natural place" and then in the screensaver 
 2. **Given** no city in the settings, **When** Telik gets the weather, **Then** it uses the city of the time zone of the TV.
 3. **Given** a city in the settings, **When** Telik gets the weather, **Then** it uses that city.
 4. **Given** no network, **When** the screens show, **Then** the clock shows alone.
+5. **Given** the weather next to the clock on the Home screen, **When** the user moves the focus to it, **Then** the title area shows the forecast for 5 days: the day, a symbol, the high and the low. The user asked for this on 2026-11-17.
 
 ### Edge Cases
 

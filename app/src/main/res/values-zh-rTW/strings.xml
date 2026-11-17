@@ -370,4 +370,5 @@
     <string name="tv_weather_city_desc">主畫面與螢幕保護程式中時鐘旁的天氣。</string>
     <string name="tv_weather_city_auto">依時區</string>
     <string name="tv_weather_city_hint">城市名稱，例如 Novi Sad。留空則使用時區城市。</string>
+    <string name="home_weather_today">今天</string>
 </resources>

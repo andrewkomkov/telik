@@ -270,6 +270,16 @@ internal fun HomeScreen(
         }
     }
     val pillFocus: () -> Unit = remember { { info.value = null; focusStamp.intValue++ } }
+    // 006 US9: the weather of the clock and the forecast. Read only in Clock and FocusTitle.
+    val weather = remember { mutableStateOf<io.github.henry753951.airplayremote.weather.WeatherReport?>(null) }
+    val weatherCtx = LocalContext.current.applicationContext
+    LaunchedEffect(Unit) {
+        while (true) {
+            weather.value = withContext(Dispatchers.IO) { io.github.henry753951.airplayremote.weather.Weather.report(weatherCtx) }
+            delay(10 * 60_000L)
+        }
+    }
+    val weatherFocus: () -> Unit = remember { { info.value = FocusInfo("", "", forecast = true); focusStamp.intValue++ } }
 
     // Rows scroll as a whole (HIG: never half a row). The top rows keep the page at the top; a
     // lower row moves up to a fixed place under the safe area.
@@ -328,7 +338,7 @@ internal fun HomeScreen(
                         Pill(Icons.Default.Tune, stringResource(R.string.home_entry_settings), fancy, pillFocus, iconOnly = true, onClick = onSettings)
                         Pill(Icons.Default.Home, stringResource(R.string.home_entry_home), fancy, pillFocus, iconOnly = true) { onMenu(true) }
                       }
-                        Clock()
+                        Clock(weather, fancy, weatherFocus)
                     }
 
                     // Title area (the Top Shelf place): a problem, the media that plays, or the item in focus.
@@ -340,7 +350,7 @@ internal fun HomeScreen(
                             np != null -> NowPlayingCard(np, fancy, { focusStamp.intValue++; onRowFocus(-1) }, onNowPlaying, onPlayPause, onNext)
                             state.nowPlayingHint -> PermissionHint(stringResource(R.string.home_np_hint), fancy, onAllowNowPlaying, onDismissNowPlaying)
                             state.listingsHint -> PermissionHint(stringResource(R.string.home_listings_hint), fancy, onAllowListings, onDismissListings)
-                            else -> FocusTitle(info, shelf, state.isDefault, state.telik)
+                            else -> FocusTitle(info, shelf, weather, state.isDefault, state.telik)
                         }
                     }
 
@@ -583,6 +593,8 @@ private data class FocusInfo(
     val artColor: Int? = null,
     /** Link of the art, for the large version in the Top Shelf. */
     val artUri: String? = null,
+    /** 006 T059: the weather next to the clock has the focus; the title area shows the forecast. */
+    val forecast: Boolean = false,
 )
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -745,9 +757,14 @@ private val LocalTitleShown = staticCompositionLocalOf<State<Boolean>> { mutable
 private fun FocusTitle(
     focusState: State<FocusInfo?>,
     shelfState: State<io.github.henry753951.airplayremote.launcher.PreviewItem?>,
+    weatherState: State<io.github.henry753951.airplayremote.weather.WeatherReport?>,
     isDefault: Boolean,
     telik: TelikStatus,
 ) {
+    if (focusState.value?.forecast == true) {
+        weatherState.value?.let { Forecast(it) }
+        return
+    }
     val shelf = shelfState.value
     // The program of the Top Shelf goes under the app name.
     val focus = focusState.value?.let { f -> if (shelf != null && f.pkg == shelf.packageName) f.copy(subtitle = shelf.title) else f }
@@ -765,8 +782,37 @@ private fun FocusTitle(
     }
 }
 
+/** 006 T059: the city and 5 days, in the title area while the weather has the focus. */
 @Composable
-private fun Clock() {
+private fun Forecast(report: io.github.henry753951.airplayremote.weather.WeatherReport) {
+    val ctx = LocalContext.current
+    val f = io.github.henry753951.airplayremote.weather.Weather.fahrenheit()
+    val city = io.github.henry753951.airplayremote.weather.Weather.cityName(ctx) ?: io.github.henry753951.airplayremote.weather.Weather.zoneCity(java.util.TimeZone.getDefault().id).orEmpty()
+    val today = stringResource(R.string.home_weather_today)
+    // The locale of the configuration: a change of the Telik language shows at once.
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    Column(Modifier.padding(bottom = 4.dp)) {
+        Text(city, color = Color.White.copy(alpha = 0.7f), fontSize = TvType.Body, maxLines = 1)
+        Spacer(Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(36.dp)) {
+            report.days.take(5).forEachIndexed { i, day ->
+                val name = if (i == 0) today else runCatching {
+                    java.time.LocalDate.parse(day.date).dayOfWeek
+                        .getDisplayName(java.time.format.TextStyle.SHORT, locale)
+                        .replaceFirstChar { it.titlecase(locale) }
+                }.getOrDefault(day.date)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(name, color = Color.White.copy(alpha = 0.8f), fontSize = TvType.Caption, maxLines = 1)
+                    Text(day.symbol, fontSize = TvType.Title3, maxLines = 1)
+                    Text(day.range(f), color = Color.White, fontSize = TvType.Caption, maxLines = 1)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Clock(weather: State<io.github.henry753951.airplayremote.weather.WeatherReport?>, fancy: Boolean, onWeatherFocus: () -> Unit) {
     val ctx = LocalContext.current
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
@@ -776,16 +822,17 @@ private fun Clock() {
         }
     }
     val text = remember(now) { android.text.format.DateFormat.getTimeFormat(ctx).format(java.util.Date(now)) }
-    // 006 US9: the weather next to the clock. The cache keeps Open-Meteo to one call in 30 minutes.
-    var weather by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(now / (10 * 60_000L)) {
-        weather = withContext(Dispatchers.IO) {
-            io.github.henry753951.airplayremote.weather.Weather.now(ctx)?.text(io.github.henry753951.airplayremote.weather.Weather.fahrenheit())
-        }
-    }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        weather?.let {
-            Text(it, color = Color.White.copy(alpha = 0.8f), fontSize = TvType.Headline, maxLines = 1, softWrap = false)
+        // 006 US9: the weather is focusable; its focus shows the forecast in the title area.
+        weather.value?.let { report ->
+            FocusTile(fancy, Modifier.height(36.dp), false, onWeatherFocus, {}, null, grow = 1.08f, shadow = false) {
+                Row(
+                    Modifier.glassPanel(RoundedCornerShape(18.dp), fancy).padding(horizontal = 14.dp).height(36.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(report.now.text(io.github.henry753951.airplayremote.weather.Weather.fahrenheit()), color = Color.White, fontSize = TvType.Body, maxLines = 1, softWrap = false)
+                }
+            }
         }
         Text(text, color = Color.White, fontSize = TvType.Headline, fontWeight = FontWeight.Medium,
             maxLines = 1, softWrap = false,

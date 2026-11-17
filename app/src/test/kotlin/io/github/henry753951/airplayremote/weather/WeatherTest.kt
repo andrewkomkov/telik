@@ -30,6 +30,17 @@ class WeatherTest {
         assertNull(Weather.parseNow("""{"current":{}}"""))
     }
 
+    @Test fun parseDays() {
+        val json = """{"daily":{"time":["2026-11-17","2026-11-18","2026-11-19"],
+            "weather_code":[53,63,81],"temperature_2m_max":[16.4,18.8,null],"temperature_2m_min":[4.3,12.7,11.0]}}"""
+        val days = Weather.parseDays(json)
+        assertEquals(2, days.size)
+        assertEquals("2026-11-18", days[1].date)
+        assertEquals("🌧", days[1].symbol)
+        assertEquals("19° / 13°", days[1].range(fahrenheit = false))
+        assertEquals(emptyList<DayForecast>(), Weather.parseDays("{}"))
+    }
+
     @Test fun symbols() {
         assertEquals("☾", WeatherNow(5.0, 0, isDay = false).symbol)
         assertEquals("🌧", WeatherNow(5.0, 61, isDay = true).symbol)
