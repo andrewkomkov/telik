@@ -1156,9 +1156,14 @@ impl CompanionSession {
                     );
                 }
             }
-            // SkipBy (pyatv MediaControlCommand 7): `_skpS` seconds, negative to go back (spec 008).
+            // SkipBy (MediaControlCommand 7), negative to go back (spec 008). The iOS 27 remote
+            // sends `MessageKeySkipSeconds`, as the TV log of 2026-11-17 shows. pyatv sends `_skpS`.
             Some(7) => {
-                let seconds = content.get("_skpS").and_then(Value::as_float).unwrap_or(0.0);
+                let seconds = content
+                    .get("MessageKeySkipSeconds")
+                    .or_else(|| content.get("_skpS"))
+                    .and_then(Value::as_float)
+                    .unwrap_or(0.0);
                 if seconds != 0.0 {
                     let name = format!("media_skip:{seconds}");
                     self.delegate.on_button(&name);
