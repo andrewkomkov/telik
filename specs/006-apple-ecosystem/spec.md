@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-17
 
-**Status**: Draft. No code yet.
+**Status**: In progress. US1 and US2 have code and pass a protocol check. US4 has code.
 
 **Input**: The user said on 2026-11-17: "the main feature is that Telik is part of the Apple ecosystem". The user asked for all
 the Apple features of the research below ("делай все").
