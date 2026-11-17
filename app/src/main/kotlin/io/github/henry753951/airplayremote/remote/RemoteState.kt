@@ -14,4 +14,6 @@ object RemoteState {
     internal val mutableConnected = MutableStateFlow(false)
     val connected = mutableConnected.asStateFlow()
     fun dismissPin() { mutablePin.value = null }
+    /** 008: the package of the window in front, from the accessibility service. */
+    internal val foreground = MutableStateFlow<String?>(null)
 }

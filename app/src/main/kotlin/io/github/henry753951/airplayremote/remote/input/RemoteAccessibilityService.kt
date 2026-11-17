@@ -60,7 +60,10 @@ open class RemoteAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            event.packageName?.let { dev.tvhomekit.HomeKitService.tv?.onForegroundPackage(it.toString()) }
+            event.packageName?.let {
+                dev.tvhomekit.HomeKitService.tv?.onForegroundPackage(it.toString())
+                io.github.henry753951.airplayremote.remote.RemoteState.foreground.value = it.toString()
+            }
         }
     }
 
