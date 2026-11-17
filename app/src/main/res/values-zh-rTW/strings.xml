@@ -353,4 +353,11 @@
     <string name="home_installing_title">正在安裝</string>
     <string name="home_installing_progress">安裝中：%1$d%%</string>
     <string name="dream_name">Telik 空拍</string>
+    <string name="section_shortcuts">Siri 捷徑</string>
+    <string name="setting_shortcuts">來自「捷徑」的指令</string>
+    <string name="setting_shortcuts_desc">iPhone 上的「捷徑」App 可在電視上開啟 App、切換 HDMI、顯示訊息及控制播放。預設關閉。</string>
+    <string name="setting_shortcuts_token">權杖</string>
+    <string name="setting_shortcuts_example">在「捷徑」中加入「取得 URL 的內容」，方法 POST，標頭 Authorization: Bearer 加上權杖。範例：%1$s。其他路徑：/v1/input?hdmi=1、/v1/message?text=…、/v1/key?name=pause。</string>
+    <string name="setting_shortcuts_renew">新權杖</string>
+    <string name="setting_shortcuts_renew_desc">舊權杖將失效。</string>
 </resources>

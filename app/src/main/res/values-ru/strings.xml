@@ -385,4 +385,11 @@
     <string name="home_installing_title">Устанавливается</string>
     <string name="home_installing_progress">Установка: %1$d%%</string>
     <string name="dream_name">Телик: виды Земли</string>
+    <string name="section_shortcuts">Быстрые команды Siri</string>
+    <string name="setting_shortcuts">Команды из «Быстрых команд»</string>
+    <string name="setting_shortcuts_desc">Приложение «Быстрые команды» на iPhone открывает приложения, переключает HDMI, показывает сообщения и управляет воспроизведением на телевизоре. По умолчанию выключено.</string>
+    <string name="setting_shortcuts_token">Токен</string>
+    <string name="setting_shortcuts_example">В «Быстрых командах» добавьте «Получить содержимое URL», метод POST, заголовок Authorization: Bearer и токен. Пример: %1$s. Другие адреса: /v1/input?hdmi=1, /v1/message?text=…, /v1/key?name=pause.</string>
+    <string name="setting_shortcuts_renew">Новый токен</string>
+    <string name="setting_shortcuts_renew_desc">Старый токен перестанет работать.</string>
 </resources>

@@ -11,7 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 
 /** Баннер поверх любого приложения (спека 006, US6). Без права на наложение — системный тост. */
-internal object MessageBanner {
+object MessageBanner {
     private var current: TextView? = null
 
     fun show(context: Context, text: String, durationMs: Long) {

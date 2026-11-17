@@ -118,4 +118,6 @@ object Prefs {
     val LAUNCH_ON_CONNECT = bool("launch_on_connect", true)
     val USB_ONLY = bool("usb_only", false, restart = true)
     val HEADPHONES_AUTO_CONNECT = bool("headphones_auto_connect", false)
+    /** Spec 006 US7: the Siri Shortcuts endpoint. Off by default (FR-010). */
+    val SHORTCUTS_ENABLED = bool("shortcuts_enabled", false)
 }
