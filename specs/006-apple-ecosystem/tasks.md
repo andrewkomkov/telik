@@ -41,8 +41,8 @@ Out of scope: the user removed US8 on 2026-11-17. T050 and T051 are not done.
 - [x] T055 [US9] Add `Weather`: the city from the settings or from the time zone, the geocoding and the current weather of Open-Meteo, a cache of 30 minutes. Add unit tests for the parsers.
 - [x] T056 [US9] Show the weather under the clock of the screensaver and next to the clock of the Home screen.
 - [x] T057 [US9] Add the city to the TV settings.
-- [ ] T059 [US9] Add the forecast for 5 days to the same Open-Meteo request. Make the weather focusable. Show the forecast in the title area on focus. Add unit tests for the parser.
-- [ ] T058 [US9] Check on the TV.
+- [x] T059 [US9] Add the forecast for 5 days to the same Open-Meteo request. Make the weather focusable. Show the forecast in the title area on focus. Add unit tests for the parser.
+- [x] T058 [US9] Check on the TV.
 
 ## Phase 7: Release
 
