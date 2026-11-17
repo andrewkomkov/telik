@@ -105,8 +105,13 @@ object PosterCache {
 @Composable
 fun rememberPoster(uri: String?): State<PosterCache.Poster?> {
     val ctx = LocalContext.current.applicationContext
-    return produceState(uri?.let { PosterCache.peek(it) }, uri) {
-        if (value == null && uri != null) value = withContext(Dispatchers.IO) { PosterCache.load(ctx, uri) }
+    // produceState keeps its value when the key changes, so the value carries its own link:
+    // a card that moves to another item never shows the art of the earlier one.
+    val state = produceState<Pair<String, PosterCache.Poster>?>(uri?.let { u -> PosterCache.peek(u)?.let { u to it } }, uri) {
+        value = uri?.let { u -> (PosterCache.peek(u) ?: withContext(Dispatchers.IO) { PosterCache.load(ctx, u) })?.let { u to it } }
+    }
+    return androidx.compose.runtime.remember(uri) {
+        androidx.compose.runtime.derivedStateOf { state.value?.takeIf { it.first == uri }?.second }
     }
 }
 

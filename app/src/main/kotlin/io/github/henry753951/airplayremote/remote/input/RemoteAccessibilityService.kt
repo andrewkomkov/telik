@@ -65,7 +65,35 @@ open class RemoteAccessibilityService : AccessibilityService() {
                 io.github.henry753951.airplayremote.remote.RemoteState.foreground.value = it.toString()
             }
         }
+        when (event?.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            AccessibilityEvent.TYPE_WINDOWS_CHANGED,
+            AccessibilityEvent.TYPE_VIEW_FOCUSED -> reportTextFocus()
+        }
     }
+
+    /** True while an app has a text editor, from the input method of the service. */
+    private var editorActive = false
+
+    /**
+     * Reports a text field only while the TV keyboard shows or the focused view is editable.
+     * YouTube keeps a hidden editor, and the iPhone kept its keyboard open for it.
+     */
+    private fun reportTextFocus() {
+        val visible = editorActive && try {
+            windows.any { it.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD } ||
+                findFocus(AccessibilityNodeInfo.FOCUS_INPUT)?.isEditable == true
+        } catch (e: RuntimeException) {
+            false
+        }
+        if (visible != reportedFocus) {
+            reportedFocus = visible
+            Log.i(TAG, "Text focus for the iPhone: $visible")
+        }
+        RemoteNative.nativeSetTextFocus(visible, "")
+    }
+
+    private var reportedFocus = false
 
     override fun onInterrupt() {
         Log.w(TAG, "RemoteAccessibilityService interrupted")
@@ -166,12 +194,14 @@ open class RemoteAccessibilityService : AccessibilityService() {
         override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
             editorAction = attribute.imeOptions and EditorInfo.IME_MASK_ACTION
             Log.i(TAG, "Text field: inputType=${attribute.inputType} package=${attribute.packageName}")
-            RemoteNative.nativeSetTextFocus(attribute.inputType != InputType.TYPE_NULL, "")
+            editorActive = attribute.inputType != InputType.TYPE_NULL
+            reportTextFocus()
         }
 
         override fun onFinishInput() {
             Log.i(TAG, "Text field closed")
-            RemoteNative.nativeSetTextFocus(false, "")
+            editorActive = false
+            reportTextFocus()
         }
     }
 

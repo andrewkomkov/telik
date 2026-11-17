@@ -1,0 +1,5 @@
+The iPhone remote shows what plays on the TV: the title and the art.
+The -10 and +10 buttons on the iPhone skip the video. In apps without media buttons, for example kino.watch, they work as the arrows.
+The iPhone keyboard opens only when you can type on the TV.
+The Apple TV shelf on the Home screen shows what you did not finish.
+The cards of Continue watching keep the correct title and art.

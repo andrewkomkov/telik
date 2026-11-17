@@ -22,7 +22,7 @@
 
 ## Phase 4: HomeKit (US6, P2)
 
-- [ ] T030 [US6] Add the HDMI inputs as input sources.
+- [x] T030 [US6] Add the HDMI inputs as input sources.
 - [ ] T031 [US6] Add the "Telik message" switch with the overlay.
 - [ ] T032 [US6] Check with the Home app on the iPhone.
 
