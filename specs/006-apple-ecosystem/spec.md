@@ -137,7 +137,9 @@ selects an input or shows a message.
 
 ---
 
-### User Story 8 - TV sound on several HomePods (Priority: P3)
+### User Story 8 - TV sound on several HomePods (Out of scope)
+
+The user removed this story on 2026-11-17 ("можно без нее"). The sender stays at one speaker.
 
 The user selects two or more AirPlay speakers in Telik. The sound of the TV plays on all of them, with a delay setting for lip sync.
 

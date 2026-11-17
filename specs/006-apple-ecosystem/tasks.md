@@ -34,8 +34,7 @@
 
 ## Phase 6: Several HomePods (US8, P3)
 
-- [ ] T050 [US8] Send to a list of AirPlay speakers with one start time and a delay setting.
-- [ ] T051 [US8] Check with two speakers.
+Out of scope: the user removed US8 on 2026-11-17. T050 and T051 are not done.
 
 ## Phase 7: Release
 
