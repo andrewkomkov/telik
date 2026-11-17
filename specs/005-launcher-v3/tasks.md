@@ -29,6 +29,7 @@
 - [x] T027 [US8] Add `Ambient`: the main color of tile art from a small pixel sample, off the main thread, kept in `BannerCache`. Add unit tests.
 - [x] T028 [US8] Add the colored glow to the backdrop and the large art of the Top Shelf in the top right.
 - [x] T035 [US8] Speed: the focus state is read only in `Backdrop` and `FocusTitle`, the Top Shelf has no offscreen layer and shows only media art, and the frame watch counts long frames (FR-022).
+- [x] T037 [US8] Replace the round glow spots with one tinted vertical gradient (FR-023). Draw the scrim only over media art. Show the tile label only when the large title is off screen.
 - [ ] T036 [US8] Check on the TV with `dumpsys gfxinfo`: fewer janky frames than build v3f (66% janky, 89 ms median on 2026-11-17).
 - [x] T029 [US8] Rework the focus of `FocusTile`: no frame with effects on, a shadow in the tile color, a light sweep that passes once. Apps without a banner get a tile in their icon color.
 

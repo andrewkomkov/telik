@@ -166,6 +166,7 @@ The user selected three changes: a Top Shelf as on tvOS, a backdrop that takes t
 - **FR-015**: The row of the Telik entries MUST sit under the app grid. The user asked for this on 2026-11-03.
 - **FR-016**: The clock MUST stay on one line. When the top bar is too wide, the top bar scrolls.
 - **FR-019**: Telik MUST find the main color of each tile art on the TV, without an image library, and MUST NOT find it on the main thread.
+- **FR-023**: The backdrop MUST be one vertical gradient. The top has the tone of the item in focus, and the bottom is near black. The user found the round color spots dated on 2026-11-17. While the large title is on screen, the focused tile MUST NOT show its name under the tile.
 - **FR-020**: The backdrop MUST glow in the color of the item in focus and MUST change color with an animation of 400 ms or more. The Top Shelf MUST show the art of the media that plays in the top right, and MUST hide it when the rows scroll up.
 - **FR-022**: A focus change MUST recompose only the backdrop and the title, not the rows. The backdrop MUST NOT use an offscreen layer. The frame watch MUST count frames of any length, so that a TV with frames of 100 ms or more also gets the plain look.
 - **FR-021**: With effects on, a focused tile MUST show depth (growth, a colored shadow, a light sweep) and no white frame. With effects off, the white frame stays.

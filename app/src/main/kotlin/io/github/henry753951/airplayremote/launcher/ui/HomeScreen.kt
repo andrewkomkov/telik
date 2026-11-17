@@ -12,8 +12,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.staticCompositionLocalOf
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.State
@@ -228,6 +231,7 @@ internal fun HomeScreen(
     // The moved tile changes its place in the grid; the focus goes with it.
     LaunchedEffect(editing, gridTiles.map { it.packageName }) { if (editing != null) moveFocus.requestFocusUntilLanded() }
     val scroll = rememberScrollState()
+    val titleShown = remember { derivedStateOf { scroll.value == 0 } }
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     // The item in focus drives the backdrop and the title area, as on the Apple TV Home screen.
@@ -262,8 +266,9 @@ internal fun HomeScreen(
     var attention by remember { mutableStateOf<Attention?>(null) }
     LaunchedEffect(pending) { if (pending == null) attention = null else { delay(ATTENTION_DELAY_MS); attention = pending } }
 
-    Box(Modifier.fillMaxSize().background(Color(0xFF0B0D12)).onPreviewKeyEvent { userMoved = true; false }) {
+    Box(Modifier.fillMaxSize().onPreviewKeyEvent { userMoved = true; false }) {
         Backdrop(info, state.nowPlaying, fancy, scroll)
+      CompositionLocalProvider(LocalTitleShown provides titleShown) {
 
         val defaultSpec = LocalBringIntoViewSpec.current
         CompositionLocalProvider(LocalBringIntoViewSpec provides NoVerticalBringIntoView) {
@@ -476,6 +481,7 @@ internal fun HomeScreen(
                 }
             }
         }
+      }
     }
 }
 
@@ -571,17 +577,12 @@ private fun Backdrop(infoState: State<FocusInfo?>, np: NowPlaying?, fancy: Boole
     val shelfAlpha = if (fancy) 0.8f else 0.6f
 
     Box(
+        // One opaque pass over the whole screen (FR-022): near black, with the tone of the item in
+        // focus at the top, as on Google TV. The color is read in the draw phase only.
         Modifier.fillMaxSize().drawBehind {
             drawRect(
-                Brush.radialGradient(
-                    listOf(glow.copy(alpha = 0.55f), glow.copy(alpha = 0.18f), Color.Transparent),
-                    center = Offset(size.width * 0.8f, size.height * 0.1f), radius = size.width * 0.8f,
-                ),
-            )
-            drawRect(
-                Brush.radialGradient(
-                    listOf(glow.copy(alpha = 0.22f), Color.Transparent),
-                    center = Offset(size.width * 0.05f, size.height * 1.05f), radius = size.width * 0.6f,
+                Brush.verticalGradient(
+                    0f to lerp(BaseColor, glow, 0.30f), 0.5f to lerp(BaseColor, glow, 0.07f), 1f to BaseColor,
                 ),
             )
         },
@@ -599,14 +600,14 @@ private fun Backdrop(infoState: State<FocusInfo?>, np: NowPlaying?, fancy: Boole
                 },
             )
         }
-        // Scrim: white text stays readable on any art.
-        Box(
-            Modifier.fillMaxSize().background(
-                Brush.verticalGradient(
-                    0f to Color.Black.copy(alpha = 0.2f), 0.45f to Color.Black.copy(alpha = 0.45f), 1f to Color.Black.copy(alpha = 0.85f),
+        // Scrim over media art only: white text stays readable on any art.
+        if (npArt != null) {
+            Box(
+                Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(0f to Color.Black.copy(alpha = 0.2f), 0.45f to Color.Black.copy(alpha = 0.45f), 1f to Color.Transparent),
                 ),
-            ),
-        )
+            )
+        }
     }
 }
 
@@ -633,6 +634,10 @@ private fun shelfShader(art: android.graphics.Bitmap, w: Float, h: Float): andro
 }
 
 private val IdleGlow = Color(0xFF2B4C7E)
+private val BaseColor = Color(0xFF0B0D12)
+
+/** True while the large title at the top is on screen (the page is not scrolled). */
+private val LocalTitleShown = staticCompositionLocalOf<State<Boolean>> { mutableStateOf(false) }
 
 @Composable
 private fun FocusTitle(focusState: State<FocusInfo?>, isDefault: Boolean, telik: TelikStatus) {
@@ -721,7 +726,9 @@ private fun NowPlayingHint(fancy: Boolean, onAllow: () -> Unit, onDismiss: () ->
 /** Label under a tile: only the tile in focus shows it (Apple TV Home screen). */
 @Composable
 private fun FocusLabel(text: String, visible: Boolean) {
-    val a by animateFloatAsState(if (visible) 1f else 0f, tween(160), label = "label")
+    // With the large title on screen, the name shows once: there, not under the tile.
+    val shown = visible && !LocalTitleShown.current.value
+    val a by animateFloatAsState(if (shown) 1f else 0f, tween(160), label = "label")
     Text(
         text, Modifier.padding(top = 12.dp).width(TileW).graphicsLayer { alpha = a },
         color = Color.White, fontSize = TvType.Caption, fontWeight = FontWeight.Medium,
