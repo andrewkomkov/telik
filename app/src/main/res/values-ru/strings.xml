@@ -384,4 +384,5 @@
     <string name="home_listings_hint">Разрешите доступ к телепрограммам, и Телик покажет, что вы смотрите в YouTube, Apple TV и других приложениях.</string>
     <string name="home_installing_title">Устанавливается</string>
     <string name="home_installing_progress">Установка: %1$d%%</string>
+    <string name="dream_name">Телик: виды Земли</string>
 </resources>

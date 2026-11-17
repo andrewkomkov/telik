@@ -384,4 +384,5 @@
     <string name="home_listings_hint">Allow access to TV listings, and Telik shows what you watch in YouTube, Apple TV and other apps.</string>
     <string name="home_installing_title">Installing</string>
     <string name="home_installing_progress">Installing: %1$d%%</string>
+    <string name="dream_name">Telik aerials</string>
 </resources>

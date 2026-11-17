@@ -119,6 +119,8 @@ tasks.configureEach {
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
+    // The real org.json for JVM tests: the android.jar version is a stub.
+    testImplementation("org.json:json:20260814")
     implementation("com.google.zxing:core:3.5.3")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

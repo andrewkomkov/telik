@@ -15,7 +15,7 @@
 
 ## Phase 3: Screensaver (US4, US5, P2)
 
-- [ ] T020 [US4] Add `AerialCatalog` with a parser of the Apple list and a disk cache. Add unit tests.
+- [x] T020 [US4] Add `AerialCatalog` with a parser of the Apple list and a disk cache. Add unit tests.
 - [ ] T021 [US4] Add `AerialDream` with two players that fade, the clock and the place name.
 - [ ] T022 [US5] Add `SharedAlbum` with a parser of the iCloud answers. Add unit tests. Add the album link to the Telik settings.
 - [ ] T023 [US4, US5] Check on the TV: 1 hour of play, the memory, the end on a key press, no network.

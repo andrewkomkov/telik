@@ -52,6 +52,7 @@
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <application
+        android:networkSecurityConfig="@xml/network_security_config"
         android:name=".AirPlayApp"
         android:allowBackup="false"
         android:usesCleartextTraffic="true"
@@ -187,6 +188,17 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+        <!-- 006 US4: the aerial screensaver, selectable in the TV settings. -->
+        <service
+            android:name="io.github.henry753951.airplayremote.screensaver.AerialDream"
+            android:exported="true"
+            android:label="@string/dream_name"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>
