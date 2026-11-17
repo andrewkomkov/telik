@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-17
 
-**Status**: Research. No code yet.
+**Status**: Stopped on 2026-11-17 at the user's request. The iPhone shows the media panel (-10 s, info, captions, +10 s). The skip buttons send `MediaControlCommand`, but Telik does not seek yet (open). The info button needs a title from the Apple TV catalog (`capellaInfoAvailable`), so it stays off for other apps. The touchpad layout of iOS has no play and pause button by design: a tap on the touchpad is OK, and OK pauses the player.
 
 **Input**: The user tested the iPhone remote on 2026-11-17 with YouTube playing on the TV. The remote showed no media
 card. The TV log shows that the remote of iOS 26 asks for `FetchCurrentNowPlayingInfoEvent`, `FetchUpNextInfoEvent` and
