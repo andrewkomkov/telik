@@ -84,3 +84,60 @@ object ContinueWatching {
         }
     }
 }
+
+/** One preview program of an app channel (005 T058): what the Top Shelf shows for a focused app. */
+data class PreviewItem(val packageName: String, val title: String, val artUri: String?, val intentUri: String?, val weight: Int)
+
+/** Preview programs of browsable channels, best weight first, at most [PER_APP] for each app. */
+object AppPreviews {
+    const val PER_APP = 8
+
+    fun pick(items: List<PreviewItem>, installed: Set<String>): Map<String, List<PreviewItem>> =
+        items.filter { it.packageName in installed && !it.artUri.isNullOrBlank() && it.title.isNotBlank() }
+            .groupBy { it.packageName }
+            .mapValues { (_, list) -> list.sortedByDescending { it.weight }.distinctBy { it.title.trim().lowercase() }.take(PER_APP) }
+
+    fun read(context: Context): List<PreviewItem> {
+        if (!TvListings.granted(context)) return emptyList()
+        val cr = context.contentResolver
+        return try {
+            // Programs of a channel that the user hid stay out.
+            val browsable = HashSet<Long>()
+            cr.query(
+                android.media.tv.TvContract.Channels.CONTENT_URI,
+                arrayOf(android.media.tv.TvContract.Channels._ID, android.media.tv.TvContract.Channels.COLUMN_BROWSABLE),
+                null, null, null,
+            )?.use { c -> while (c.moveToNext()) if (c.isNull(1) || c.getInt(1) != 0) browsable += c.getLong(0) }
+            val cols = arrayOf(
+                android.media.tv.TvContract.PreviewPrograms.COLUMN_CHANNEL_ID,
+                android.media.tv.TvContract.PreviewPrograms.COLUMN_PACKAGE_NAME,
+                android.media.tv.TvContract.PreviewPrograms.COLUMN_TITLE,
+                android.media.tv.TvContract.PreviewPrograms.COLUMN_POSTER_ART_URI,
+                android.media.tv.TvContract.PreviewPrograms.COLUMN_THUMBNAIL_URI,
+                android.media.tv.TvContract.PreviewPrograms.COLUMN_INTENT_URI,
+                android.media.tv.TvContract.PreviewPrograms.COLUMN_WEIGHT,
+                android.media.tv.TvContract.PreviewPrograms.COLUMN_BROWSABLE,
+            )
+            cr.query(android.media.tv.TvContract.PreviewPrograms.CONTENT_URI, cols, null, null, null)?.use { c ->
+                val out = ArrayList<PreviewItem>()
+                fun str(i: Int) = if (c.isNull(i)) null else c.getString(i)
+                while (c.moveToNext()) {
+                    if (c.getLong(0) !in browsable) continue
+                    if (!c.isNull(7) && c.getInt(7) == 0) continue
+                    out += PreviewItem(
+                        packageName = str(1) ?: continue,
+                        title = str(2) ?: continue,
+                        // A wide image suits the shelf: the poster first, then the thumbnail.
+                        artUri = str(3) ?: str(4),
+                        intentUri = str(5),
+                        weight = if (c.isNull(6)) 0 else c.getInt(6),
+                    )
+                }
+                out
+            } ?: emptyList()
+        } catch (e: Exception) {
+            Log.w("AppPreviews", "read failed: ${e.javaClass.simpleName}")
+            emptyList()
+        }
+    }
+}

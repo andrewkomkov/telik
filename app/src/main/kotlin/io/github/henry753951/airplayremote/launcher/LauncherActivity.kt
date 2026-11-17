@@ -56,6 +56,7 @@ class LauncherActivity : ComponentActivity() {
     private var favorites: List<String> = emptyList()
     private var launches: List<Launch> = emptyList()
     private var watchNext: List<WatchNextItem> = emptyList()
+    private var previewItems: List<PreviewItem> = emptyList()
     private lateinit var nowPlaying: NowPlayingWatcher
 
     private val roleRequest = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -237,7 +238,8 @@ class LauncherActivity : ComponentActivity() {
         // US5: Watch Next can change while another app is open, so read it on each return.
         lifecycleScope.launch {
             val items = withContext(Dispatchers.IO) { ContinueWatching.read(applicationContext) }
-            if (items != watchNext) { watchNext = items; rebuild() }
+            val previews = withContext(Dispatchers.IO) { AppPreviews.read(applicationContext) }
+            if (items != watchNext || previews != previewItems) { watchNext = items; previewItems = previews; rebuild() }
         }
     }
 
@@ -267,6 +269,7 @@ class LauncherActivity : ComponentActivity() {
         val lastLaunch = launches.associate { it.packageName to it.lastMillis }
         state = state.copy(
             continueWatching = ContinueWatching.pick(watchNext, apps.mapTo(HashSet()) { it.packageName }),
+            previews = AppPreviews.pick(previewItems, apps.mapTo(HashSet()) { it.packageName }),
             recent = Recent.pick(launches, visible, shown.filter { it.startsWith(Favorites.APP) }.mapTo(HashSet()) { it.removePrefix(Favorites.APP) }),
             badges = apps.mapNotNull { a ->
                 Recent.badge(a.installedMillis, a.updatedMillis, lastLaunch[a.packageName], now)?.let { a.packageName to it }
@@ -326,6 +329,7 @@ class LauncherActivity : ComponentActivity() {
         refreshListingsHint()
         lifecycleScope.launch {
             watchNext = withContext(Dispatchers.IO) { ContinueWatching.read(applicationContext) }
+            previewItems = withContext(Dispatchers.IO) { AppPreviews.read(applicationContext) }
             rebuild()
         }
     }

@@ -40,3 +40,24 @@ class ContinueWatchingTest {
         assertEquals(1f, item(1, pos = 500, len = 100).progress!!, 0.001f)
     }
 }
+
+class AppPreviewsTest {
+    private fun p(pkg: String, title: String, w: Int, art: String? = "https://x/a.jpg") = PreviewItem(pkg, title, art, "intent:#Intent;end", w)
+
+    @Test fun groupsByAppBestWeightFirst() {
+        val out = AppPreviews.pick(listOf(p("yt", "A", 1), p("yt", "B", 9), p("nf", "C", 5), p("gone", "D", 9)), setOf("yt", "nf"))
+        assertEquals(listOf("B", "A"), out["yt"]!!.map { it.title })
+        assertEquals(listOf("C"), out["nf"]!!.map { it.title })
+        assertEquals(null, out["gone"])
+    }
+
+    @Test fun dropsItemsWithoutArtAndDuplicates() {
+        val out = AppPreviews.pick(listOf(p("yt", "A", 1, art = null), p("yt", "Show", 3), p("yt", "show ", 2)), setOf("yt"))
+        assertEquals(listOf("Show"), out["yt"]!!.map { it.title })
+    }
+
+    @Test fun keepsTheLimit() {
+        val out = AppPreviews.pick((1..20).map { p("yt", "T$it", it) }, setOf("yt"))
+        assertEquals(AppPreviews.PER_APP, out["yt"]!!.size)
+    }
+}

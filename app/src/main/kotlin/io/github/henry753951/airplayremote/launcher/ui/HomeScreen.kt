@@ -158,6 +158,8 @@ data class HomeState(
     val badges: Map<String, Recent.Badge> = emptyMap(),
     /** 005 US5: Watch Next programs of other apps, last used first. */
     val continueWatching: List<WatchNextItem> = emptyList(),
+    /** 005 T058: preview programs of app channels, for the Top Shelf of a focused app. */
+    val previews: Map<String, List<io.github.henry753951.airplayremote.launcher.PreviewItem>> = emptyMap(),
 )
 
 
@@ -246,6 +248,22 @@ internal fun HomeScreen(
     // The item in focus drives the backdrop and the title area, as on the Apple TV Home screen.
     val info = remember { mutableStateOf<FocusInfo?>(null) }
     val focusOn: (FocusInfo) -> Unit = remember { { i -> info.value = i; focusStamp.intValue++ } }
+    // T058, as the tvOS Top Shelf: a focused app with channels shows its programs, one every 6 seconds.
+    val shelf = remember { mutableStateOf<io.github.henry753951.airplayremote.launcher.PreviewItem?>(null) }
+    val previews = androidx.compose.runtime.rememberUpdatedState(state.previews)
+    LaunchedEffect(Unit) {
+        snapshotFlow { info.value?.pkg }.collectLatest { pkg ->
+            shelf.value = null
+            val list = pkg?.let { previews.value[it] }.orEmpty()
+            if (list.isEmpty()) return@collectLatest
+            delay(300)
+            var i = 0
+            while (true) {
+                shelf.value = list[i++ % list.size]
+                delay(6_000)
+            }
+        }
+    }
     val pillFocus: () -> Unit = remember { { info.value = null; focusStamp.intValue++ } }
 
     // Rows scroll as a whole (HIG: never half a row). The top rows keep the page at the top; a
@@ -276,7 +294,7 @@ internal fun HomeScreen(
     LaunchedEffect(pending) { if (pending == null) attention = null else { delay(ATTENTION_DELAY_MS); attention = pending } }
 
     Box(Modifier.fillMaxSize().onPreviewKeyEvent { userMoved = true; false }) {
-        Backdrop(info, state.nowPlaying, fancy, scroll)
+        Backdrop(info, shelf, state.nowPlaying, fancy, scroll)
       CompositionLocalProvider(LocalTitleShown provides titleShown) {
 
         val defaultSpec = LocalBringIntoViewSpec.current
@@ -317,7 +335,7 @@ internal fun HomeScreen(
                             np != null -> NowPlayingCard(np, fancy, { focusStamp.intValue++; onRowFocus(-1) }, onNowPlaying, onPlayPause, onNext)
                             state.nowPlayingHint -> PermissionHint(stringResource(R.string.home_np_hint), fancy, onAllowNowPlaying, onDismissNowPlaying)
                             state.listingsHint -> PermissionHint(stringResource(R.string.home_listings_hint), fancy, onAllowListings, onDismissListings)
-                            else -> FocusTitle(info, state.isDefault, state.telik)
+                            else -> FocusTitle(info, shelf, state.isDefault, state.telik)
                         }
                     }
 
@@ -592,8 +610,17 @@ private fun TileRow(
  * recomposes only this function (FR-022).
  */
 @Composable
-private fun Backdrop(infoState: State<FocusInfo?>, np: NowPlaying?, fancy: Boolean, scroll: ScrollState) {
+private fun Backdrop(
+    infoState: State<FocusInfo?>,
+    shelfState: State<io.github.henry753951.airplayremote.launcher.PreviewItem?>,
+    np: NowPlaying?,
+    fancy: Boolean,
+    scroll: ScrollState,
+) {
     val info = infoState.value
+    val shelf = shelfState.value?.takeIf { it.packageName == info?.pkg }
+    val shelfCard = rememberPoster(shelf?.artUri).value
+    val shelfLarge = rememberLargePoster(shelf?.artUri)
     val playing = np?.art
     val npColor by produceState<Int?>(null, playing) {
         value = playing?.let { withContext(Dispatchers.Default) { BannerCache.mainColor(it) } }
@@ -601,12 +628,13 @@ private fun Backdrop(infoState: State<FocusInfo?>, np: NowPlaying?, fancy: Boole
     // The art of a focused program wins over the art of the media that plays. Its large version
     // replaces the card-size one when it arrives.
     val large = rememberLargePoster(info?.artUri)
-    val npArt = info?.art?.let { large ?: it } ?: playing
+    val npArt = info?.art?.let { large ?: it } ?: shelf?.let { shelfLarge ?: shelfCard?.bitmap } ?: playing
     val pkg = info?.pkg
     val activity = info?.activity
     val appColor = if (pkg != null && activity != null) rememberArt(pkg, activity).value?.color else null
     val target = when {
         info?.art != null -> info.artColor?.let { Color(it) }
+        shelf != null && shelfCard != null -> shelfCard.color?.let { Color(it) }
         playing != null -> npColor?.let { Color(it) }
         pkg != null -> appColor?.let { Color(it) }
         else -> info?.entry?.accent()?.first()
@@ -696,8 +724,15 @@ private val BaseColor = Color(0xFF0B0D12)
 private val LocalTitleShown = staticCompositionLocalOf<State<Boolean>> { mutableStateOf(false) }
 
 @Composable
-private fun FocusTitle(focusState: State<FocusInfo?>, isDefault: Boolean, telik: TelikStatus) {
-    val focus = focusState.value
+private fun FocusTitle(
+    focusState: State<FocusInfo?>,
+    shelfState: State<io.github.henry753951.airplayremote.launcher.PreviewItem?>,
+    isDefault: Boolean,
+    telik: TelikStatus,
+) {
+    val shelf = shelfState.value
+    // The program of the Top Shelf goes under the app name.
+    val focus = focusState.value?.let { f -> if (shelf != null && f.pkg == shelf.packageName) f.copy(subtitle = shelf.title) else f }
     // A Telik entry shows its live state, not the state at the moment of the focus.
     val info = focus?.entry?.let { e -> telikCardText(e, telik).let { (t, sub, _) -> focus.copy(title = t, subtitle = sub) } } ?: focus
     Column(Modifier.padding(bottom = 4.dp)) {
