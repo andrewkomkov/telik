@@ -1,14 +1,14 @@
-<p align="center"><img src="site/assets/mascot.svg" width="120" alt="Telik mascot"></p>
+<p align="center"><img src="https://telikapp.github.io/assets/mascot.svg" width="120" alt="Telik mascot"></p>
 
 # Telik
 
 Control Android TV with the built-in iPhone Apple TV Remote. Telik runs on the TV: no Apple TV box,
 Homebridge, server or iPhone app.
 
-[Website](https://andrewkomkov.github.io/telik/) · [Русский](README.ru.md) ·
-[Download](https://github.com/andrewkomkov/telik/releases/latest)
+[Website](https://telikapp.github.io/) · [Русский](README.ru.md) ·
+[Download](https://github.com/telikapp/telik/releases/latest)
 
-![Telik home screen](site/assets/home.jpg)
+![Telik home screen](https://telikapp.github.io/assets/og.jpg)
 
 ## Features
 
@@ -44,11 +44,11 @@ are welcome.
 
 1. Install Telik on an Android TV 13+ device. Use one of these ways:
    - Open the direct link on the TV, for example in the Downloader app:
-     `https://github.com/andrewkomkov/telik/releases/latest/download/telik-armv7.apk`
-   - Download `telik-*-armv7.apk` from [Releases](https://github.com/andrewkomkov/telik/releases/latest).
+     `https://github.com/telikapp/telik/releases/latest/download/telik-armv7.apk`
+   - Download `telik-*-armv7.apk` from [Releases](https://github.com/telikapp/telik/releases/latest).
    - Add Telik to [Obtainium](https://github.com/ImranR98/Obtainium). It installs the updates from Releases.
 
-     [<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="54">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/andrewkomkov/telik)
+     [<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="54">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/telikapp/telik)
 2. Open Telik and allow accessibility access. It presses remote buttons and receives keyboard text.
 3. On iPhone, open Control Center, tap the remote icon, choose Telik and enter the code from the TV.
 4. For Apple Home, open **Home app** in Telik and scan the QR code.
@@ -81,7 +81,7 @@ adb shell settings put global telik_keep_wireless_debugging 1
 | CMake | 3.22.1 |
 
 ```sh
-git clone --recurse-submodules https://github.com/andrewkomkov/telik.git
+git clone --recurse-submodules https://github.com/telikapp/telik.git
 cd telik
 rustup target add armv7-linux-androideabi
 scripts/build-remote.sh
