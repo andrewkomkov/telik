@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-17
 
-**Status**: In progress.
+**Status**: Done on the test TV on 2026-11-17: Back on all levels, English UI, font scale 2.0 with no overlap.
 
 **Input**: The user asked on 2026-11-17 for a launcher with all current platform features ("state of the art"). slop: user quote.
 A research of the official Android 13 and 14 pages on 2026-11-17 gave the list below. The test TV runs Android 14 (API 34).
