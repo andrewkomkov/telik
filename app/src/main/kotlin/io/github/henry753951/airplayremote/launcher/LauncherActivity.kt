@@ -119,6 +119,11 @@ class LauncherActivity : ComponentActivity() {
                     prefs().edit().putBoolean(NP_DISMISSED, true).apply()
                     state = state.copy(nowPlayingHint = false)
                 },
+                onAllowListings = ::askListings,
+                onDismissListings = {
+                    prefs().edit().putBoolean(LISTINGS_DISMISSED, true).apply()
+                    state = state.copy(listingsHint = false)
+                },
                 onEditFavorite = { state = state.copy(editingFavorite = it) },
                 onMoveFavorite = { key, d -> saveFavorites(Favorites.move(favorites, key, d)) },
                 onInput = ::openInput,
@@ -228,6 +233,7 @@ class LauncherActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         if (::store.isInitialized) refreshDefault()
+        refreshListingsHint()
         // US5: Watch Next can change while another app is open, so read it on each return.
         lifecycleScope.launch {
             val items = withContext(Dispatchers.IO) { ContinueWatching.read(applicationContext) }
@@ -294,6 +300,34 @@ class LauncherActivity : ComponentActivity() {
             .addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
         open(intent)
+    }
+
+    private fun refreshListingsHint() {
+        state = state.copy(listingsHint = !TvListings.granted(this) && !prefs().getBoolean(LISTINGS_DISMISSED, false))
+    }
+
+    /**
+     * 005 T057: the system dialog for READ_TV_LISTINGS. After "Don't ask again" the system shows no
+     * dialog, so the hint opens the app screen of the system instead.
+     */
+    private fun askListings() {
+        val asked = prefs().getBoolean(LISTINGS_ASKED, false)
+        if (asked && !shouldShowRequestPermissionRationale(TvListings.PERMISSION)) {
+            open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", packageName, null)))
+            return
+        }
+        prefs().edit().putBoolean(LISTINGS_ASKED, true).apply()
+        listingsRequest.launch(TvListings.PERMISSION)
+    }
+
+    private val listingsRequest = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) {
+        refreshListingsHint()
+        lifecycleScope.launch {
+            watchNext = withContext(Dispatchers.IO) { ContinueWatching.read(applicationContext) }
+            rebuild()
+        }
     }
 
     /**
@@ -394,5 +428,7 @@ class LauncherActivity : ComponentActivity() {
         val PACKAGE_NAME = Regex("[A-Za-z0-9_.]+")
         const val GLASS = "glass"
         const val NP_DISMISSED = "now_playing_hint_dismissed"
+        const val LISTINGS_DISMISSED = "listings_hint_dismissed"
+        const val LISTINGS_ASKED = "listings_asked"
     }
 }

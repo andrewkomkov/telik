@@ -149,6 +149,8 @@ data class HomeState(
     val nowPlaying: NowPlaying? = null,
     /** Notification access is missing and the user did not say "not now". */
     val nowPlayingHint: Boolean = false,
+    /** 005 T057: READ_TV_LISTINGS is missing and the user did not say "not now". */
+    val listingsHint: Boolean = false,
     /** Package of the app menu that a long OK opened. */
     val appMenu: String? = null,
     /** 005 US3: packages of the Recent row, last used first. */
@@ -175,6 +177,8 @@ internal fun HomeScreen(
     onNext: () -> Unit,
     onAllowNowPlaying: () -> Unit,
     onDismissNowPlaying: () -> Unit,
+    onAllowListings: () -> Unit,
+    onDismissListings: () -> Unit,
     onEditFavorite: (String?) -> Unit,
     onMoveFavorite: (String, Int) -> Unit,
     onInput: (String) -> Unit,
@@ -311,7 +315,8 @@ internal fun HomeScreen(
                         when {
                             a != null -> AttentionRow(a, fancy) { onAttention(a) }
                             np != null -> NowPlayingCard(np, fancy, { focusStamp.intValue++; onRowFocus(-1) }, onNowPlaying, onPlayPause, onNext)
-                            state.nowPlayingHint -> NowPlayingHint(fancy, onAllowNowPlaying, onDismissNowPlaying)
+                            state.nowPlayingHint -> PermissionHint(stringResource(R.string.home_np_hint), fancy, onAllowNowPlaying, onDismissNowPlaying)
+                            state.listingsHint -> PermissionHint(stringResource(R.string.home_listings_hint), fancy, onAllowListings, onDismissListings)
                             else -> FocusTitle(info, state.isDefault, state.telik)
                         }
                     }
@@ -759,14 +764,14 @@ private fun ModalMenu(title: String, fancy: Boolean, content: @Composable (Modif
 }
 
 @Composable
-private fun NowPlayingHint(fancy: Boolean, onAllow: () -> Unit, onDismiss: () -> Unit) {
+private fun PermissionHint(text: String, fancy: Boolean, onAllow: () -> Unit, onDismiss: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().glassPanel(TileShape, fancy).padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            stringResource(R.string.home_np_hint), Modifier.weight(1f), color = Color.White, fontSize = TvType.Body,
+            text, Modifier.weight(1f), color = Color.White, fontSize = TvType.Body,
             maxLines = 2, overflow = TextOverflow.Ellipsis,
         )
         ActionButton(stringResource(R.string.btn_allow), fancy, onClick = onAllow)

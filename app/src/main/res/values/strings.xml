@@ -381,4 +381,5 @@
     <string name="home_np_not_now">Not Now</string>
     <string name="home_crash_notice">Telik Home failed to start and was turned off. The previous Home screen is back.</string>
     <string name="home_cannot_open">Cannot open this app</string>
+    <string name="home_listings_hint">Allow access to TV listings, and Telik shows what you watch in YouTube, Apple TV and other apps.</string>
 </resources>
