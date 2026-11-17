@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-17
 
-**Status**: In progress.
+**Status**: Done on 2026-11-17. The launch goes live on 2026-11-18.
 
 **Input**: The user asked to launch Telik on Product Hunt and to move it to its own GitHub organization, as Gantry
 (`getgantry`) and SecretBar (`secretbar`). The user chose the name `telikapp` and the first free launch day.

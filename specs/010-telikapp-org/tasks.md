@@ -5,4 +5,4 @@
 - [x] T003 Remove `site/` and the Pages workflow. Change the addresses in README, F-Droid metadata and store notes.
 - [x] T004 Check `https://telikapp.github.io/` after the deploy, and turn off Pages of `telikapp/telik`.
 - [x] T005 Make the Product Hunt draft: text, thumbnail, gallery, maker comment, topics.
-- [ ] T006 Submit the launch on the first free day, after the user confirms.
+- [x] T006 Submit the launch on the first free day, after the user confirms. Scheduled for 2026-11-18 (launch 1320533).
