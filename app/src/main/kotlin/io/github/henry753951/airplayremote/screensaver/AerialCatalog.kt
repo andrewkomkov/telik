@@ -55,19 +55,40 @@ object AerialCatalog {
         val out = HashMap<String, ByteArray>()
         val header = ByteArray(512)
         while (out.size < names.size) {
-            if (input.readNBytes(header, 0, 512) < 512) break
+            if (readFully(input, header) < 512) break
             val name = String(header, 0, 100, Charsets.UTF_8).substringBefore('\u0000')
             if (name.isEmpty()) break
             val size = String(header, 124, 12, Charsets.US_ASCII).trim('\u0000', ' ').toLongOrNull(8) ?: 0L
             val padded = (size + 511) / 512 * 512
             if (name in names && size <= 8_000_000) {
-                out[name] = input.readNBytes(size.toInt())
-                input.skipNBytes(padded - size)
+                out[name] = ByteArray(size.toInt()).also { readFully(input, it) }
+                skipFully(input, padded - size)
             } else {
-                input.skipNBytes(padded)
+                skipFully(input, padded)
             }
         }
         return out
+    }
+
+    // InputStream.readNBytes and skipNBytes need API 34; minSdk is 33.
+    private fun readFully(input: InputStream, buf: ByteArray): Int {
+        var n = 0
+        while (n < buf.size) {
+            val r = input.read(buf, n, buf.size - n)
+            if (r < 0) break
+            n += r
+        }
+        return n
+    }
+
+    private fun skipFully(input: InputStream, count: Long) {
+        var left = count
+        val scratch = ByteArray(8192)
+        while (left > 0) {
+            val r = input.read(scratch, 0, minOf(left, scratch.size.toLong()).toInt())
+            if (r < 0) return
+            left -= r
+        }
     }
 
     /** The list, from the disk cache when it is younger than 7 days. Empty without network and cache. */
