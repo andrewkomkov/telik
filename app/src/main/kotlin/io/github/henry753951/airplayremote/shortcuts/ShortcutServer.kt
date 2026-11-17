@@ -114,8 +114,7 @@ class ShortcutServer(private val context: Context) {
     }
 
     private fun start(intent: Intent) {
-        runCatching { context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-            .onFailure { Log.w(TAG, "start failed: ${it.javaClass.simpleName}") }
+        io.github.henry753951.airplayremote.remote.TvLaunch.start(context, intent)
     }
 
     private fun key(code: Int, media: Boolean = true) {

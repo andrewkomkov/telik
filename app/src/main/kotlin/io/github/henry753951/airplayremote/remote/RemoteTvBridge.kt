@@ -86,7 +86,7 @@ class RemoteTvBridge(private val context: Context) {
             return@post
         }
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-        runCatching { context.startActivity(intent) }.onFailure { Log.w(TAG, "launch of $packageName failed", it) }
+        TvLaunch.start(context, intent)
     }
 
     /**

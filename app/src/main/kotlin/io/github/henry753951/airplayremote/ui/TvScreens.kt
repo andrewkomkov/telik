@@ -964,6 +964,29 @@ private fun remoteItems(viewModel: MainViewModel): List<TvItem> {
             stringResource(R.string.tv_remote_dpad), stringResource(R.string.tv_remote_dpad_short),
             detail = stringResource(R.string.tv_remote_dpad_desc)
         ),
+    ) + shortcutItems(viewModel)
+}
+
+/** Spec 006 US7: Siri Shortcuts. The token shows only while the endpoint is on. */
+@Composable
+private fun shortcutItems(viewModel: MainViewModel): List<TvItem> {
+    val ctx = LocalContext.current
+    val on by viewModel.pref(Prefs.SHORTCUTS_ENABLED).collectAsState()
+    val toggleItem = toggle(viewModel, Prefs.SHORTCUTS_ENABLED, R.string.setting_shortcuts, R.string.setting_shortcuts_desc)
+    if (!on) return listOf(toggleItem)
+    var token by remember { mutableStateOf(io.github.henry753951.airplayremote.shortcuts.ShortcutToken.get(ctx)) }
+    val ip = remember { io.github.henry753951.airplayremote.platform.LocalNetworkAddress.get(ctx) ?: "TV" }
+    val example = "http://$ip:${io.github.henry753951.airplayremote.shortcuts.ShortcutApi.PORT}/v1/open?app=com.google.android.youtube.tv"
+    return listOf(
+        toggleItem,
+        TvItem(
+            stringResource(R.string.setting_shortcuts_token), token,
+            detail = stringResource(R.string.setting_shortcuts_example, example),
+        ),
+        TvItem(
+            stringResource(R.string.setting_shortcuts_renew), stringResource(R.string.setting_shortcuts_renew_desc),
+            onClick = { token = io.github.henry753951.airplayremote.shortcuts.ShortcutToken.renew(ctx) },
+        ),
     )
 }
 
