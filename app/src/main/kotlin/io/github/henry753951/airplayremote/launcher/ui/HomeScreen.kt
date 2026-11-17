@@ -406,7 +406,10 @@ internal fun HomeScreen(
                         RowTitle(stringResource(R.string.home_cw_title))
                         TileRow(1, rowTops, onRowFocus) {
                             watching.forEach { item ->
-                                WatchNextCard(item, fancy, firstMod(), focusOn) { onWatchNext(item) }
+                                // One composition for each item, so its state never moves to another card.
+                                androidx.compose.runtime.key(item.packageName, item.id) {
+                                    WatchNextCard(item, fancy, firstMod(), focusOn) { onWatchNext(item) }
+                                }
                             }
                         }
                     }
