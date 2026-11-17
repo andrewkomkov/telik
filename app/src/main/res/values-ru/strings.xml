@@ -382,4 +382,6 @@
     <string name="home_crash_notice">Домашний экран Телика не запустился и выключен. Вернулся прежний экран.</string>
     <string name="home_cannot_open">Не удалось открыть приложение</string>
     <string name="home_listings_hint">Разрешите доступ к телепрограммам, и Телик покажет, что вы смотрите в YouTube, Apple TV и других приложениях.</string>
+    <string name="home_installing_title">Устанавливается</string>
+    <string name="home_installing_progress">Установка: %1$d%%</string>
 </resources>

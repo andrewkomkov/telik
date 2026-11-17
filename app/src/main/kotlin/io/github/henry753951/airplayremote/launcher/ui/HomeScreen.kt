@@ -160,6 +160,8 @@ data class HomeState(
     val badges: Map<String, Recent.Badge> = emptyMap(),
     /** 005 US5: Watch Next programs of other apps, last used first. */
     val continueWatching: List<WatchNextItem> = emptyList(),
+    /** 005 T032: app installs in progress. */
+    val installs: List<io.github.henry753951.airplayremote.launcher.Install> = emptyList(),
     /** 005 T058: preview programs of app channels, for the Top Shelf of a focused app. */
     val previews: Map<String, List<io.github.henry753951.airplayremote.launcher.PreviewItem>> = emptyMap(),
 )
@@ -399,12 +401,22 @@ internal fun HomeScreen(
                         }
                     }
 
+                    // Installs in progress (T032), after Continue watching.
+                    val installs = if (editing == null) state.installs else emptyList()
+                    val afterInstalls = if (installs.isEmpty()) recentIndex else recentIndex + 1
+                    if (installs.isNotEmpty()) {
+                        RowTitle(stringResource(R.string.home_installing_title))
+                        TileRow(recentIndex, rowTops, onRowFocus) {
+                            installs.forEach { InstallTile(it, fancy, focusOn) }
+                        }
+                    }
+
                     // Then Recent (US3), only outside edit mode and only when there is something to show.
                     val recentApps = if (editing == null) state.recent.mapNotNull { byPackage[it] } else emptyList()
-                    val gridStart = if (recentApps.isEmpty()) recentIndex else recentIndex + 1
+                    val gridStart = if (recentApps.isEmpty()) afterInstalls else afterInstalls + 1
                     if (recentApps.isNotEmpty()) {
                         RowTitle(stringResource(R.string.home_recent_title))
-                        TileRow(recentIndex, rowTops, onRowFocus) {
+                        TileRow(afterInstalls, rowTops, onRowFocus) {
                             recentApps.forEach { app ->
                                 val tag = "recent:" + app.packageName
                                 AppTileView(
@@ -853,6 +865,31 @@ private fun WatchNextCard(item: WatchNextItem, fancy: Boolean, modifier: Modifie
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(4.dp).background(Color.White.copy(alpha = 0.25f)))
                 Box(Modifier.align(Alignment.BottomStart).fillMaxWidth(f).height(4.dp).background(Color.White))
             }
+        }
+    }
+}
+
+/** A tile of an app install (T032): the icon of the installer session and the progress. */
+@Composable
+private fun InstallTile(install: io.github.henry753951.airplayremote.launcher.Install, fancy: Boolean, onFocused: (FocusInfo) -> Unit) {
+    val label = install.label ?: rememberAppLabel(install.packageName) ?: install.packageName
+    val subtitle = stringResource(R.string.home_installing_progress, (install.progress * 100).toInt())
+    FocusTile(
+        fancy, Modifier.size(TileW, TileH), false,
+        { onFocused(FocusInfo(label, subtitle)) },
+        {}, null, grow = FocusGrow,
+    ) {
+        Box(Modifier.fillMaxSize().background(Color(0xFF1C1F26)), contentAlignment = Alignment.Center) {
+            val icon = install.icon
+            if (icon != null) {
+                val image = remember(icon) { icon.asImageBitmap() }
+                Image(image, label, Modifier.size(48.dp))
+            } else {
+                Text(label, color = Color.White, fontSize = TvType.Body, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.padding(12.dp))
+            }
+            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(4.dp).background(Color.White.copy(alpha = 0.25f)))
+            Box(Modifier.align(Alignment.BottomStart).fillMaxWidth(install.progress).height(4.dp).background(Color(0xFF0A84FF)))
         }
     }
 }

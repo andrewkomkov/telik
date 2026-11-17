@@ -350,4 +350,6 @@
     <string name="home_crash_notice">Telik 主畫面無法啟動，已關閉，已恢復先前的主畫面。</string>
     <string name="home_cannot_open">無法開啟此應用程式</string>
     <string name="home_listings_hint">允許存取電視節目資訊，Telik 就能顯示你在 YouTube、Apple TV 等 App 中觀看的內容。</string>
+    <string name="home_installing_title">正在安裝</string>
+    <string name="home_installing_progress">安裝中：%1$d%%</string>
 </resources>

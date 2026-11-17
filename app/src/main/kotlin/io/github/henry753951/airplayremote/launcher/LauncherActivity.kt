@@ -156,6 +156,7 @@ class LauncherActivity : ComponentActivity() {
             nowPlaying.granted.collect { state = state.copy(nowPlayingHint = !it && !prefs().getBoolean(NP_DISMISSED, false)) }
         }
         lifecycleScope.launch { store.launches.collect { launches = it; rebuild() } }
+        lifecycleScope.launch { Installs.flow(this@LauncherActivity).collect { state = state.copy(installs = it) } }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) { telik.status.collect { state = state.copy(telik = it) } }
         }
