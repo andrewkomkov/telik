@@ -17,6 +17,8 @@ pub mod flags {
     pub const FAST_FORWARD: u64 = 0x0010;
     pub const REWIND: u64 = 0x0020;
     pub const VOLUME: u64 = 0x0100;
+    pub const SKIP_FORWARD: u64 = 0x0200;
+    pub const SKIP_BACKWARD: u64 = 0x0400;
 }
 
 /// One launchable app: the id is the Android package name.

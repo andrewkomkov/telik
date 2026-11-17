@@ -115,6 +115,10 @@ class RemoteTvBridge(private val context: Context) {
      * active media session, so the bridge needs no session access for the commands.
      */
     fun mediaKey(name: String): Boolean {
+        if (name.startsWith("media_skip:")) {
+            name.removePrefix("media_skip:").toDoubleOrNull()?.let { s -> main.post { media.skipBy(s) } }
+            return true
+        }
         val code = when (name) {
             "media_play" -> KeyEvent.KEYCODE_MEDIA_PLAY
             "media_pause" -> KeyEvent.KEYCODE_MEDIA_PAUSE

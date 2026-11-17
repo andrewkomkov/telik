@@ -1156,6 +1156,14 @@ impl CompanionSession {
                     );
                 }
             }
+            // SkipBy (pyatv MediaControlCommand 7): `_skpS` seconds, negative to go back (spec 008).
+            Some(7) => {
+                let seconds = content.get("_skpS").and_then(Value::as_float).unwrap_or(0.0);
+                if seconds != 0.0 {
+                    let name = format!("media_skip:{seconds}");
+                    self.delegate.on_button(&name);
+                }
+            }
             // Play, pause, next, previous (spec 006 US2): to the media session of the TV.
             Some(c) if tv_state::command_button(c).is_some() => {
                 let name = tv_state::command_button(c).unwrap_or_default();

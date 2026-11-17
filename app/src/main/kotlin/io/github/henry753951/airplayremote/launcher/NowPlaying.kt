@@ -78,6 +78,16 @@ class NowPlayingWatcher(private val context: Context) {
 
     fun next() { active()?.transportControls?.skipToNext() }
 
+    /** 008: skip by [seconds] from the current position, by a seek of the active session. */
+    fun skipBy(seconds: Double) {
+        val c = active() ?: return
+        val s = c.playbackState ?: return
+        val since = android.os.SystemClock.elapsedRealtime() - s.lastPositionUpdateTime
+        val now = s.position + if (s.state == PlaybackState.STATE_PLAYING) (since * s.playbackSpeed).toLong() else 0L
+        val max = c.metadata?.getLong(MediaMetadata.METADATA_KEY_DURATION)?.takeIf { it > 0 } ?: Long.MAX_VALUE
+        c.transportControls.seekTo((now + (seconds * 1000).toLong()).coerceIn(0L, max))
+    }
+
     private fun watch(list: List<MediaController>) {
         controllers.forEach { it.unregisterCallback(callback) }
         controllers = list
