@@ -310,3 +310,35 @@ pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_
         JNI_FALSE
     }
 }
+
+/// The launchable apps of the TV for the iPhone remote (spec 006 US1). Two arrays of the same length.
+#[no_mangle]
+pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_RemoteNative_nativeSetApps(
+    mut env: JNIEnv,
+    _class: JClass,
+    ids: jni::objects::JObjectArray,
+    names: jni::objects::JObjectArray,
+) {
+    let count = env.get_array_length(&ids).unwrap_or(0);
+    let mut apps = Vec::with_capacity(count.max(0) as usize);
+    for i in 0..count {
+        let read = |env: &mut JNIEnv, array: &jni::objects::JObjectArray| -> Option<String> {
+            let item = env.get_object_array_element(array, i).ok()?;
+            let text: String = env.get_string(&JString::from(item)).ok()?.into();
+            Some(text)
+        };
+        let (Some(id), Some(name)) = (read(&mut env, &ids), read(&mut env, &names)) else { continue };
+        apps.push(atv_core::tv_state::App { id, name });
+    }
+    atv_core::tv_state::set_apps(apps);
+}
+
+/// The media control flags of the active media session (spec 006 US2).
+#[no_mangle]
+pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_RemoteNative_nativeSetMedia(
+    _env: JNIEnv,
+    _class: JClass,
+    flags: jni::sys::jlong,
+) {
+    atv_core::tv_state::set_media_flags(flags as u64);
+}

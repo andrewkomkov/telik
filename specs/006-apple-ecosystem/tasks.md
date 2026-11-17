@@ -2,9 +2,9 @@
 
 ## Phase 1: The iPhone remote (US1, US2, P1)
 
-- [ ] T001 [US1] Add a shared app list to `atv-core`. Answer `FetchLaunchableApplicationsEvent` from it. Refuse `_launchApp` for an id that is not in it. Add Rust tests.
+- [x] T001 [US1] Add a shared app list to `atv-core`. Answer `FetchLaunchableApplicationsEvent` from it. Refuse `_launchApp` for an id that is not in it. Add Rust tests.
 - [ ] T002 [US1] Add `nativeSetApps` to `atv-android` and `RemoteNative.kt`. Push the launchable apps at start and on each app change. Open the app on `LaunchApp`.
-- [ ] T003 [US2] Add shared media flags to `atv-core`. Send `_iMC` to the sessions when they change. Add Rust tests.
+- [x] T003 [US2] Add shared media flags to `atv-core`. Send `_iMC` to the sessions when they change. Add Rust tests.
 - [ ] T004 [US2] Add `nativeSetMedia`. Map the `PlaybackState` actions to the flags, with a JVM test. Send play, pause, next and previous from `_mcc` to the media session.
 - [ ] T005 [US1, US2] Check on the TV with the iPhone remote: the app list, an app launch, pause and play.
 

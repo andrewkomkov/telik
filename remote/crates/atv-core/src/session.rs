@@ -21,13 +21,14 @@ use crate::opack::{self, Value};
 use crate::registry::{ActiveConnectionTracker, DeviceRegistry};
 use crate::srp::SrpServer;
 use crate::text_input::{self, TextFocusEvent};
+use crate::tv_state;
 use crate::tlv::{self, tags};
 use crate::FrameType;
 
 pub const SERVER_IDENTIFIER: &str = "5D797FD3-3538-427E-A47B-A32FC6CF3A6A";
 pub const SERVER_PRIVATE_KEY: [u8; 32] = [0xaa; 32];
 pub const DEVICE_MODEL: &str = "AppleTV14,1";
-pub const MEDIA_CONTROL_VOLUME: u64 = 0x0100;
+pub const MEDIA_CONTROL_VOLUME: u64 = tv_state::flags::VOLUME;
 
 const SWIPE_MIN_DISTANCE: f64 = 150.0; // touchpad units; the surface is 1000x1000
 const TAP_MAX_DISTANCE: f64 = 60.0; // below this a touch sequence counts as a tap
@@ -315,7 +316,7 @@ impl CompanionSession {
             xid,
             Some(Value::dict(vec![Value::kv(
                 "MediaControlFlags",
-                Value::Int(MEDIA_CONTROL_VOLUME),
+                Value::Int(tv_state::media_flags()),
             )])),
         )
         .await?;
@@ -324,7 +325,7 @@ impl CompanionSession {
             xid,
             Some(Value::dict(vec![Value::kv(
                 "_mcF",
-                Value::Int(MEDIA_CONTROL_VOLUME),
+                Value::Int(tv_state::media_flags()),
             )])),
         )
         .await?;
@@ -335,13 +336,13 @@ impl CompanionSession {
 
     /// Re-publish the volume capability flag after a state change so iOS
     /// refreshes its volume HUD (it issues GetVolume in response).
-    async fn push_media_state(&mut self, xid: Option<u64>) -> Result<()> {
+    pub async fn push_media_state(&mut self, xid: Option<u64>) -> Result<()> {
         self.send_event(
             "MediaControlStatus",
             xid,
             Some(Value::dict(vec![Value::kv(
                 "MediaControlFlags",
-                Value::Int(MEDIA_CONTROL_VOLUME),
+                Value::Int(tv_state::media_flags()),
             )])),
         )
         .await?;
@@ -350,7 +351,7 @@ impl CompanionSession {
             xid,
             Some(Value::dict(vec![Value::kv(
                 "_mcF",
-                Value::Int(MEDIA_CONTROL_VOLUME),
+                Value::Int(tv_state::media_flags()),
             )])),
         )
         .await
@@ -856,7 +857,7 @@ impl CompanionSession {
                                     xid,
                                     Some(Value::dict(vec![Value::kv(
                                         "MediaControlFlags",
-                                        Value::Int(MEDIA_CONTROL_VOLUME),
+                                        Value::Int(tv_state::media_flags()),
                                     )])),
                                 )
                                 .await?;
@@ -885,7 +886,7 @@ impl CompanionSession {
                     xid,
                     Some(Value::dict(vec![Value::kv(
                         "MediaControlFlags",
-                        Value::Int(MEDIA_CONTROL_VOLUME),
+                        Value::Int(tv_state::media_flags()),
                     )])),
                     0,
                 )
@@ -932,20 +933,12 @@ impl CompanionSession {
                 }
             }
             Some("FetchLaunchableApplicationsEvent") => {
-                self.send_response(
-                    xid,
-                    Some(Value::dict(vec![
-                        Value::kv("com.apple.TVAppStore", Value::str("App Store")),
-                        Value::kv("com.apple.TVSettings", Value::str("Settings")),
-                        Value::kv("com.apple.TVMusic", Value::str("Music")),
-                        Value::kv("com.apple.TVMovies", Value::str("Movies")),
-                        Value::kv("com.apple.TVWatchList", Value::str("TV")),
-                        Value::kv("com.google.ios.youtube", Value::str("YouTube")),
-                        Value::kv("com.netflix.Netflix", Value::str("Netflix")),
-                    ])),
-                    2,
-                )
-                .await?;
+                // The apps of the TV (spec 006 US1): id = package name.
+                let apps = tv_state::apps()
+                    .into_iter()
+                    .map(|a| Value::kv(&a.id, Value::str(&a.name)))
+                    .collect();
+                self.send_response(xid, Some(Value::dict(apps)), 2).await?;
             }
             Some("FetchAttentionState") => {
                 self.send_response(
@@ -964,7 +957,12 @@ impl CompanionSession {
                     .and_then(Value::as_str)
                     .unwrap_or("")
                     .to_string();
-                self.delegate.on_event(EventKind::LaunchApp, &bundle_id);
+                // Only an app from the list that the TV gave (spec 006 FR-002).
+                if tv_state::is_launchable(&bundle_id) {
+                    self.delegate.on_event(EventKind::LaunchApp, &bundle_id);
+                } else {
+                    warn!("refused _launchApp for an id that is not in the app list");
+                }
                 self.inspector
                     .emit("launch_app", &format!("{{\"bundle_id\":\"{bundle_id}\"}}"));
                 self.send_response(xid, None, 0).await?;
@@ -1055,7 +1053,7 @@ impl CompanionSession {
                         "MediaControlStatus",
                         xid,
                         Some(Value::dict(vec![
-                            Value::kv("MediaControlFlags", Value::Int(MEDIA_CONTROL_VOLUME)),
+                            Value::kv("MediaControlFlags", Value::Int(tv_state::media_flags())),
                             Value::kv("Muted", Value::Bool(self.muted)),
                         ])),
                     )
@@ -1065,7 +1063,7 @@ impl CompanionSession {
                         xid,
                         Some(Value::dict(vec![Value::kv(
                             "_mcF",
-                            Value::Int(MEDIA_CONTROL_VOLUME),
+                            Value::Int(tv_state::media_flags()),
                         )])),
                     )
                     .await?;
@@ -1125,6 +1123,12 @@ impl CompanionSession {
                         &format!("{{\"volume\":{:.3},\"muted\":{}}}", self.volume, self.muted),
                     );
                 }
+            }
+            // Play, pause, next, previous (spec 006 US2): to the media session of the TV.
+            Some(c) if tv_state::command_button(c).is_some() => {
+                let name = tv_state::command_button(c).unwrap_or_default();
+                self.delegate.on_button(name);
+                self.inspector.emit("button", &format!("{{\"name\":\"{name}\"}}"));
             }
             // GetCaptionSettings
             Some(12) => {
