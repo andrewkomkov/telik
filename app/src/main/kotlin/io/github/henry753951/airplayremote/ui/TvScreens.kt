@@ -308,7 +308,12 @@ internal fun TelikRowIcon(entry: TvHomeEntry) {
             .clip(RoundedCornerShape(15.dp))
             .background(androidx.compose.ui.graphics.Brush.linearGradient(entry.accent())),
         contentAlignment = Alignment.Center,
-    ) {
+    ) { TelikGlyph(entry) }
+}
+
+/** The white mark of a Telik entry, without its tile. */
+@Composable
+internal fun TelikGlyph(entry: TvHomeEntry) {
         when (entry) {
             TvHomeEntry.CAST -> AirPlayMark(28.dp, Color.White)
             TvHomeEntry.REMOTE -> Canvas(Modifier.size(width = 16.dp, height = 30.dp)) {
@@ -319,7 +324,6 @@ internal fun TelikRowIcon(entry: TvHomeEntry) {
             TvHomeEntry.HOMEKIT -> Icon(Icons.Default.Home, null, Modifier.size(30.dp), tint = Color.White)
             TvHomeEntry.SPEAKERS -> Icon(Icons.Default.Speaker, null, Modifier.size(30.dp), tint = Color.White)
         }
-    }
 }
 
 // ---- home artwork: drawn, static, no animation of its own ----

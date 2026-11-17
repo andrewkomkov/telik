@@ -1,6 +1,7 @@
 package io.github.henry753951.airplayremote.launcher.ui
 
 import android.content.ComponentName
+import android.graphics.Bitmap
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -10,6 +11,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.graphics.drawable.toBitmap
+import io.github.henry753951.airplayremote.launcher.Ambient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -21,7 +23,8 @@ object BannerCache {
     private const val W = 320
     private const val H = 180
 
-    class Art(val image: ImageBitmap, val isBanner: Boolean)
+    /** [color] is the main color of the art (US8), null for gray art. */
+    class Art(val image: ImageBitmap, val isBanner: Boolean, val color: Int?)
     private val arts = HashMap<String, Art>()
 
     fun peek(pkg: String): Art? = synchronized(arts) { arts[pkg] }
@@ -33,10 +36,11 @@ object BannerCache {
             val component = ComponentName(pkg, activity)
             val banner = pm.getActivityBanner(component) ?: pm.getApplicationBanner(pkg)
             val art = if (banner != null) {
-                Art(banner.toBitmap(W, H).asImageBitmap(), true)
+                val bmp = banner.toBitmap(W, H)
+                Art(bmp.asImageBitmap(), true, mainColor(bmp))
             } else {
-                val icon = pm.getActivityIcon(component)
-                Art(icon.toBitmap(H, H).asImageBitmap(), false)
+                val bmp = pm.getActivityIcon(component).toBitmap(H, H)
+                Art(bmp.asImageBitmap(), false, mainColor(bmp))
             }
             synchronized(arts) {
                 if (arts.size >= 48) arts.remove(arts.keys.first())
@@ -46,6 +50,14 @@ object BannerCache {
         } catch (_: Exception) {
             null
         }
+    }
+
+    fun mainColor(bmp: Bitmap): Int? {
+        val small = Bitmap.createScaledBitmap(bmp, 24, 14, true)
+        val px = IntArray(24 * 14)
+        small.getPixels(px, 0, 24, 0, 0, 24, 14)
+        if (small !== bmp) small.recycle()
+        return Ambient.pick(px)
     }
 }
 

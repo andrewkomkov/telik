@@ -26,7 +26,8 @@ class AppRepository(private val context: Context) {
                 val a = info.activityInfo ?: continue
                 if (a.packageName == context.packageName) continue
                 if (seen.add(a.packageName)) {
-                    out += AppTile(a.packageName, info.loadLabel(pm).toString(), a.name)
+                    val p = runCatching { pm.getPackageInfo(a.packageName, 0) }.getOrNull()
+                    out += AppTile(a.packageName, info.loadLabel(pm).toString(), a.name, p?.firstInstallTime ?: 0, p?.lastUpdateTime ?: 0)
                 }
             }
         }

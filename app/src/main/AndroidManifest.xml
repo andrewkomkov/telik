@@ -21,6 +21,8 @@
     </queries>
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- TV home rows of other apps (005 US5). A runtime permission. -->
+    <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
@@ -85,6 +87,14 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 005 US2: the key for the media sessions of all apps. It reads no notifications. -->
+        <service android:name=".launcher.NowPlayingListener"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter><action android:name="android.service.notification.NotificationListenerService" /></intent-filter>
+        </service>
 
         <!-- The Home role lives on an alias. CrashGuard and the settings switch it off
              without touching the activity, so the Telik screen can always be opened again. -->
