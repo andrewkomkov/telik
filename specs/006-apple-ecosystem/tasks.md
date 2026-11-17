@@ -29,7 +29,7 @@
 ## Phase 5: Shortcuts (US7, P3)
 
 - [x] T040 [US7] Add `ShortcutServer` with the token and the actions of FR-011. Add unit tests for the parser.
-- [ ] T041 [US7] Add the settings: on and off, the token, a link to copy.
+- [x] T041 [US7] Add the settings: on and off, the token, a link to copy.
 - [ ] T042 [US7] Check with a shortcut on the iPhone.
 
 ## Phase 6: Several HomePods (US8, P3)
