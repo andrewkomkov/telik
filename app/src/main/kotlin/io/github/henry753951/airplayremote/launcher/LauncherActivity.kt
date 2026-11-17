@@ -138,7 +138,8 @@ class LauncherActivity : ComponentActivity() {
                 onMenu = { state = state.copy(menuOpen = it) },
                 onMove = { pkg, d -> update { it.copy(order = TileLayout.move(fullOrder(), pkg, d)) } },
                 onHide = { pkg, h -> update { TileLayout.setHidden(it.copy(order = fullOrder()), pkg, h) } },
-                onAppMenu = { state = state.copy(appMenu = it) },
+                onAppMenu = { pkg -> state = state.copy(appMenu = pkg, menuShortcuts = pkg?.let(::shortcutsOf).orEmpty()) },
+                onShortcut = ::startShortcut,
                 onStopApp = ::stopApp,
                 onUninstall = { pkg -> open(Intent(Intent.ACTION_DELETE, Uri.fromParts("package", pkg, null))) },
                 onInfo = { pkg ->
@@ -350,6 +351,29 @@ class LauncherActivity : ComponentActivity() {
         }
         apps.firstOrNull { it.packageName == item.packageName }?.let(::launchApp)
             ?: Toast.makeText(this, R.string.home_cannot_open, Toast.LENGTH_SHORT).show()
+    }
+
+    /** 005 T051: the shortcuts of an app. Only the default Home app may read them. */
+    private fun shortcutsOf(pkg: String): List<Pair<String, String>> = runCatching {
+        val la = getSystemService(android.content.pm.LauncherApps::class.java)
+        if (!la.hasShortcutHostPermission()) return emptyList()
+        val q = android.content.pm.LauncherApps.ShortcutQuery().setPackage(pkg).setQueryFlags(
+            android.content.pm.LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
+                android.content.pm.LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or
+                android.content.pm.LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED,
+        )
+        la.getShortcuts(q, android.os.Process.myUserHandle()).orEmpty()
+            .filter { it.isEnabled }
+            .sortedBy { it.rank }
+            .mapNotNull { s -> (s.shortLabel ?: s.longLabel)?.toString()?.let { s.id to it } }
+            .distinctBy { it.second }
+            .take(4)
+    }.getOrDefault(emptyList())
+
+    private fun startShortcut(pkg: String, id: String) {
+        runCatching {
+            getSystemService(android.content.pm.LauncherApps::class.java).startShortcut(pkg, id, null, null, android.os.Process.myUserHandle())
+        }.onFailure { Toast.makeText(this, R.string.home_cannot_open, Toast.LENGTH_SHORT).show() }
     }
 
     /** Force stop through the adb port of the TV, as for the headphones. Without it, the app screen of the system. */

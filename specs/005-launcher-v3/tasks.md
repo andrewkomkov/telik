@@ -55,7 +55,7 @@
 - [ ] T057 [US5] Ask for `READ_TV_LISTINGS` on the Home screen, as for notification access, with "Not now".
 - [ ] T058 [US5] Show the preview programs of the focused app in the Top Shelf (scenario 1).
 - [ ] T059 [US5] Check on the TV with screenshots and `gfxinfo`.
-- [ ] T051 [US6] Add uninstall, the system screen of the app and the app shortcuts to the edit menu.
+- [x] T051 [US6] Add uninstall, the system screen of the app and the app shortcuts to the edit menu.
 - [x] T053 [US6] Add the app menu for a long OK. It has these items: open, stop, favorites, move, hide, the system screen, uninstall. Stop runs `am force-stop` through the adb port of the TV. Without the adb port, the system screen opens.
 - [ ] T052 Check on the TV: the Home screen opens in 1 second or less with all rows (SC-003).
 

@@ -153,6 +153,8 @@ data class HomeState(
     val listingsHint: Boolean = false,
     /** Package of the app menu that a long OK opened. */
     val appMenu: String? = null,
+    /** 005 T051: the shortcuts of that app, id to label, at most four. */
+    val menuShortcuts: List<Pair<String, String>> = emptyList(),
     /** 005 US3: packages of the Recent row, last used first. */
     val recent: List<String> = emptyList(),
     val badges: Map<String, Recent.Badge> = emptyMap(),
@@ -197,6 +199,7 @@ internal fun HomeScreen(
     onInfo: (String) -> Unit,
     onAppMenu: (String?) -> Unit,
     onStopApp: (String) -> Unit,
+    onShortcut: (String, String) -> Unit,
     onUninstall: (String) -> Unit,
 ) = AirPlayTheme {
     // Frame watch (FR-012): slow frames while focus moves switch the effects to plain.
@@ -485,6 +488,9 @@ internal fun HomeScreen(
             val ownApp = pkg == LocalContext.current.packageName
             ModalMenu(app?.label ?: pkg, fancy) { first ->
                 MenuButton(stringResource(R.string.home_menu_open), fancy, first) { onAppMenu(null); app?.let(onLaunch) }
+                state.menuShortcuts.forEach { (id, label) ->
+                    MenuButton(label, fancy) { onAppMenu(null); onShortcut(pkg, id) }
+                }
                 if (!ownApp) MenuButton(stringResource(R.string.home_menu_stop), fancy) { onAppMenu(null); onStopApp(pkg) }
                 MenuButton(stringResource(if (favKey in state.favoriteKeys) R.string.home_fav_remove else R.string.home_fav_add), fancy) {
                     onAppMenu(null); onToggleFavorite(favKey)
