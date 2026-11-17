@@ -59,4 +59,4 @@ Out of scope: the user removed US4 on 2026-11-17 ("не делай группы"
 
 ## Release
 
-- [ ] T060 Add changelog files for English and Russian, bump the version to 3.0.0 and release.
+- [x] T060 Add changelog files for English and Russian, bump the version to 3.0.0 and release.

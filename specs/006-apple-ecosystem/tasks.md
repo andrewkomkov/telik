@@ -46,4 +46,4 @@ Out of scope: the user removed US8 on 2026-11-17. T050 and T051 are not done.
 
 ## Phase 7: Release
 
-- [ ] T060 Add changelog files in English and Russian in `fastlane/metadata/android/`.
+- [x] T060 Add changelog files in English and Russian in `fastlane/metadata/android/`.
