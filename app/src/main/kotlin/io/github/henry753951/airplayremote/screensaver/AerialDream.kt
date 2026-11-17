@@ -6,7 +6,8 @@ import android.service.dreams.DreamService
 import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
-import android.view.TextureView
+import android.view.SurfaceView
+import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextClock
 import android.widget.TextView
@@ -23,13 +24,15 @@ import kotlinx.coroutines.withContext
 
 /**
  * The Telik screensaver (006 US4): the aerial videos of Apple TV with the clock and the place.
- * One player and one view: a fade through black between videos keeps the memory low on the TV.
+ * One player: a fade through black between videos keeps the memory low on the TV.
  * Without the list (no network, no cache) it shows the clock only.
  */
 class AerialDream : DreamService() {
     private var scope: CoroutineScope? = null
     private var player: ExoPlayer? = null
-    private lateinit var video: TextureView
+    private lateinit var video: SurfaceView
+    /** Black cover over the video: a SurfaceView is a hardware layer and does not fade itself. */
+    private lateinit var cover: View
     private lateinit var place: TextView
     private var queue: List<Aerial> = emptyList()
     private var index = 0
@@ -40,8 +43,11 @@ class AerialDream : DreamService() {
         isFullscreen = true
         isScreenBright = true
         val root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
-        video = TextureView(this).apply { alpha = 0f }
+        // A SurfaceView goes to a hardware video layer at the panel size (4K), past the 1080p UI and the GPU.
+        video = SurfaceView(this)
         root.addView(video, FrameLayout.LayoutParams(-1, -1))
+        cover = View(this).apply { setBackgroundColor(Color.BLACK) }
+        root.addView(cover, FrameLayout.LayoutParams(-1, -1))
         val clock = TextClock(this).apply {
             format24Hour = "H:mm"
             format12Hour = "h:mm"
@@ -74,7 +80,7 @@ class AerialDream : DreamService() {
             index = 0
             player = ExoPlayer.Builder(this@AerialDream).build().apply {
                 volume = 0f
-                setVideoTextureView(video)
+                setVideoSurfaceView(video)
                 addListener(object : Player.Listener {
                     override fun onPlaybackStateChanged(state: Int) {
                         when (state) {
@@ -102,7 +108,7 @@ class AerialDream : DreamService() {
     }
 
     private fun fadeIn() {
-        video.animate().alpha(1f).setDuration(FADE_MS).start()
+        cover.animate().alpha(0f).setDuration(FADE_MS).start()
         place.animate().alpha(1f).setStartDelay(FADE_MS).setDuration(FADE_MS).start()
         // The place name shows for a short time only, as on Apple TV.
         place.postDelayed({ place.animate().alpha(0f).setDuration(FADE_MS).start() }, 8_000)
@@ -110,7 +116,7 @@ class AerialDream : DreamService() {
 
     private fun next() {
         index++
-        video.animate().alpha(0f).setDuration(FADE_MS).withEndAction { play() }.start()
+        cover.animate().alpha(1f).setDuration(FADE_MS).withEndAction { play() }.start()
         place.animate().alpha(0f).setDuration(FADE_MS).start()
     }
 
@@ -119,7 +125,7 @@ class AerialDream : DreamService() {
         scope = null
         player?.release()
         player = null
-        if (::video.isInitialized) video.animate().cancel()
+        if (::cover.isInitialized) cover.animate().cancel()
         super.onDreamingStopped()
     }
 

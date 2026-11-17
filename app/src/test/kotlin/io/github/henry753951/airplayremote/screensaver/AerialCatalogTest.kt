@@ -11,6 +11,7 @@ class AerialCatalogTest {
     private val entries = """
         {"assets": [
           {"id": "A", "accessibilityLabel": "Seals", "pointsOfInterest": {"0": "A016_C009_0"},
+           "url-4K-SDR": "https://sylvan.apple.com/a_4K.mov",
            "url-1080-SDR": "https://sylvan.apple.com/a_HEVC.mov", "url-1080-H264": "https://sylvan.apple.com/a_AVC.mov"},
           {"id": "B", "accessibilityLabel": "Hong Kong", "url-1080-H264": "https://sylvan.apple.com/b_AVC.mov"},
           {"id": "C", "accessibilityLabel": "Broken", "url-1080-H264": "http://insecure/c.mov"}
@@ -18,15 +19,19 @@ class AerialCatalogTest {
     """.trimIndent()
 
     @Test fun parsePrefersHevcAndLocalNames() {
-        val out = AerialCatalog.parse(entries, mapOf("A016_C009_0" to "Морские котики"), hevc = true)
+        val out = AerialCatalog.parse(entries, mapOf("A016_C009_0" to "Морские котики"), AerialQuality.HD_HEVC)
         assertEquals(listOf("A", "B"), out.map { it.id })
         assertEquals("https://sylvan.apple.com/a_HEVC.mov", out[0].url)
+        assertEquals("https://sylvan.apple.com/b_AVC.mov", out[1].url)
         assertEquals("Морские котики", out[0].place)
         assertEquals("Hong Kong", out[1].place)
     }
 
     @Test fun parseWithoutHevcUsesH264() {
-        val out = AerialCatalog.parse(entries, emptyMap(), hevc = false)
+        val uhd = AerialCatalog.parse(entries, emptyMap(), AerialQuality.UHD_HEVC)
+        assertEquals("https://sylvan.apple.com/a_4K.mov", uhd[0].url)
+        assertEquals("https://sylvan.apple.com/b_AVC.mov", uhd[1].url)
+        val out = AerialCatalog.parse(entries, emptyMap(), AerialQuality.HD_H264)
         assertEquals("https://sylvan.apple.com/a_AVC.mov", out[0].url)
         assertEquals("Seals", out[0].place)
     }

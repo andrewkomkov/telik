@@ -14,6 +14,13 @@ import java.util.Locale
 /** One aerial video of Apple TV (006 US4). */
 data class Aerial(val id: String, val url: String, val place: String)
 
+/** The best file the TV can play: 4K HEVC on a 4K panel goes to a hardware layer at full size. */
+enum class AerialQuality(val keys: List<String>) {
+    UHD_HEVC(listOf("url-4K-SDR", "url-1080-SDR", "url-1080-H264")),
+    HD_HEVC(listOf("url-1080-SDR", "url-1080-H264")),
+    HD_H264(listOf("url-1080-H264")),
+}
+
 /**
  * The public list of the Apple TV aerial videos: `resources-16.tar` holds `entries.json` and the
  * place names for each language. Telik streams the videos and keeps only this list (FR-006).
@@ -24,11 +31,11 @@ object AerialCatalog {
     private const val TAG = "AerialCatalog"
 
     /** Videos from `entries.json`, with the place name in the language of [names] when it has one. */
-    fun parse(entries: String, names: Map<String, String>, hevc: Boolean): List<Aerial> {
+    fun parse(entries: String, names: Map<String, String>, quality: AerialQuality): List<Aerial> {
         val assets = JSONObject(entries).optJSONArray("assets") ?: return emptyList()
         return (0 until assets.length()).mapNotNull { i ->
             val a = assets.optJSONObject(i) ?: return@mapNotNull null
-            val url = (if (hevc) a.optString("url-1080-SDR") else "").ifBlank { a.optString("url-1080-H264") }
+            val url = quality.keys.map { a.optString(it) }.firstOrNull { it.isNotBlank() }.orEmpty()
             if (!url.startsWith("https://")) return@mapNotNull null
             val poi = a.optJSONObject("pointsOfInterest")?.optString("0").orEmpty()
             val place = names[poi] ?: a.optString("accessibilityLabel")
@@ -74,7 +81,7 @@ object AerialCatalog {
         val files = cache.inputStream().buffered().use { untar(it, (wanted + "entries.json").toSet()) }
         val entries = files["entries.json"] ?: return emptyList()
         val names = wanted.firstNotNullOfOrNull { files[it] }?.let { runCatching { Bplist.strings(it) }.getOrNull() }.orEmpty()
-        return parse(String(entries, Charsets.UTF_8), names, hasHevcDecoder())
+        return parse(String(entries, Charsets.UTF_8), names, quality(context))
     }
 
     private fun download(target: File) {
@@ -92,7 +99,20 @@ object AerialCatalog {
         }
     }
 
-    private fun hasHevcDecoder(): Boolean = MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos.any { info ->
-        !info.isEncoder && info.supportedTypes.any { it.equals(MediaFormat.MIMETYPE_VIDEO_HEVC, ignoreCase = true) }
+    /** 4K only with a hardware HEVC decoder for 3840x2160 and a panel of that size. */
+    fun quality(context: Context): AerialQuality {
+        val hevc = MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos.filter { info ->
+            !info.isEncoder && info.supportedTypes.any { it.equals(MediaFormat.MIMETYPE_VIDEO_HEVC, ignoreCase = true) }
+        }
+        if (hevc.isEmpty()) return AerialQuality.HD_H264
+        val uhdDecoder = hevc.any { info ->
+            info.isHardwareAccelerated && runCatching {
+                info.getCapabilitiesForType(MediaFormat.MIMETYPE_VIDEO_HEVC).videoCapabilities?.isSizeSupported(3840, 2160) == true
+            }.getOrDefault(false)
+        }
+        val mode = context.getSystemService(android.hardware.display.DisplayManager::class.java)
+            .getDisplay(android.view.Display.DEFAULT_DISPLAY)?.mode
+        val uhdPanel = (mode?.physicalWidth ?: 0) >= 3840
+        return if (uhdDecoder && uhdPanel) AerialQuality.UHD_HEVC else AerialQuality.HD_HEVC
     }
 }
