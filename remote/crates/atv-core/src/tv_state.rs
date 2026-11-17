@@ -33,6 +33,21 @@ fn apps_cell() -> &'static Mutex<Vec<App>> {
 
 static MEDIA_FLAGS: AtomicU64 = AtomicU64::new(flags::VOLUME);
 
+fn airplay_id_cell() -> &'static Mutex<Option<String>> {
+    static ID: OnceLock<Mutex<Option<String>>> = OnceLock::new();
+    ID.get_or_init(|| Mutex::new(None))
+}
+
+/// 008: the `deviceid` of the AirPlay receiver of the same TV. The companion TXT carries it as
+/// `rpMRtID`, so iOS can tie the remote to the AirPlay route (its log: "no Airplay ID").
+pub fn set_airplay_id(id: Option<String>) {
+    *airplay_id_cell().lock().unwrap() = id.filter(|s| !s.is_empty());
+}
+
+pub fn airplay_id() -> Option<String> {
+    airplay_id_cell().lock().unwrap().clone()
+}
+
 fn channel() -> &'static broadcast::Sender<u64> {
     static CHANNEL: OnceLock<broadcast::Sender<u64>> = OnceLock::new();
     CHANNEL.get_or_init(|| broadcast::channel(16).0)

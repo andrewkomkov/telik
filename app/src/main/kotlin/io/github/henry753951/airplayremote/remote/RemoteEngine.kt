@@ -81,6 +81,11 @@ class RemoteEngine(
                 setReferenceCounted(false); acquire()
             }
             val id = RemoteIdentityStore.getDeviceId(this)
+            // 008: tie the remote to the AirPlay receiver: the same deviceid as AirPlay announces.
+            val airplay = io.github.henry753951.airplayremote.runtime.AirPlayIdentity(
+                getSharedPreferences(io.github.henry753951.airplayremote.Prefs.NAME, MODE_PRIVATE),
+            ).hardwareAddress()
+            RemoteNative.nativeSetAirPlayId(airplay.joinToString(":") { "%02X".format(it) })
             val ok = RemoteNative.nativeStartServer(identity.first, RemoteIdentityStore.getPairingPin(this), id,
                 RemoteIdentityStore.getServerIdentifier(this, id), ip, this, RemoteIdentityStore.getPrivateKey(this),
                 createDeviceProtectedStorageContext().filesDir.absolutePath)

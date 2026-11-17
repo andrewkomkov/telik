@@ -375,3 +375,14 @@ pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_
     };
     atv_core::now_playing::set(Some(np));
 }
+
+/// 008: the AirPlay `deviceid` of this TV for `rpMRtID`. Call it before the server starts.
+#[no_mangle]
+pub extern "system" fn Java_io_github_henry753951_airplayremote_remote_protocol_RemoteNative_nativeSetAirPlayId(
+    mut env: JNIEnv,
+    _class: JClass,
+    id: JString,
+) {
+    let id: Option<String> = if id.is_null() { None } else { env.get_string(&id).map(Into::into).ok() };
+    atv_core::tv_state::set_airplay_id(id);
+}

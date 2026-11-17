@@ -262,6 +262,7 @@ impl AtvServer {
             hex::encode(&h.finalize()[..16])
         };
 
+        let route_id = crate::tv_state::airplay_id();
         let mut services: Vec<(&str, u16, Vec<(&str, &str)>)> = vec![
             (
                 "_mediaremotetv._tcp.local.",
@@ -306,6 +307,12 @@ impl AtvServer {
                 ],
             ),
         ];
+
+        if let Some(id) = route_id.as_deref() {
+            if let Some((_, _, props)) = services.iter_mut().find(|(k, _, _)| *k == "_companion-link._tcp.local.") {
+                props.push(("rpMRtID", id));
+            }
+        }
 
         if !config.advertise_airplay {
             services.retain(|(kind, _, _)| *kind != "_airplay._tcp.local.");
