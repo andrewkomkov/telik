@@ -43,9 +43,7 @@
 
 ## Phase 4: Groups (US4, P2)
 
-- [ ] T040 [US4] Add `Groups` with the category map and user overrides. Add unit tests.
-- [ ] T041 [US4] Add the group filter above the app row and "Set group" in the edit menu.
-- [ ] T042 [US4] Check on the TV.
+Out of scope: the user removed US4 on 2026-11-17 ("не делай группы"). On the test TV, 12 of 15 apps declare no category (see `research.md`). T040, T041 and T042 are not done.
 
 ## Phase 5: Content and app actions (US5, US6, P3)
 
