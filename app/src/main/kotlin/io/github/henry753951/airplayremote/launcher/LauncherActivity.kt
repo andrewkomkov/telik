@@ -273,7 +273,8 @@ class LauncherActivity : ComponentActivity() {
             continueWatching = ContinueWatching.pick(watchNext, apps.mapTo(HashSet()) { it.packageName }),
             previews = AppPreviews.withWatchNext(
                 AppPreviews.pick(previewItems, apps.mapTo(HashSet()) { it.packageName }),
-                ContinueWatching.pick(watchNext, apps.mapTo(HashSet()) { it.packageName }),
+                // The shelf takes all items of its app. The common row limit applies only to the row.
+                ContinueWatching.pick(watchNext, apps.mapTo(HashSet()) { it.packageName }, limit = Int.MAX_VALUE),
             ),
             recent = Recent.pick(launches, visible, shown.filter { it.startsWith(Favorites.APP) }.mapTo(HashSet()) { it.removePrefix(Favorites.APP) }),
             badges = apps.mapNotNull { a ->
