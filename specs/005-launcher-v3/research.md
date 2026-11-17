@@ -14,10 +14,24 @@ Checks on the test TV on 2026-11-03, with adb as shell. Telik 2.1.0 is the defau
 | Use of all apps | `UsageStatsManager` | App op `GET_USAGE_STATS` is "default", not granted. The user grants it in the settings or with adb | Better recent apps, optional |
 | Now playing in any app | `MediaSessionManager.getActiveSessions` with a notification listener | The system ignores writes to `enabled_notification_listeners` (checked on 2026-11-03). The user allows access on the TV screen, or with `adb shell cmd notification allow_listener` | Now playing card with controls |
 | App shortcuts | `LauncherApps.getShortcuts` | Telik is the default Home app, so the call is allowed. Only `com.google.android.gms` has shortcuts on the TV | Low value. Show them when an app has them |
-| Preview channels and programs | `TvContract` | `READ_TV_LISTINGS` is dangerous, so the user grants it on the TV. `ACCESS_ALL_EPG_DATA` is `signature|privileged`, and only the maker launcher holds it | Unknown. Shell sees no rows, so a probe in Telik must decide |
-| Watch Next | `TvContract.WatchNextPrograms` | As above. A third-party launcher cannot change entries of other apps | Read only, if the probe finds rows |
+| Preview channels and programs | `TvContract` | `READ_TV_LISTINGS` is dangerous, so the user grants it on the TV. `ACCESS_ALL_EPG_DATA` is `signature|privileged`, and only the maker launcher holds it | Yes. The probe of 2026-11-17 found rows of 7 apps (see below) |
+| Watch Next | `TvContract.WatchNextPrograms` | As above. A third-party launcher cannot change entries of other apps | Read only. YouTube, kino.watch and Apple TV have rows |
 | HDMI inputs | `TvInputManager` | Free | Already in 001 |
 | Uninstall, app info | `ACTION_DELETE`, `ACTION_APPLICATION_DETAILS_SETTINGS` | Free, the system asks the user | Edit menu |
+
+## Probe of TvProvider (T001, 2026-11-17)
+
+Telik read the tables with `READ_TV_LISTINGS`, granted with `adb shell pm grant`. TvProvider gives the rows
+with `searchable=1` of all packages. A caller without `ACCESS_ALL_EPG_DATA` cannot pass a selection, so
+Telik filters the rows itself. The constant is hidden in the SDK, so the code uses the permission string.
+`pm grant` of `ACCESS_ALL_EPG_DATA` fails: "not a changeable permission type". The TV is a user build
+without root.
+
+| Table | Rows for each package |
+|---|---|
+| Channels | YouTube 3, kino.watch 3, Netflix 1, Prime Video 1, Apple TV 1, Google recommendations 1, MediaTek TV 1 |
+| Preview programs | kino.watch 55, Prime Video 20, YouTube 15, Netflix 15, Google recommendations 11 |
+| Watch Next | kino.watch 10, YouTube 9, Apple TV 5 |
 
 ## Not possible for a third-party Home app
 
@@ -28,8 +42,6 @@ Checks on the test TV on 2026-11-03, with adb as shell. Telik 2.1.0 is the defau
 
 ## Open points
 
-- Under Google TV, do the apps on the test TV publish to `TvContract`? Examples are YouTube and Netflix.
-  Task T001 answers this with `READ_TV_LISTINGS`.
 - Does the TV show the "Usage access" screen? If not, the user grants `GET_USAGE_STATS` with `adb shell appops set dev.telik.tv GET_USAGE_STATS allow`.
 
 ## tvOS Human Interface Guidelines

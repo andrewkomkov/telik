@@ -21,6 +21,8 @@
     </queries>
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- TV home rows of other apps (005 US5). A runtime permission. -->
+    <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />

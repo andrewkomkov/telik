@@ -226,6 +226,8 @@ class LauncherActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         if (::store.isInitialized) refreshDefault()
+        // T001 probe: counts only, off the main thread.
+        lifecycleScope.launch(Dispatchers.IO) { TvListings.log(applicationContext) }
     }
 
     // Home pressed while Home is open: leave edit mode and go back to the first tile.

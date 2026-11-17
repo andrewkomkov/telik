@@ -2,8 +2,8 @@
 
 ## Phase 0: Probe
 
-- [ ] T001 Add a hidden debug action that asks for `READ_TV_LISTINGS` and counts rows of `PreviewPrograms` and `WatchNextPrograms` for each package. Run it on the TV.
-- [ ] T003 Record the result of T001 in `research.md`.
+- [x] T001 Add `TvListings`: with `READ_TV_LISTINGS`, it counts the rows of the channels, `PreviewPrograms` and `WatchNextPrograms` for each package. It logs counts only. Run it on the TV.
+- [x] T003 Record the result of T001 in `research.md`.
 - [ ] T002 Check whether the TV shows the "Usage access" screen for Telik. Record the result in `research.md`.
 
 ## Phase 1: Favorites (US1, P1)
