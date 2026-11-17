@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-17
 
-**Status**: Resumed and done on 2026-11-17. Ships in 3.1.0. The iPhone shows the media panel (-10 s, info, captions, +10 s). The skip buttons seek. The user checked them on the TV. The buttons for an app with no media session are not checked yet (T012). The info button needs a title from the Apple TV catalog (`capellaInfoAvailable`), so it stays off for other apps. The touchpad layout of iOS has no play and pause button by design: a tap on the touchpad is OK, and OK pauses the player.
+**Status**: Resumed and done on 2026-11-17. Ships in 3.1.0. The iPhone does not show the title and the art. The user does not need them (T015). The iPhone shows the media panel (-10 s, info, captions, +10 s). The skip buttons seek. The user checked them on the TV. The buttons for an app with no media session are not checked yet (T012). The info button needs a title from the Apple TV catalog (`capellaInfoAvailable`), so it stays off for other apps. The touchpad layout of iOS has no play and pause button by design: a tap on the touchpad is OK, and OK pauses the player.
 
 **Input**: The user tested the iPhone remote on 2026-11-17 with YouTube playing on the TV. The remote showed no media
 card. The TV log shows that the remote of iOS 26 asks for `FetchCurrentNowPlayingInfoEvent`, `FetchUpNextInfoEvent` and
